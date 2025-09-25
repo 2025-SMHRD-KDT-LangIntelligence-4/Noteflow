@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+</head>
+<body>
+<div class = "feed-position-container">
+	<div class = "feed-container">
+		<c:if test=" ">따옴표 안에 조건 작성
+			<c:forEach items="" var=""> 반복할 것 = items, 변수명 = var로 지정하면됨
+	                <div class = "feed-title">제목은 작성자 지정값으로 받아오세요</div>
+	                <div class = "feed-date">작성일 받아오세요</div>
+	                <div calss = "feed-content">피드 내용도 받아오세요 이미지도 있으면 받아오세요</div>
+	                <div class = "feed-like">좋아요도 받아오세요</div>
+	                <div class = "feed-comment-count">댓글 수도 받아오세요</div>	               
+	                <c:if test=" "> 따옴표 안에 조건 작성
+	                	<c:forEach items = "" var = "">
+	                		<div class = "feed-comment-userProfile">댓글 작성자 프로필 이미지 받아오세요</div>
+	                		<div class = "feed-comment-userName">댓글 작성자 이름 받아오세요</div>
+	                		<div class = "feed-comment-date">댓글 작성 날짜 받아오세요</div> 
+	                		<div class = "feed-comment-contents">댓글 내용 받아와요</div>
+	                		<div class = "feed-comment-like">댓글 좋아요 수 받아오세요</div>
+	                	</c:forEach>
+	                </c:if>    	
+        	</c:forEach>
+        </c:if>
+	</div>
+</div>
+<div class = "AI-position-container">
+	<div class = "AI-container">AI모델 이미지 공간입니다</div>
+</div>
+<div class = top-button-position-container>
+	<button>TOP버튼입니다.</button>
+</div>
+</body>
+</html>
