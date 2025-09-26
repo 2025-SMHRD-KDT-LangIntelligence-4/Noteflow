@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>스케줄 관리 달력</title>
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+</head>
+<body>
+  <div id="calendar"></div>
+  <div class="schedule-manager-container">
+    <div class="date">날짜를 선택하세요</div>
+    <div class="schedule">작성된 스케줄이 여기에 표시됩니다</div>
+    <input type="text" class="schedule-create" placeholder="스케줄을 입력하세요"/>
+  </div>
+
+  <script>
+    const dateEl = document.querySelector('.date');
+    const scheduleEl = document.querySelector('.schedule');
+    const inputEl = document.querySelector('.schedule-create');
+
+    const schedules = {};
+
+    const calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
+      initialView: 'dayGridMonth',
+      locale: 'ko',
+      dateClick: function(info) {
+    	  
+        const clickedDate = new Date(info.dateStr);
+        const month = clickedDate.getMonth() + 1;
+        const day = clickedDate.getDate();
+        
+        dateEl.innerText = `${month}월 ${day}일`;
+
+        const key = info.dateStr;
+        if (schedules[key] && schedules[key].length > 0) {
+          scheduleEl.innerHTML = schedules[key].map(item => `• ${item}`).join("<br>");
+        } else {
+          scheduleEl.innerText = "작성된 스케줄 없음";
+        }
+
+        inputEl.onkeydown = function(e) {
+          if (e.key === "Enter" && inputEl.value.trim() !== "") {
+            if (!schedules[key]) schedules[key] = [];
+            schedules[key].push(inputEl.value.trim());
+            scheduleEl.innerHTML = schedules[key].map(item => `• ${item}`).join("<br>");
+            inputEl.value = "";
+          }
+        };
+      }
+    });
+
+    calendar.render();
+  </script>
+</body>
+</html>
