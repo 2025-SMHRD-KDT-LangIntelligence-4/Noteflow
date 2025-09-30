@@ -12,13 +12,16 @@
     }
 </style>
 <body>
-  <div id="calendar"></div>
-  <div class="schedule-manager-container">
-    <div class="date">날짜를 선택하세요</div>
-    <div class="schedule">작성된 스케줄이 여기에 표시됩니다</div>
-    <input type="text" class="schedule-create" placeholder="스케줄을 입력하세요"/>
-  </div>
-
+  
+    <div class="schedule-manager-container">
+        <div class="date">날짜를 선택하세요</div>
+        <div class="schedule">작성된 스케줄이 여기에 표시됩니다</div>
+        <input type="text" class="schedule-create" placeholder="스케줄을 입력하세요"/>
+    </div>
+    <div class = "calendar-container">
+        <div id="calendar"></div>
+    </div>
+    
   <script>
     const dateEl = document.querySelector('.date');
     const scheduleEl = document.querySelector('.schedule');

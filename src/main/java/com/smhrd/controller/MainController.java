@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping("/")
 public class MainController {
 	
+	// 해당 페이지에서는 메인페이지와 관련된 이동만 다룰 것
 	@GetMapping("/main")
     public String mainPage() {
         System.out.println(">>> Main Page 요청 처리됨: /main");
@@ -16,8 +17,7 @@ public class MainController {
 	
 	@GetMapping("/")
     public String rootPage() {
-        System.out.println(">>> Root Page 요청 처리됨: /api/");
-        // 루트 요청이 들어오면 main 페이지로 포워딩합니다.
+        System.out.println(">>> Root Page 요청 처리됨: /");
         return "main";
     }
 }
