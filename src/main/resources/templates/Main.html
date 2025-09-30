@@ -12,18 +12,24 @@
 			<!-- feeds라는 이름의 모델 객체 리스트를 순회하며 각 요소를 feed 변수에 저장 (수정됨) -->
 			<div class="feed-item" th:each="feed : ${feeds}">
 		        <div class = "feed-title" th:text="${feed.title}">제목은 작성자 지정값으로 받아오세요</div> <!-- th:text로 제목 데이터 출력 (수정됨) -->
+		        
 		        <div class = "feed-date" th:text="${feed.date}">작성일 받아오세요</div> <!-- th:text로 작성일 데이터 출력 (수정됨) -->
+		        
 		        <!-- 피드 내용 (text와 image)을 포함한다고 가정하고, 내용 텍스트만 출력 (이미지는 th:src 사용) (수정됨) -->
+		        
 		        <div class = "feed-content" th:text="${feed.content}">피드 내용도 받아오세요</div> 
 		        <!-- 피드 이미지가 있다면 여기에 th:src로 추가해야 합니다. 예: <img th:src="${feed.imageUrl}"/> -->
 		        
 		        <div class = "feed-like" th:text="${feed.likeCount}">좋아요도 받아오세요</div> <!-- th:text로 좋아요 수 데이터 출력 (수정됨) -->
+		        
 		        <div class = "feed-comment-count" th:text="${#lists.size(feed.comments)}">댓글 수도 받아오세요</div> <!-- 댓글 리스트의 크기 출력 (수정됨) -->
 		        
 		        <!-- feed.comments 리스트가 비어있지 않은 경우에만 댓글 영역 표시 (수정됨) -->
 		        <div class="comments-section" th:if="${!#lists.isEmpty(feed.comments)}"> 
+		        
 		        	<!-- feed.comments 리스트를 순회하며 각 요소를 comment 변수에 저장 (수정됨) -->
 		        	<div class="comment-item" th:each="comment : ${feed.comments}">
+		        	
 		        		<!-- 프로필 이미지는 th:src를 사용하고, alt 속성은 th:alt를 사용하여 접근성 향상 (수정됨) -->
 		        		<div class = "feed-comment-userProfile">
 							<img th:src="${comment.profileImageUrl}" th:alt="${comment.userName} + '의 프로필 이미지'"/>

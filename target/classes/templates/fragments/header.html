@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
 <meta charset="UTF-8">
 <title>Insert title here</title>
@@ -106,23 +107,25 @@
 </style>
 </head>
 <body>
-<div class = "header-top">
-	<a href = "main.html" class = "logo">SAEGIM</a>
-</div>
-<div class = "header-bottom">
-	<div class = "title-container">홈 대시보드</div>
-	<div class = "categori-container">
-		<a href='Main.html'">피드</a>
-		<a href='schedule-manager.html'">일정관리</a>
-		<a href='NotionCreate.html'">노션작성</a>
-		<a href='아직안만듦'">노션관리</a>
-		<a href='아직안만듦'">문제생성</a>
+<header th:fragment="siteHeader">
+	<div class = "header-top">
+		<a href = "main.html" class = "logo">SAEGIM</a>
 	</div>
-	<div class = "login-container">
-	    <a href = "로그인창 주소" class = "login-button">로그인</a>
+	<div class = "header-bottom">
+		<div class = "title-container">홈 대시보드</div>
+		<div class = "categori-container">
+			<a href='Main.html'">피드</a>
+			<a href='schedule-manager.html'">일정관리</a>
+			<a href='NotionCreate.html'">노션작성</a>
+			<a href='아직안만듦'">노션관리</a>
+			<a href='아직안만듦'">문제생성</a>
+		</div>
+		<div class = "login-container">
+		    <a href = "로그인창 주소" class = "login-button">로그인</a>
+		</div>
+	    
 	</div>
-    
-</div>
+</header>
 
 </body>
 </html>
