@@ -1,0 +1,63 @@
+@charset "UTF-8";
+body {
+        background-color: #EAEAEA;
+        display: flex;
+        justify-content: center;
+        gap: 40px;
+
+    }
+    #calendar {
+      width: 600px;
+      max-height: 600px;
+      background-color: #ffffff;
+    }
+    .calendar-container {
+        width: 700px;
+        background-color: #ffffff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 20px;
+    }
+    .schedule-manager-container {
+        width: 300px;
+        height: 700px;
+        background-color: #ffffff;
+        display: flex;
+        justify-content: space-around;
+        flex-direction: column;
+        gap : 200px;
+        align-items: center;
+        border-radius: 20px;
+    }
+    .date {
+        border-style: solid;
+        border-color: #c7c7c7;
+        border-width: 0px 0px 1px 0px;
+        width: 249px;
+        height: 46px;
+        position: relative;
+        overflow: hidden;
+    }
+    .schedule {
+        color: #000000;
+        text-align: center;
+        font-family: "Pretendard-Regular", sans-serif;
+        font-size: 20px;
+        font-weight: 400;
+        position: relative;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        width: 80%;
+    }
+    .schedule-create {
+        border-radius: 10px;
+        border-style: solid;
+        border-color: #c7c7c7;
+        border-width: 1px;
+        width: 249px;
+        height: 31px;
+        position: relative;
+        overflow: hidden;
+        }

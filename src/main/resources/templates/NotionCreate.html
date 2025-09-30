@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+</head>
+<body>
+	<div th:replace="fragments/header :: siteHeader"></div>
+	<div class = "notion-content-container">
+			<form id="" action="" method="post" class="location-container">
+				<div class = "notion-container">
+					<input class = "notion-title" type = "text" value = "제목을 입력하세요"/>
+					<textarea class = "notion-content" type = "text" value = "내용이 출력됩니다."></textarea>
+				</div>
+				<div class = "notion-type-container">
+                    <div class = "notion-save-type">
+                        <label for="notion-desc">서술형</label>
+                        <input type="radio" id="notion-desc" name="description" value="서술형"/>
+                        <label for="notion-sum">요약형</label>
+                        <input type="radio" id="notion-sum" name="summary" value="요약형"/>
+                        <label for="notion-custom">커스텀</label>
+                        <input type="radio" id="notion-custom" name="custom" value="커스텀"/>
+                    </div>
+                    <button type="submit" class = "save-notion">전송</button>
+				</div>
+                <div class = "input-box-container">
+                    <div class = "text-input-container">
+                        <div class = "textarea-title">메시지입력</div>
+                        <textarea class = "notion-text" type = "text" value = "텍스트를 입력해주세요"></textarea>
+                    </div>
+                    <div class = "attatch-file-container">
+                        <div class = "attatch-file-title">첨부파일</div>
+                        <input type = "file" class = "file-attatch" accept = "파일 타입 넣어주세요"/>
+                    </div>
+                </div>
+                
+			</form>
+	</div></body>
+</html>
