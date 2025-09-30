@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+</head>
+<body>
+	<div class = "mypage-container">
+		<div class="title">마이페이지 수정</div>
+  			<form action="editMypage" method="post" enctype="multipart/form-data">
+    			<button type="submit" class="info-save-button">저장하기</button>
+			    <div class="profile-image-location-container">
+			      <div class="profile-image-container">
+			        <img src="이미지 주소값 넣어주세요" alt="프로필 이미지 미리보기" id="preview"/>
+			        <input type="file" name="profileImage" accept="image/*" onchange="previewImage(event)"/>
+			      </div>
+			    </div>
+			    <div class="user-info-container">
+			      <label>
+			        이름
+			        <input type="text" name="userName" value="사용자 이름 불러와주세요"/>
+			      </label>
+			      <label>
+			        이메일
+			        <input type="email" name="userEmail" value="이메일 주소 불러와주세요"/>
+			      </label>
+			      <label>
+			        아이디
+			        <input type="text" name="userId" value="아이디 값 불러와주세요" readonly/>
+			      </label>
+			      <label>
+			        비밀번호
+			        <input type="password" name="userPw" placeholder="새 비밀번호 입력"/>
+			      </label>
+			      <label>
+			        소셜 로그인 여부
+			        <select name="userSocialLogin">
+			          <option value="Y">사용</option>
+			          <option value="N">미사용</option>
+			        </select>
+			      </label>
+			      <label>
+			        관심 분야
+			        <input type="text" name="userInterest" value="관심 분야 불러와주세요"/>
+			      </label>
+			    </div>
+  			</form>
+	</div>
+	<div class = "AI-position-container">
+		<div class = "AI-container">AI모델 이미지 공간입니다</div>
+	</div>
+	<div class = top-button-position-container>
+		<button>TOP버튼입니다.</button>
+	</div>
+</body>
+</html>
