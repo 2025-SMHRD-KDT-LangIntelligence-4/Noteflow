@@ -3,10 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <title>로그인</title>
+    <link rel="stylesheet" th:href="@{/css/header.css}" />
 </head>
+<STyle>
+/* 전체 페이지의 기본 스타일을 초기화합니다. */
+.a {
+    /* 수평/수직 완벽한 중앙 정렬을 위해 Flexbox를 사용합니다. */
+    display: flex;
+    justify-content: center; /* 수평(가로) 중앙 정렬 */
+    align-items: center; /* 수직(세로) 중앙 정렬 */
+    height: 100vh; /* 뷰포트 높이 전체를 사용합니다. (세로 중앙 정렬을 위해 필수) */
+    margin: 0; /* 기본 여백 제거 */
+    background-color: #f4f4f9; /* 배경색 설정 */
+    font-family: Arial, sans-serif;
+}
+
+/* 로그인 폼 전체를 감싸는 영역의 스타일입니다. */
+.login-wrapper {
+    width: 500px;
+    padding: 40px;
+    height: 400px;
+    background-color: #ffffff; /* 흰색 배경 */
+    /* 모서리를 10px만큼 둥글게 만듭니다. */
+    border-radius: 20px;
+    /* 은은한 그림자 효과를 줍니다. */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    text-align: center; /* h1 제목을 가운데 정렬합니다. */
+}
+
+/* 제목 스타일 */
+h1 {
+    margin-bottom: 40px;
+    color: #333;
+    font-size: 40px;
+}
+
+/* 각 입력 필드 그룹 (아이디/비밀번호)의 스타일입니다. */
+.input-group {
+    /* 각 그룹 아래에 간격을 줍니다. (필수) */
+    margin-bottom: 20px;
+    text-align: left; /* label과 input을 왼쪽 정렬 */
+}
+
+/* label 스타일 */
+.input-group label {
+    display: block; /* label을 한 줄 전체를 차지하게 만들어 input과 분리 */
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #555;
+}
+
+/* input 필드 스타일 */
+.input-group input {
+    width: 100%; /* 부모 input-group의 너비에 꽉 채웁니다. */
+    padding: 10px;
+    border: 1px solid #ccc;
+    /* input 모서리를 부드럽게 둥글게 처리 */
+    border-radius: 5px;
+    box-sizing: border-box; /* 패딩이 너비에 포함되도록 설정 (필수!) */
+}
+
+/* 로그인 버튼 스타일 */
+.login-button {
+    width: 100%;
+    padding: 12px;
+    background-color: #007bff; /* 파란색 배경 */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer; /* 마우스 오버 시 손가락 모양 커서 */
+    font-size: 16px;
+    font-weight: bold;
+    margin-top: 10px; /* 입력 필드와의 간격 */
+    transition: background-color 0.1s; /* 호버 시 색상 변화 애니메이션 */
+}
+
+/* 버튼에 마우스를 올렸을 때의 스타일 */
+.login-button:hover {
+    background-color: #0056b3;
+}
+
+/* 기타 링크 영역 스타일 */
+.links {
+    margin-top: 25px;
+    font-size: 14px;
+    color: #888;
+}
+
+/* 링크 스타일 */
+.links a {
+    color: #007bff;
+    text-decoration: none; /* 밑줄 제거 */
+}
+
+/* 링크에 마우스를 올렸을 때의 스타일 */
+.links a:hover {
+    text-decoration: underline; /* 밑줄 다시 표시 */
+}
+</STyle>
 <body>
-    <h2>로그인</h2>
+   <div th:replace="fragments/header :: siteHeader"></div>
     
+    <!-- <h2>로그인</h2> -->
     <div th:if="${param.error}" style="color:red">
         로그인 실패! 이메일이나 비밀번호를 확인해주세요.
     </div>
@@ -15,13 +113,40 @@
         로그아웃되었습니다.
     </div>
 
-    <form method="post" th:action="@{/login}">
-        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-        <input type="text" name="user_id" placeholder="아이디" required />
-        <input type="password" name="user_pw" placeholder="비밀번호" required />
-        <button type="submit">로그인</button>
-    </form>
-    
-    <a th:href="@{/signup}">회원가입</a>
+    <!-- <form method="post" th:action="@{/login}"> -->
+        <!-- <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/> -->
+        <!-- <input type="text" name="user_id" placeholder="아이디" required /> -->
+        <!-- <input type="password" name="user_pw" placeholder="비밀번호" required /> -->
+        <!-- <button type="submit">로그인</button> -->
+    <!-- </form> -->
+    <div class="a">
+    <div class="login-wrapper">
+
+        <h1>Login</h1>
+
+        <form th:action="@{/login}" method="POST" class="login-form">
+            
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+            <div class="input-group">
+                <label for="username">ID</label>
+                <input type="text" id="username" name="username" placeholder="아이디를 입력해주세요" required autofocus>
+            </div>
+
+            <div class="input-group">
+                <label for="password">PW</label>
+                <input type="password" id="password" name="password" placeholder="비밀번호를 입력해주세요" required>
+            </div>
+
+            <button type="submit" class="login-button">로그인</button>
+        </form>
+
+        <div class="links">
+            <a href="#">비밀번호 찾기</a>
+            <span>|</span>
+            <a th:href="@{/signup}">회원가입</a>
+        </div>
+    </div>
+    </div>
 </body>
 </html>

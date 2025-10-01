@@ -98,20 +98,3 @@ body {
     position:relative;
     top:50px;
 }
-.AI-position-container {
-	position: fixed;       /* 화면에 고정 */
-    bottom: 30px;          /* 화면 아래에서 30px 위 */
-    left: 30px;           /* 화면 오른쪽에서 30px 왼쪽 */
-    z-index: 1000;         
-}
-.top-button-position-container {
-	position: fixed;       /* 화면에 고정 */
-    bottom: 30px;          /* 화면 아래에서 30px 위 */
-    right: 30px;           /* 화면 오른쪽에서 30px 왼쪽 */
-    z-index: 1000; 
-}
-.AI-container {
-	width:150px;
-	height:150px;
-	background-color:white;
-}
