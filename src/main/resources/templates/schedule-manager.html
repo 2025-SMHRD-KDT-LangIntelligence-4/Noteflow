@@ -38,6 +38,7 @@
       locale: 'ko',
       dateClick: function(info) {
     	  
+    	  
         const clickedDate = new Date(info.dateStr);
         const month = clickedDate.getMonth() + 1;
         const day = clickedDate.getDate();
@@ -59,6 +60,12 @@
             inputEl.value = "";
           }
         };
+        document.querySelectorAll('.fc-daygrid-day').forEach(cell => {
+            cell.classList.remove('selected-date');
+          });
+
+          // 현재 클릭한 날짜 셀에 클래스 추가
+          info.dayEl.classList.add('selected-date');  
       }
     });
 

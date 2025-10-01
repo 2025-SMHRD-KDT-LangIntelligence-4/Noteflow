@@ -64,3 +64,23 @@ body {
         position: relative;
         overflow: hidden;
         }
+        
+ 	.selected-date {
+      background-color: #D3EBFF !important;
+    }
+    a[aria-label="일요일"]  {
+    	color: red;
+    	
+    }
+    a[aria-label="토요일"] {
+    	color: blue;
+    }
+    .fc-day-sun {
+  		background-color: #F5F5F5; 
+	}
+	.fc-day-sat {
+		background-color: #F5F5F5;
+	}
+	.fc-day-today {
+		background-color: #D3EBFF !important;
+	}
