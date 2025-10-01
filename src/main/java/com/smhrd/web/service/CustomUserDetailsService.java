@@ -1,6 +1,6 @@
 package com.smhrd.web.service;
 
-import com.smhrd.web.domain.User;
+import com.smhrd.web.entity.User;
 import com.smhrd.web.repository.UserRepository;
 import org.springframework.security.core.userdetails.*;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -21,35 +21,39 @@ public class CustomUserDetailsService implements UserDetailsService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    // Spring Security 로그인 처리
+    // 로그인 처리
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User u = userRepo.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("사용자 없음: " + username));
+    public UserDetails loadUserByUsername(String userId) throws UsernameNotFoundException {
+        User user = userRepo.findByUserId(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("사용자 없음: " + userId));
 
         List<SimpleGrantedAuthority> authorities = List.of(
-                new SimpleGrantedAuthority("ROLE_" + u.getRole().toUpperCase())
+                new SimpleGrantedAuthority("ROLE_" + user.getUserRole().toUpperCase())
         );
 
-        return new org.springframework.security.core.userdetails.User(
-                u.getUsername(),
-                u.getPassword(),
-                true, // enabled always true
-                true, true, true,
-                authorities
-        );
+        return org.springframework.security.core.userdetails.User.builder()
+                .username(user.getUserId())
+                .password(user.getUserPw())
+                .authorities(authorities)
+                .accountExpired(false)
+                .accountLocked(false)
+                .credentialsExpired(false)
+                .disabled(false)
+                .build();
     }
 
     // 회원가입 메서드
-    public User register(String username, String rawPassword, String email, boolean mailingAgreed) {
-        User u = new User();
-        u.setUsername(username);
-        u.setPassword(passwordEncoder.encode(rawPassword));
-        u.setRole("USER");
-        u.setEmail(email);
-        u.setMailingAgreed(mailingAgreed);
-        u.setCreatedAt(LocalDateTime.now());
-        // 기타 필드 기본값 설정
-        return userRepo.save(u);
+    public User register(String userId, String rawPassword, String email, boolean mailingAgreed) {
+        User user = User.builder()
+                .userId(userId)
+                .userPw(passwordEncoder.encode(rawPassword))
+                .userRole("USER")
+                .email(email)
+                .mailingAgreed(mailingAgreed)
+                .createdAt(LocalDateTime.now())
+                .attachmentCount(0)
+                .build();
+
+        return userRepo.save(user);
     }
 }
