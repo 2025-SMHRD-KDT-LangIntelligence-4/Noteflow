@@ -41,4 +41,10 @@ public class User {
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
+    
+    @Column(nullable = true)
+    private String profileImageUrl;
+    
+    private String Nickname;
+    private String socialLogin;
 }

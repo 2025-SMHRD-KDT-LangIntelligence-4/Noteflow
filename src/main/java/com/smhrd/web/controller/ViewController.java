@@ -27,15 +27,6 @@ public class ViewController {
         return "login";
     }
 
-
-    @GetMapping("/mypage")
-    public String myPage() {
-    	
-    	
-    	
-        return "MyPage";
-    }
-
     @GetMapping("/mypage/edit")
     public String editMyPage() {
         return "editMypage";

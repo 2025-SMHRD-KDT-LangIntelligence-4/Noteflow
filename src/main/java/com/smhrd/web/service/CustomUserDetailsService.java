@@ -21,7 +21,6 @@ public class CustomUserDetailsService implements UserDetailsService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    // 로그인 처리
     @Override
     public UserDetails loadUserByUsername(String userId) throws UsernameNotFoundException {
         User user = userRepo.findByUserId(userId)
@@ -42,18 +41,4 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .build();
     }
 
-    // 회원가입 메서드
-    public User register(String userId, String rawPassword, String email, boolean mailingAgreed) {
-        User user = User.builder()
-                .userId(userId)
-                .userPw(passwordEncoder.encode(rawPassword))
-                .userRole("USER")
-                .email(email)
-                .mailingAgreed(mailingAgreed)
-                .createdAt(LocalDateTime.now())
-                .attachmentCount(0)
-                .build();
-
-        return userRepo.save(user);
-    }
 }
