@@ -27,10 +27,6 @@ public class ViewController {
         return "login";
     }
 
-    @GetMapping("/signup")
-    public String signupPage() {
-        return "signup";
-    }
 
     @GetMapping("/mypage")
     public String myPage() {
@@ -75,16 +71,7 @@ public class ViewController {
         return "quizResult";
     }
 
-    @PostMapping("/signup")
-    public String signup(
-            @RequestParam("user_id") String username,
-            @RequestParam("user_pw") String rawPassword,
-            @RequestParam("email") String email,
-            @RequestParam(value = "mailing_agreed", defaultValue = "false") boolean mailingAgreed
-    ) {
-        userService.register(username, rawPassword, email, mailingAgreed);
-        return "redirect:/login";
-    }
+    
 
     // 추가 API 필요 시 @PostMapping 구현...
 }
