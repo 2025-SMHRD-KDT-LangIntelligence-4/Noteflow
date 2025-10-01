@@ -1,0 +1,111 @@
+@charset "UTF-8";
+/* src/main/resources/static/css/header.css */
+
+/* 상단 파란색 바 */
+.header-top {
+    background-color: #96D0FF;
+    width: 100%;
+    height: 50px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    overflow-x: auto;
+    box-sizing: border-box;
+}
+
+/* 하단 흰색 영역 */
+.header-bottom {
+    width: 100%;
+    background-color: #FFFFFF;
+    border-radius: 0px 0px 10px 10px;
+    height: 110px;
+    position: relative;
+    box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* 대시보드 타이틀 */
+.title-container {
+    width: 200px;
+    color: #000000;
+    text-align: center;
+    font-family: "Pretendard-Bold", sans-serif;
+    font-size: 30px;
+    font-weight: 700;
+    display: flex;
+    align-items: flex-end;
+    padding-left: 20px;
+}
+
+/* 카테고리 메뉴 */
+.categori-container {
+    width: 608px;
+    height: 50px;
+    margin-top: 60px;
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+}
+
+.categori-container a {
+    width: 100px;
+    text-decoration: none;
+    color: #000000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    font-size: 18px;
+    background-color: #FFFFFF;
+}
+
+.categori-container a:hover {
+    border-bottom: 5px solid black;
+}
+
+/* 로그인 버튼 영역 */
+.login-container {
+    width: 200px;
+    padding-right: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.login-container a {
+    text-decoration: none;
+    color: #000000;
+}
+
+.login-container a:hover {
+    text-decoration: underline;
+    text-decoration-thickness: 3px;
+    text-underline-offset: 3px;
+}
+
+/* 파란색 버튼 */
+.login-button {
+    line-height: 20px;
+    text-align: center;
+    font-size: 1.2rem;
+    color: #FFFFFF !important;
+    padding: 10px 15px;
+    border-radius: 4px;
+    background-color: #96D0FF;
+    display: block;
+}
+
+/* 로고 */
+.logo {
+    color: #ffffff;
+    text-align: center;
+    font-size: 30px;
+    font-weight: 700;
+    position: absolute;
+    left: 78px;
+    top: 15px;
+    text-decoration: none;
+}

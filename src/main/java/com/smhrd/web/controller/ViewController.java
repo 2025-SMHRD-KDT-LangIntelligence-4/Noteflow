@@ -34,6 +34,9 @@ public class ViewController {
 
     @GetMapping("/mypage")
     public String myPage() {
+    	
+    	
+    	
         return "MyPage";
     }
 
