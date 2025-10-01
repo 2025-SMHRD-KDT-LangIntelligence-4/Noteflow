@@ -1,0 +1,117 @@
+@charset "UTF-8";
+body {
+    
+    background-color: #EAEAEA;
+}
+.mypage-container {
+    width: 940px;
+    height:700px;
+    background-color: white;
+    border-radius: 20px;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap:20px;
+    align-content: center;
+}
+.title {
+    width: 780px;
+    height: 80px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: solid 2px;
+    border-color: #C7C7C7;
+    font-size: 30px;
+}
+.profile-image-location-container{
+    width:780px;
+    height:150px;
+    display: flex;
+    justify-content: center;
+}
+.profile-image-container{
+    width: 150px;
+    height:150px;
+    border-radius: 100%;
+    background-color: #96D0FF;
+}
+.user-name {
+    width: 450px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: solid 2px;
+    border-color: #C7C7C7;
+
+}
+.user-info-container {
+    width: 780px;
+    height:240px;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+.email-address{
+    width:240px;
+    height:50px;
+    display: flex;
+    justify-content: center;
+    border-bottom: solid 2px;
+    border-right: solid 2px;
+    border-color: #C7C7C7;
+    align-items: center;
+}
+.user-email-address {
+    width:530px;
+    height:50px;
+    border-bottom: solid 2px;
+    border-color: #C7C7C7;
+    align-items: center;
+    display: flex;
+    justify-content: center;
+}
+.id, .pw, .social-login, .interesting{
+    width:240px;
+    height:50px;
+    display: flex;
+    justify-content: center;
+    border-bottom: solid 2px;
+    border-right: solid 2px;
+    border-color: #C7C7C7;
+    align-items: center;
+}
+.user-id, .user-pw, .user-social-login, .user-interesting {
+    width:530px;
+    height:50px;
+    border-bottom: solid 2px;
+    border-color: #C7C7C7;
+    align-items: center;
+    display: flex;
+    justify-content: center;
+}
+.location-container {
+	display: flex;
+    justify-content:center;
+    align-items: center;
+    position:relative;
+    top:50px;
+}
+.AI-position-container {
+	position: fixed;       /* 화면에 고정 */
+    bottom: 30px;          /* 화면 아래에서 30px 위 */
+    left: 30px;           /* 화면 오른쪽에서 30px 왼쪽 */
+    z-index: 1000;         
+}
+.top-button-position-container {
+	position: fixed;       /* 화면에 고정 */
+    bottom: 30px;          /* 화면 아래에서 30px 위 */
+    right: 30px;           /* 화면 오른쪽에서 30px 왼쪽 */
+    z-index: 1000; 
+}
+.AI-container {
+	width:150px;
+	height:150px;
+	background-color:white;
+}
