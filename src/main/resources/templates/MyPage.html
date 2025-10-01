@@ -7,6 +7,7 @@
     <link rel="stylesheet" th:href="@{/css/mypage.css}" />
 </head>
 <body>
+<<<<<<< HEAD
     <!-- 헤더 -->
     <div th:replace="fragments/header :: siteHeader"></div>
 
@@ -16,6 +17,9 @@
     </div>
 
     <!-- 마이페이지 메인 컨테이너 -->
+=======
+	<div th:replace="fragments/header :: siteHeader"></div>
+>>>>>>> branch 'main' of https://github.com/2025-SMHRD-KDT-LangIntelligence-4/Noteflow.git
     <div class="location-container">
         <div class="mypage-container">
             <div class="title">
@@ -52,11 +56,16 @@
                 <div class="user-interesting" th:text="${user.interestArea != null ? user.interestArea : '관심 분야 없음'}">관심 분야</div>
             </div>
         </div>
+<<<<<<< HEAD
 
         <!-- TOP 버튼 -->
         <div class="top-button-position-container">
             <button onclick="window.scrollTo({ top: 0, behavior: 'smooth' });">TOP</button>
         </div>
+=======
+        
+        
+>>>>>>> branch 'main' of https://github.com/2025-SMHRD-KDT-LangIntelligence-4/Noteflow.git
     </div>
 
     <!-- JS 블록: 사용자 ID를 안전하게 사용 -->
