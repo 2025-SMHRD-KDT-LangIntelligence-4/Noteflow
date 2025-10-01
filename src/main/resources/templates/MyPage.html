@@ -3,30 +3,40 @@
 <head>
 <meta charset="UTF-8">
 <title>Insert title here</title>
+<link rel="stylesheet" th:href="@{/css/header.css}" />
+<link rel="stylesheet" th:href="@{/css/mypage.css}"/>
 </head>
 <body>
-	<div class = "mypage-container">
-		<div class = "title">마이페이지</div>
-		<button class = "info-edit-button">수정하기</button>
-		<div class= "profile-image-location-container">
-			<div class = "profile-image-contaner">
-				<img src = "이미지 주소값 넣어주세요"/>
-			</div>
-		</div>
-		<div class = "user-name">사용자 이름 출력해주세요</div>
-		<div class = "user-info-container">
-			<div class = "user-email-address">이메일 주소 불러와주세요</div>
-			<div class = "user-id">아이디 값 불러와주세요</div>
-			<div class = "user-pw">패스워드 값 불러와주세요</div>
-			<div class = "user-social-login">소셜 로그인 여부 불러와주세요</div>
-			<div class = "user-interesting">관심 분야 불러와주세요</div>
-		</div>
-	</div>
+	<div th:replace="fragments/header :: siteHeader"></div>
 	<div class = "AI-position-container">
-		<div class = "AI-container">AI모델 이미지 공간입니다</div>
-	</div>
-	<div class = top-button-position-container>
-		<button>TOP버튼입니다.</button>
-	</div>
+          <div class = "AI-container">AI모델 이미지 공간입니다</div>
+    </div>
+    <div class="location-container">
+        <div class = "mypage-container">
+            <div class = "title">마이페이지
+                <button class = "info-edit-button">수정하기</button>
+            </div>
+            <div class= "profile-image-location-container">
+                    <img src = "이미지 주소값 넣어주세요" class="profile-image-container"/>
+            </div>
+            <div class = "user-name">사용자 이름 출력해주세요</div>
+            <div class = "user-info-container">
+                <div class = "email-address">이메일 주소</div>
+                <div class = "user-email-address">이메일 주소 불러오기</div>
+                <div class = "id">아이디</div>
+                <div class = "user-id">아이디 값 불러와주세요</div>
+                <div class = "pw">패스워드</div>
+                <div class = "user-pw">패스워드 값 불러와주세요</div>
+                <div class = "social-login">소셜 로그인 여부</div>
+                <div class = "user-social-login">소셜 로그인 여부 불러와주세요</div>
+                <div class = "interesting">관심 분야</div>
+                <div class = "user-interesting">관심 분야 불러와주세요</div>
+            </div>
+        </div>
+        
+        <div class = top-button-position-container>
+            <button>TOP버튼입니다.</button>
+        </div>
+    </div>
 </body>
 </html>
