@@ -1,10 +1,13 @@
 @charset "UTF-8";
 body {
         background-color: #EAEAEA;
-        display: flex;
-        justify-content: center;
+    }
+    .location-container {
+    	display:flex;
+    	justify-content: center;
+		position:relative;
+		top:50px;
         gap: 40px;
-
     }
     #calendar {
       width: 600px;

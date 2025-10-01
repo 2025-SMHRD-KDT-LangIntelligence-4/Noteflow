@@ -4,8 +4,9 @@
 <meta charset="UTF-8">
 <title>Insert title here</title>
 <link rel="stylesheet" th:href="@{/css/header.css}" />
+<link rel="stylesheet" th:href="@{/css/notionCreate.css}"/>
 </head>
-<body><br>
+<body>
 	<div th:replace="fragments/header :: siteHeader"></div>
 	<div class = "notion-content-container">
 			<form id="" action="" method="post" class="location-container">
@@ -14,14 +15,25 @@
 					<textarea class = "notion-content" type = "text" value = "내용이 출력됩니다."></textarea>
 				</div>
 				<div class = "notion-type-container">
-                    <div class = "notion-save-type">
-                        <label for="notion-desc">서술형</label>
-                        <input type="radio" id="notion-desc" name="description" value="서술형"/>
-                        <label for="notion-sum">요약형</label>
-                        <input type="radio" id="notion-sum" name="summary" value="요약형"/>
-                        <label for="notion-custom">커스텀</label>
-                        <input type="radio" id="notion-custom" name="custom" value="커스텀"/>
-                    </div>
+                    <label for="notion-type" class="type-name">저장 형식 선택</label>
+                    <select id="notion-type" name="notion-type" class = "notion-save-type">
+                          <option value="심플버전">1. 심플버전</option>
+						  <option value="문제중심버전">2. 문제중심버전</option>
+						  <option value="학습 전부 기록버전">3. 학습 전부 기록버전</option>
+						  <option value="스토리텔링버전">4. 스토리텔링버전</option>
+						  <option value="액션아이템버전">5. 액션아이템버전</option>
+						  <option value="키워드버전">6. 키워드버전</option>
+						  <option value="인사이트중심버전">7. 인사이트중심버전</option>
+						  <option value="코드로그버전">8. 코드로그버전</option>
+						  <option value="비주얼요약버전">9. 비주얼요약버전</option>
+						  <option value="감정일기버전">10. 감정일기버전</option>
+						  <option value="짧은 Q&A버전">11. 짧은 Q&A버전</option>
+						  <option value="성과지향버전">12. 성과지향버전</option>
+						  <option value="멘토링버전">13. 멘토링버전</option>
+						  <option value="리서치논문버전">14. 리서치논문버전</option>
+						  <option value="미래투영버전">15. 미래투영버전</option>
+						  <option value="포트폴리오버전">16. 포트폴리오버전</option>
+                    </select>
                     <button type="submit" class = "save-notion">전송</button>
 				</div>
                 <div class = "input-box-container">
