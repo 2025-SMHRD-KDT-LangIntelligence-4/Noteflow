@@ -8,18 +8,21 @@
 </head>
 <body>
 	<div th:replace="fragments/header :: siteHeader"></div>
-	<div class = "notion-container">
-		<div class = "preview-title">비동기 통신으로 제목 출력</div>
-		<div class = "preview-content">비동기 통신으로 내용물 출력</div>
-	</div>
-	<div class = "save-seperate-container">
-		<label for="fileName">파일 이름</label>
-		<input type="text" id="fileName" placeholder="예: myDocument.txt" />
-	
-		<label for="filePath">저장 위치</label>
-		<input type="text" id="filePath" placeholder="예: C:/Documents/" />
-	
-		<button id="saveBtn">저장하기</button>
+	<div class ="location-container">
+		<div class ="notion-list-container">
+			<div class="search-bar"></div>
+			<div class="notion-list"></div>
+			<div class="notion-title"></div>
+		</div>
+		<div class ="notion-content-container">
+			<div class="title">노션제목</div>
+			<div class="notion-content"></div>
+			<div class="button-container">
+				<button>저장</button>
+				<button>수정하기</button>
+				<button>취소</button>
+			</div>
+		</div>
 	</div>
 </body>
 </html>
