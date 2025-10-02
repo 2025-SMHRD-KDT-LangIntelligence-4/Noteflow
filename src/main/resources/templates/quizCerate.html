@@ -11,21 +11,23 @@
     <div th:replace="fragments/header :: siteHeader"></div>
 	<div class = "quiz-location-container">
 		  <div class="notion-selector">
-		    <h3>저장된 노션 선택</h3>
-		    <select id="notionSelect">
-		      <option value="">노션 문서를 선택하세요</option>	     
-		    </select>
-		    <button id="generateBtn">퀴즈 생성</button>
+		    <h3 style ="display: flex; justify-content: flex-start; width: 80%; margin-bottom: 50px; font-size:20px; margin-left:10px;">저장된 노션 선택</h3>
+		    <div class="select-container">
+			    <select id="notionSelect" class="notion-select">
+			      <option value="">노션 문서를 선택하세요</option>	     
+			    </select>
+		    </div>
+		    <button id="generateBtn" class ="gene-button">퀴즈 생성</button>
 		  </div>
 		  <div class ="content-location">
 			  <div class = "quiz-content-box">
-			  	<h3>퀴즈</h3>
+			  	<h3 style ="display: flex; justify-content: flex-start; width: 820px; margin-bottom: 10px; font-size:20px;">QUIZ</h3>
 			  	<div class= "quiz-content">퀴즈 출력칸입니다.</div>
 			  </div>
 			  <div class ="form-container">
 			  	<form method = "post" action = "" >
 				  	<div  class = "answer-box">
-				  	<div style ="display: flex; justify-content: flex-start; width: 820px; margin-bottom: 10px;">답변 작성</div>
+				  	<div style ="display: flex; justify-content: flex-start; width: 820px; margin-bottom: 10px; font-size:20px;">답변 작성</div>
 				  		<textarea type = "text" id = "quiz-answer" class="answer-area" value = "답변을 작성해주세요"></textarea>
 				  	</div>
 			  		<button type="submit" class ="submit-button">제출</button>
