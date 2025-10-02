@@ -30,6 +30,7 @@
         height: 270px;
         resize: none;
         padding: 15px;
+        outline:none;
     }
     .notion-title {
         color: #000000;
@@ -78,6 +79,7 @@
         align-items: center;
         flex-wrap: wrap;
         justify-content: center;
+        outline:none;
     }
     .notion-save-type label {
         width:100px;

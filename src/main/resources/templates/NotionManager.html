@@ -4,21 +4,22 @@
 	<meta charset="UTF-8">
 	<title>Insert title here</title>
 	<link rel="stylesheet" th:href="@{/css/header.css}" />
+	<link rel="stylesheet" th:href="@{/css/notionmanager.css}" />
 </head>
 <body>
-  <div th:replace="fragments/header :: siteHeader"></div>
-<div class = "notion-container">
-	<div class = "preview-title">비동기 통신으로 제목 출력</div>
-	<div class = "preview-content">비동기 통신으로 내용물 출력</div>
-</div>
-<div class = "save-seperate-container">
-	<label for="fileName">파일 이름</label>
-	<input type="text" id="fileName" placeholder="예: myDocument.txt" />
-
-	<label for="filePath">저장 위치</label>
-	<input type="text" id="filePath" placeholder="예: C:/Documents/" />
-
-	<button id="saveBtn">저장하기</button>
-</div>
+	<div th:replace="fragments/header :: siteHeader"></div>
+	<div class = "notion-container">
+		<div class = "preview-title">비동기 통신으로 제목 출력</div>
+		<div class = "preview-content">비동기 통신으로 내용물 출력</div>
+	</div>
+	<div class = "save-seperate-container">
+		<label for="fileName">파일 이름</label>
+		<input type="text" id="fileName" placeholder="예: myDocument.txt" />
+	
+		<label for="filePath">저장 위치</label>
+		<input type="text" id="filePath" placeholder="예: C:/Documents/" />
+	
+		<button id="saveBtn">저장하기</button>
+	</div>
 </body>
 </html>

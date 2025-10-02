@@ -11,11 +11,14 @@
     <div th:replace="fragments/header :: siteHeader"></div>
 	<div class = "quiz-location-container">
 		  <div class="notion-selector">
-		    <h3 style ="display: flex; justify-content: flex-start; width: 80%; margin-bottom: 50px; font-size:20px; margin-left:10px;">저장된 노션 선택</h3>
+		    <h3 style ="display: flex; justify-content: flex-start; width: 80%; font-size:20px; margin-left:10px;">저장된 노션 선택</h3>
 		    <div class="select-container">
 			    <select id="notionSelect" class="notion-select">
 			      <option value="">노션 문서를 선택하세요</option>	     
 			    </select>
+		    </div>
+		    <div class="tree-position">
+		    	<div class="tree-container"></div>
 		    </div>
 		    <button id="generateBtn" class ="gene-button">퀴즈 생성</button>
 		  </div>
