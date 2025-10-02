@@ -11,7 +11,9 @@
         <a th:href="@{/main}" class="logo">SAEGIM</a>
     </div>
     <div class="header-bottom">
-        <div class="title-container">홈 대시보드</div>
+        <!-- 페이지별로 동적으로 바뀌는 타이틀 -->
+        <div class="title-container" th:text="${pageTitle}">홈 대시보드</div>
+
         <div class="categori-container">
             <a th:href="@{/main}">피드</a>
             <a th:href="@{/schedule}">일정관리</a>
@@ -19,6 +21,7 @@
             <a th:href="@{/notion/manage}">노션관리</a>
             <a th:href="@{/quiz/create}">문제생성</a>
         </div>
+
         <div class="login-container">
             <!-- 로그인 상태에 따른 조건부 표시 -->
             <div sec:authorize="isAnonymous()">
@@ -30,11 +33,13 @@
             </div>
         </div>
     </div>
-    <div class = "AI-position-container">
-          <div class = "AI-container">AI모델 이미지 공간입니다</div>
+
+    <div class="AI-position-container">
+        <div class="AI-container">AI모델 이미지 공간입니다</div>
     </div>
-    <div class = top-button-position-container>
-            <button>TOP버튼입니다.</button>
+
+    <div class="top-button-position-container">
+        <button>TOP버튼입니다.</button>
     </div>
 </header>
 </body>
