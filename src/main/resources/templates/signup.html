@@ -43,7 +43,7 @@
 
     <!-- 비밀번호 확인 -->
     <label for="confirmPw">비밀번호 확인:</label>
-    <input type="password" id="confirmPw" required>
+    <input type="password" id="confirmPw" th:field="*{userPwConfirm}" required>
     <br>
 
     <!-- 이메일 -->
@@ -66,10 +66,10 @@
     <input type="text" id="learningArea" th:field="*{learningArea}">
     <br>
 
-    <!-- 첨부파일 카운트 (기본 0) -->
+    <!-- 첨부파일 카운트 (기본 0) 
     <label for="attachmentCount">첨부파일 수:</label>
     <input type="number" id="attachmentCount" th:field="*{attachmentCount}" value="0">
-    <br>
+    <br>-->
 
     <!-- [추가] 약관 동의 -->
     <label>

@@ -27,24 +27,30 @@ public class User {
 
     @Column(nullable = false, unique = true)
     private String email;
-
+    @Transient
     private LocalDateTime lastLogin;
 
     @Column(nullable = false)
     private Boolean mailingAgreed;
-
+    @Transient
     private String interestArea;
+    @Transient
     private String learningArea;
 
     @Column(nullable = false)
     private Integer attachmentCount;
-
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
     
+    @Transient
     @Column(nullable = true)
     private String profileImageUrl;
-    
+    @Transient
     private String Nickname;
+    @Transient
     private String socialLogin;
+    
+    @Transient
+    private String userPwConfirm;
+    
 }
