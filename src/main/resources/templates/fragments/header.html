@@ -1,6 +1,8 @@
 <!-- src/main/resources/templates/fragments/header.html -->
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="UTF-8">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      lang="UTF-8">
 <head>
     <!-- 외부 CSS 파일 연결 -->
     <link rel="stylesheet" th:href="@{/css/header.css}" />
@@ -14,16 +16,17 @@
         <!-- 페이지별로 동적으로 바뀌는 타이틀 -->
         <div class="title-container" th:text="${pageTitle}">홈 대시보드</div>
 
+        <!-- 카테고리 메뉴 -->
         <div class="categori-container">
-            <a th:href="@{/main}">피드</a>
-            <a th:href="@{/schedule}">일정관리</a>
-            <a th:href="@{/notion/create}">노션작성</a>
-            <a th:href="@{/notion/manage}">노션관리</a>
-            <a th:href="@{/quiz/create}">문제생성</a>
+            <a th:href="@{/main}" th:classappend="${activeMenu == 'main'} ? ' active' : ''">피드</a>
+            <a th:href="@{/schedule}" th:classappend="${activeMenu == 'schedule'} ? ' active' : ''">일정관리</a>
+            <a th:href="@{/notion/create}" th:classappend="${activeMenu == 'notionCreate'} ? ' active' : ''">노션작성</a>
+            <a th:href="@{/notion/manage}" th:classappend="${activeMenu == 'notionManage'} ? ' active' : ''">노션관리</a>
+            <a th:href="@{/quiz/create}" th:classappend="${activeMenu == 'quizCreate'} ? ' active' : ''">문제생성</a>
         </div>
 
+        <!-- 로그인 상태에 따른 버튼 -->
         <div class="login-container">
-            <!-- 로그인 상태에 따른 조건부 표시 -->
             <div sec:authorize="isAnonymous()">
                 <a th:href="@{/login}" class="login-button">로그인</a>
             </div>
