@@ -3,8 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <title>Insert title here</title>
+<link rel="stylesheet" th:href="@{/css/header.css}" />
+<link rel="stylesheet" th:href="@{/css/main.css}" />
 </head>
 <body>
+<!-- 헤더 -->
+    <div th:replace="fragments/header :: siteHeader"></div>
 	<div class = "feed-position-container">
 		<div class = "feed-container" th:if="${!#lists.isEmpty(feeds)}"> 
 		<!-- feeds 리스트가 비어있지 않은 경우에만 컨테이너 표시 (수정됨) -->
