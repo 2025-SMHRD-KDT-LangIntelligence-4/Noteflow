@@ -1,56 +1,100 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
-<meta charset="UTF-8">
-<title>Insert title here</title>
+    <meta charset="UTF-8">
+    <title>마이페이지 수정</title>
 </head>
 <body>
-	<div class = "mypage-container">
-		<div class="title">마이페이지 수정</div>
-  			<form action="editMypage" method="post" enctype="multipart/form-data">
-    			<button type="submit" class="info-save-button">저장하기</button>
-			    <div class="profile-image-location-container">
-			      <div class="profile-image-container">
-			        <img src="이미지 주소값 넣어주세요" alt="프로필 이미지 미리보기" id="preview"/>
-			        <input type="file" name="profileImage" accept="image/*" onchange="previewImage(event)"/>
-			      </div>
-			    </div>
-			    <div class="user-info-container">
-			      <label>
-			        이름
-			        <input type="text" name="userName" value="사용자 이름 불러와주세요"/>
-			      </label>
-			      <label>
-			        이메일
-			        <input type="email" name="userEmail" value="이메일 주소 불러와주세요"/>
-			      </label>
-			      <label>
-			        아이디
-			        <input type="text" name="userId" value="아이디 값 불러와주세요" readonly/>
-			      </label>
-			      <label>
-			        비밀번호
-			        <input type="password" name="userPw" placeholder="새 비밀번호 입력"/>
-			      </label>
-			      <label>
-			        소셜 로그인 여부
-			        <select name="userSocialLogin">
-			          <option value="Y">사용</option>
-			          <option value="N">미사용</option>
-			        </select>
-			      </label>
-			      <label>
-			        관심 분야
-			        <input type="text" name="userInterest" value="관심 분야 불러와주세요"/>
-			      </label>
-			    </div>
-  			</form>
-	</div>
-	<div class = "AI-position-container">
-		<div class = "AI-container">AI모델 이미지 공간입니다</div>
-	</div>
-	<div class = top-button-position-container>
-		<button>TOP버튼입니다.</button>
-	</div>
+<div class="mypage-container">
+    <div class="title">마이페이지 수정</div>
+
+    <form th:action="@{/editMypage}" method="post" enctype="multipart/form-data">
+
+        <!-- 저장 / 취소 버튼 -->
+        <div class="button-container">
+            <button type="submit" class="info-save-button">저장하기</button>
+            <button type="button" class="info-cancel-button" onclick="window.location.href='/mypage'">취소</button>
+        </div>
+
+        <!-- 프로필 이미지 -->
+        <div class="profile-image-location-container">
+            <div class="profile-image-container">
+                <!-- 프로필 이미지 null-safe 처리 -->
+                <th:block th:if="${user?.profileImageUrl != null}">
+                    <img th:src="@{${user.profileImageUrl}}" 
+                         alt="프로필 이미지 미리보기" id="preview" width="120"/>
+                </th:block>
+                <th:block th:if="${user?.profileImageUrl == null}">
+                    <img src="/images/default-profile.png" 
+                         alt="기본 프로필 이미지" id="preview" width="120"/>
+                </th:block>
+
+                <input type="file" name="profileImage" accept="image/*" onchange="previewImage(event)"/>
+                <label>
+                    <input type="checkbox" name="deleteProfileImage" value="true"/> 기존 이미지 삭제
+                </label>
+            </div>
+        </div>
+
+        <!-- 유저 정보 -->
+        <div class="user-info-container">
+
+            <!-- 닉네임 -->
+            <label for="nickname">닉네임</label>
+            <input type="text" id="nickname" name="nickname" th:value="${user?.nickname}" required>
+            <br>
+
+            <!-- 이메일 -->
+            <label for="userEmail">이메일</label>
+            <input type="email" id="userEmail" name="userEmail" th:value="${user?.email}">
+            <br>
+
+            <!-- 아이디 (readonly) -->
+            <label for="userId">아이디</label>
+            <input type="text" id="userId" name="userId" th:value="${user?.userId}" readonly>
+            <br>
+
+            <!-- 비밀번호 변경 -->
+            <label for="userPw">비밀번호</label>
+            <input type="password" id="userPw" name="userPw" placeholder="변경할 경우에만 입력">
+            <br>
+
+            <!-- 비밀번호 확인 -->
+            <label for="userPwConfirm">비밀번호 확인</label>
+            <input type="password" id="userPwConfirm" name="userPwConfirm" placeholder="비밀번호 재입력">
+            <br>
+
+            <!-- 관심 분야 -->
+            <label for="userInterest">관심 분야</label>
+            <input type="text" id="userInterest" name="userInterest" th:value="${user?.interestArea}">
+            <br>
+
+            <!-- 가입일 -->
+            <label>가입일</label>
+            <span th:text="${user != null ? #temporals.format(user.createdAt, 'yyyy-MM-dd HH:mm') : '-'}"></span>
+            <br>
+        </div>
+    </form>
+</div>
+
+<!-- AI 영역 -->
+<div class="AI-position-container">
+    <div class="AI-container">AI모델 이미지 공간입니다</div>
+</div>
+
+<!-- TOP 버튼 -->
+<div class="top-button-position-container">
+    <button onclick="window.scrollTo({top:0, behavior:'smooth'})">TOP</button>
+</div>
+
+<script>
+    function previewImage(event) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('preview').src = e.target.result;
+        };
+        reader.readAsDataURL(event.target.files[0]);
+    }
+</script>
 </body>
 </html>
