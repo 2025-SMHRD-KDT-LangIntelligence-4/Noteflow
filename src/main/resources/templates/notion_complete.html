@@ -3,16 +3,25 @@
 <head>
 <meta charset="UTF-8">
 <title>Insert title here</title>
+<link rel="stylesheet" th:href="@{/css/header.css}" />
+<link rel="stylesheet" th:href="@{/css/notioncomplete.css}" />
 </head>
 <body>
-	<div class = "message-container">
+	<!-- 헤더 -->
+    <div th:replace="fragments/header :: siteHeader"></div>
+
+	 <div class = "message-container">
 		<div class = "message-box">
 			<div class = "message">저장이 완료되었습니다.</div>
-			<div class = "AI-model-box">AI모델 이미지 공간입니다.</div>
-			<button class = "return-create">작성페이지로</button> 단순이동일 것 같아서 form에 넣지않았음
-			<button class = "notion-manage">노션관리</button>
-			<button class = "create-quiz">퀴즈생성</button>
-			<button class = "return-main">메인으로</button>
+			<div class = "AI-model-box-location-container">
+                <div class = "AI-model-box"></div>
+            </div>
+            <div class="button-location-container">
+                <a href ="" class = "return-create">작성페이지로</a> 
+                <a href ="" class = "notion-manage">노션관리</a>
+                <a href ="" class = "create-quiz">퀴즈생성</a>
+                <a href ="" class = "return-main">메인으로</a>
+            </div>
 		</div>
 	</div>
 </body>
