@@ -1,7 +1,8 @@
 package com.smhrd.web.entity;
 
-import jakarta.persistence.*;
 import lombok.*;
+
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
@@ -27,4 +28,9 @@ public class Chat {
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @PrePersist
+    public void prePersist() {
+        createdAt = LocalDateTime.now();
+    }
 }
