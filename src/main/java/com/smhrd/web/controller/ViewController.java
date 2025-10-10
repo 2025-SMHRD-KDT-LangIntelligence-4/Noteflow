@@ -80,6 +80,10 @@ public class ViewController {
         model.addAttribute("activeMenu", "quizResult");
         return "quizResult";
     }
+    @GetMapping("/file-test")
+    public String fileTest() {
+        return "file-test";  // templates/file-test.html 렌더링
+    }
 
     // 추가 API 필요 시 @PostMapping 구현...
 }
