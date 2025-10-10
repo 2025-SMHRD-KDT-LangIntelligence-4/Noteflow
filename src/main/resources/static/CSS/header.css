@@ -1,6 +1,11 @@
 @charset "UTF-8";
 /* src/main/resources/static/css/header.css */
-
+@font-face {
+    font-family: 'Pretendard';
+    src: url('https://cdn.jsdelivr.net/gh/Project-Noonnu/noonfonts_2107@1.1/Pretendard-Thin.woff') format('woff');
+    font-weight: 100;
+    font-display: swap;
+}    
 /* 상단 파란색 바 */
 .header-top {
     background-color: #96D0FF;
@@ -32,7 +37,7 @@
     width: 200px;
     color: #000000;
     text-align: center;
-    font-family: "Pretendard-Bold", sans-serif;
+    font-family: "Pretendard-Bold";
     font-size: 30px;
     font-weight: 700;
     display: flex;
@@ -96,6 +101,7 @@
     border-radius: 4px;
     background-color: #96D0FF;
     display: block;
+    font-family: 'Pretendard';
 }
 
 /* 로고 */
@@ -128,16 +134,16 @@
 }
 /* 현재 활성화된 메뉴 표시용 */
 .categori-container a.active {
-    background-color: #007bff; /* 강조용 배경색 */
-    color: white;               /* 글자 색 강조 */
-    border-radius: 4px;         /* 모서리 살짝 둥글게 */
-    padding: 5px 10px;          /* 클릭 영역 확보 */
-    text-decoration: none;      /* 밑줄 제거 */
+    text-decoration: none;
+    border-bottom: 5px solid black;      /* 밑줄 제거 */
 }
 
-/* hover 상태와 동일하게 강조 (선택사항) */
-.categori-container a.active:hover {
-    background-color: #0056b3;
-    color: white;
+.top-button {
+	border:none;
+	background-color:white;
+	border-radius:10px;
+	color:black;
+	width:80px;
+	height:40px;
 }
 
