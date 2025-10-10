@@ -57,7 +57,7 @@ button {
     width: 100%;
     padding: 12px;
     margin-top: 8px;
-    background-color: #4CAF50;
+    background-color: #96D0FF;
     border: none;
     color: white;
     font-size: 16px;
@@ -66,7 +66,7 @@ button {
 }
 
 button:hover {
-    background-color: #45a049;
+    background-color:#2FA1FF;
 }
 
 .error-message {
@@ -90,7 +90,7 @@ button:hover {
 
 .link a {
     text-decoration: none;
-    color: #4CAF50;
+    color: black;
     font-size: 14px;
 }
 
@@ -104,9 +104,9 @@ button:hover {
     flex-shrink: 0;
     width: auto;
     padding: 8px 14px;
-    background-color: #007BFF;
+    background-color: #96D0FF;
 }
 
 .id-check button:hover {
-    background-color: #0066cc;
+    background-color:#2FA1FF; 
 }

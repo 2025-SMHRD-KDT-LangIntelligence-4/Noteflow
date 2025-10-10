@@ -86,9 +86,7 @@
 }
 
 .login-container a:hover {
-    text-decoration: underline;
-    text-decoration-thickness: 3px;
-    text-underline-offset: 3px;
+    background-color:#2FA1FF; 
 }
 
 /* 파란색 버튼 */

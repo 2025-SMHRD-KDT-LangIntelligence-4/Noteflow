@@ -93,6 +93,9 @@ body {
 	font-size:20px;
 	box-shadow: 0px 2px 2px 3px rgba(0, 0, 0, 0.1);
 }
+.submit-button:hover {
+	background-color:#2FA1FF; 
+}
 .result-title {
 	width:520px;
 	height:40px;
@@ -153,6 +156,13 @@ h1 {
 
   .arrow.right {
     right: 0;
+  }
+  .arrow.left:hover {
+    background-color: #96D0FF;
+  }
+
+  .arrow.right:hover {
+    background-color: #96D0FF;
   }
    .arrow {
     position: relative;
