@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+<link rel="stylesheet" th:href="@{/css/header.css}" />
+<link rel="stylesheet" th:href="@{/css/signUp.css}" />
+<link rel="stylesheet" th:href="@{/css/footer.css}" />
 <head>
+
     <meta charset="UTF-8">
     <title>회원가입</title>
     <script>
@@ -23,94 +27,91 @@
     </script>
 </head>
 <body>
-<h2>회원가입</h2>
+ <div th:replace="fragments/header :: siteHeader"></div>
 
 <!-- 아이디 중복 에러 메시지 -->
 <div th:if="${param.error}" style="color:red">
     아이디가 이미 존재합니다. 다른 아이디를 사용해주세요.
 </div>
+<div class="signup-location-container">
+    <form th:action="@{/signup}" method="post" th:object="${user}" onsubmit="return validateForm()" class="signup-container">
+		<h2>회원가입</h2>
+        <label for="userId">아이디</label>
+        <div class="id-check">
+            <input type="text" id="userId" th:field="*{userId}" required>
+            <button type="button" id="checkBtn">중복확인</button>
+        </div>
+        <div th:if="${param.error}" style="color:red; font-size:14px; margin-bottom:10px;">
+           
+        </div>
+        <!-- 메시지 영역 -->
+        <div id="checkResult"></div>
 
-<form th:action="@{/signup}" method="post" th:object="${user}" onsubmit="return validateForm()">
-    <!-- 아이디 -->
-    <label for="userId">아이디:</label>
-    <input type="text" id="userId" th:field="*{userId}" required>
-    <br>
+        <label for="userPw">비밀번호</label>
+        <input type="password" id="userPw" th:field="*{userPw}" required>
 
-    <!-- 비밀번호 -->
-    <label for="userPw">비밀번호:</label>
-    <input type="password" id="userPw" th:field="*{userPw}" required>
-    <br>
+        <label for="confirmPw">비밀번호 확인</label>
+        <input type="password" id="confirmPw" required>
 
-    <!-- 비밀번호 확인 -->
-    <label for="confirmPw">비밀번호 확인:</label>
-    <input type="password" id="confirmPw" th:field="*{userPwConfirm}" required>
-    <br>
+        <label for="email">이메일</label>
+        <input type="email" id="email" th:field="*{email}" required>
 
-    <!-- 이메일 -->
-    <label for="email">이메일:</label>
-    <input type="email" id="email" th:field="*{email}" required>
-    <br>
+        <label>
+            <input type="checkbox" id="mailingAgreed" th:field="*{mailingAgreed}"> 메일 수신 동의
+        </label>
 
-    <!-- 메일 수신 동의 -->
-    <label for="mailingAgreed">메일 수신 동의:</label>
-    <input type="checkbox" id="mailingAgreed" th:field="*{mailingAgreed}">
-    <br>
+        <label for="interestArea">관심 분야</label>
+        <input type="text" id="interestArea" th:field="*{interestArea}">
 
-    <!-- 관심 분야 -->
-    <label for="interestArea">관심 분야:</label>
-    <input type="text" id="interestArea" th:field="*{interestArea}">
-    <br>
+        <label for="learningArea">학습 분야</label>
+        <input type="text" id="learningArea" th:field="*{learningArea}">
 
-    <!-- 학습 분야 -->
-    <label for="learningArea">학습 분야:</label>
-    <input type="text" id="learningArea" th:field="*{learningArea}">
-    <br>
+        <label for="attachmentCount">첨부파일 수</label>
+        <input type="number" id="attachmentCount" th:field="*{attachmentCount}" value="0">
 
-    <!-- 첨부파일 카운트 (기본 0) 
-    <label for="attachmentCount">첨부파일 수:</label>
-    <input type="number" id="attachmentCount" th:field="*{attachmentCount}" value="0">
-    <br>-->
+        <label>
+            <input type="checkbox" id="terms" required> 서비스 이용약관에 동의합니다.
+        </label>
 
-    <!-- [추가] 약관 동의 -->
-    <label>
-        <input type="checkbox" id="terms" required>
-        서비스 이용약관에 동의합니다.
-    </label>
-    <br><br>
+       <button type="submit">회원가입</button>
+	    <div class="link">
+	        <a href="/login">로그인으로 돌아가기</a>
+	    </div>
+    </form>
 
-    <button type="submit">회원가입</button>
-</form>
+</div>
 
-<a th:href="@{/login}">로그인으로 돌아가기</a>
-
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-        // jQuery AJAX 요청
-        $(document).ready(function() {
-            $("#checkBtn").click(function() {
-                let userId = $("#userId").val();
+    $(document).ready(function() {
+        $("#checkBtn").click(function() {
+            let userId = $("#userId").val();
 
-                if(userId === "") {
-                    $("#checkResult").css("color", "red").text("아이디를 입력하세요.");
-                    return;
-                }
+            if(userId === "") {
+                $("#checkResult").attr("class","error-message").text("아이디를 입력하세요.");
+                return;
+            }
 
-                $.ajax({
-                    url: "/checkId", // Controller와 매핑된 URL
-                    type: "GET",
-                    data: { userId: userId },
-                    success: function(response) {
-                        if(response === true) {
-                            $("#checkResult").css("color", "red").text("이미 사용 중인 아이디입니다.");
-                        } else {
-                            $("#checkResult").css("color", "green").text("사용 가능한 아이디입니다.");
-                        }
-                    },
-                    error: function() {
-                        $("#checkResult").css("color", "red").text("서버 오류 발생!");
+            $.ajax({
+                url: "/checkId",
+                type: "GET",
+                data: { userId: userId },
+                success: function(response) {
+                    if(response === true) {
+                        $("#checkResult").attr("class","error-message")
+                            .text("아이디가 이미 존재합니다. 다른 아이디를 사용해주세요.");
+                    } else {
+                        $("#checkResult").attr("class","success-message")
+                            .text("사용 가능한 아이디입니다.");
                     }
-                });
+                },
+                error: function() {
+                    $("#checkResult").attr("class","error-message").text("서버 오류 발생");
+                }
             });
         });
-    </script>
+    });
+</script>
+<div th:replace="fragments/footer :: siteFooter"></div>
 </body>
 </html>
