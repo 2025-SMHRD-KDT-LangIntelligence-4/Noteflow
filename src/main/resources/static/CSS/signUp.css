@@ -1,0 +1,112 @@
+@charset "UTF-8";
+@charset "UTF-8";
+@font-face {
+    font-family: 'Pretendard';
+    src: url('https://cdn.jsdelivr.net/gh/Project-Noonnu/noonfonts_2107@1.1/Pretendard-Thin.woff') format('woff');
+    font-weight: 100;
+    font-display: swap;
+}
+body {
+    font-family: 'Pretendard';
+    background: #f7f7f7;
+            
+}
+
+.signup-location-container {
+    display: flex;
+    justify-content:center;
+    margin-top: 50px;
+}
+
+.signup-container {
+	background-color: white;
+	border-radius:10px;
+	width:600px;
+	height:800px;
+	display:flex;
+	flex-wrap:wrap;
+	padding:50px;
+}
+
+label {
+    font-weight: bold;
+    margin-top: 10px;
+    display: block;
+    color: #444;
+}
+h2 {
+	width:100%;
+}
+input[type="text"], 
+input[type="password"], 
+input[type="email"], 
+input[type="number"] {
+    width: 100%;
+    padding: 10px;
+    margin-top: 3px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+        }
+
+input[type="checkbox"] {
+    margin-right: 3px;
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 8px;
+    background-color: #4CAF50;
+    border: none;
+    color: white;
+    font-size: 16px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+.error-message {
+    color: red;
+    font-size: 13px;
+    margin-top: 6px;
+    text-align: left;   
+}
+
+.success-message {
+    color: green;
+    font-size: 13px;
+    margin-top: 6px;
+    text-align: left;  
+}
+
+.link {
+    text-align: center;
+    margin-top: 15px;
+}
+
+.link a {
+    text-decoration: none;
+    color: #4CAF50;
+    font-size: 14px;
+}
+
+.id-check {
+    display: flex;
+    gap: 8px;
+    width:100%;
+}
+
+.id-check button {
+    flex-shrink: 0;
+    width: auto;
+    padding: 8px 14px;
+    background-color: #007BFF;
+}
+
+.id-check button:hover {
+    background-color: #0066cc;
+}
