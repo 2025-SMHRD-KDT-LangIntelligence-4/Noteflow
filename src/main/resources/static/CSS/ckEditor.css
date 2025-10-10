@@ -1,0 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+
+@media print {
+	body {
+		margin: 0 !important;
+	}
+}
+
+:root {
+	--ck-content-font-family: 'Lato';
+}
+
+.main-container {
+	font-family: var(--ck-content-font-family);
+	width: fit-content;
+	margin-left: auto;
+	margin-right: auto;
+	height:450px;
+}
+
+/* CKEditor 전체 컨테이너 */
+.editor-container_classic-editor .editor-container__editor {
+  width: 520px;
+  height: 470px;
+  overflow: hidden; /* 내부 편집 영역만 스크롤하도록 */
+}
+
+/* 실제 입력 영역 (CKEditor 내부 contenteditable 영역) */
+.editor-container_classic-editor .ck-editor__editable {
+  min-height: 420px !important;
+  max-height: 420px !important;
+  overflow-y: auto !important; /* 세로 스크롤만 */
+  overflow-x: hidden !important; /* 가로 스크롤 완전 차단 */
+  white-space: pre-wrap; /* 긴 단어도 줄바꿈되도록 */
+  word-break: break-word; /* 긴 단어 자동 줄바꿈 */
+
+}
