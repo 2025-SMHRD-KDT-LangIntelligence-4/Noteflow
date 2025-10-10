@@ -3,77 +3,167 @@
 <head>
     <meta charset="UTF-8">
     <title>마이페이지 수정</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #fafafa;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        .mypage-container {
+            width: 60%;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            padding: 40px;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .button-container {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .info-save-button, .info-cancel-button {
+            background-color: #007BFF;
+            border: none;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 15px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .info-cancel-button {
+            background-color: #777;
+        }
+
+        .profile-image-container {
+            text-align: center;
+        }
+
+        .profile-image-container img {
+            border-radius: 50%;
+            border: 2px solid #ddd;
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            margin-bottom: 10px;
+        }
+
+        .AI-container {
+            width: 60%;
+            margin: 30px auto;
+            padding: 20px;
+            background-color: #e8f0fe;
+            text-align: center;
+            border-radius: 10px;
+        }
+
+        .top-button-position-container {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+        }
+
+        .top-button-position-container button {
+            background: #007BFF;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
 <div class="mypage-container">
     <div class="title">마이페이지 수정</div>
 
-    <form th:action="@{/editMypage}" method="post" enctype="multipart/form-data">
-
-        <!-- 저장 / 취소 버튼 -->
-        <div class="button-container">
-            <button type="submit" class="info-save-button">저장하기</button>
-            <button type="button" class="info-cancel-button" onclick="window.location.href='/mypage'">취소</button>
-        </div>
+    <form th:action="@{/editMypage}" method="post" enctype="multipart/form-data" onsubmit="return validatePassword()">
 
         <!-- 프로필 이미지 -->
-        <div class="profile-image-location-container">
-            <div class="profile-image-container">
-                <!-- 프로필 이미지 null-safe 처리 -->
-                <th:block th:if="${user?.profileImageUrl != null}">
-                    <img th:src="@{${user.profileImageUrl}}" 
-                         alt="프로필 이미지 미리보기" id="preview" width="120"/>
-                </th:block>
-                <th:block th:if="${user?.profileImageUrl == null}">
-                    <img src="/images/default-profile.png" 
-                         alt="기본 프로필 이미지" id="preview" width="120"/>
-                </th:block>
+        <div class="profile-image-container">
+            <th:block th:if="${user?.profileImage != null}">
+                <img th:src="@{${user.profileImage}}" alt="프로필 이미지 미리보기" id="preview"/>
+            </th:block>
+            <th:block th:if="${user?.profileImage == null}">
+                <img src="/images/default-profile.png" alt="기본 프로필 이미지" id="preview"/>
+            </th:block>
 
-                <input type="file" name="profileImage" accept="image/*" onchange="previewImage(event)"/>
-                <label>
-                    <input type="checkbox" name="deleteProfileImage" value="true"/> 기존 이미지 삭제
-                </label>
+            <input type="file" name="profileImage" accept="image/*" onchange="previewImage(event)"/>
+            <div>
+                <label><input type="checkbox" name="deleteProfileImage" value="true"/> 기존 이미지 삭제</label>
             </div>
         </div>
 
         <!-- 유저 정보 -->
         <div class="user-info-container">
 
-            <!-- 닉네임 -->
             <label for="nickname">닉네임</label>
             <input type="text" id="nickname" name="nickname" th:value="${user?.nickname}" required>
-            <br>
 
-            <!-- 이메일 -->
             <label for="userEmail">이메일</label>
             <input type="email" id="userEmail" name="userEmail" th:value="${user?.email}">
-            <br>
 
-            <!-- 아이디 (readonly) -->
             <label for="userId">아이디</label>
             <input type="text" id="userId" name="userId" th:value="${user?.userId}" readonly>
-            <br>
 
-            <!-- 비밀번호 변경 -->
             <label for="userPw">비밀번호</label>
             <input type="password" id="userPw" name="userPw" placeholder="변경할 경우에만 입력">
-            <br>
 
-            <!-- 비밀번호 확인 -->
             <label for="userPwConfirm">비밀번호 확인</label>
             <input type="password" id="userPwConfirm" name="userPwConfirm" placeholder="비밀번호 재입력">
-            <br>
 
-            <!-- 관심 분야 -->
             <label for="userInterest">관심 분야</label>
-            <input type="text" id="userInterest" name="userInterest" th:value="${user?.interestArea}">
-            <br>
+            <input type="text" id="userInterest" name="interestArea" th:value="${user?.interestArea}">
 
-            <!-- 가입일 -->
+            <label for="learningArea">학습 중인 분야</label>
+            <input type="text" id="learningArea" name="learningArea" th:value="${user?.learningArea}">
+
             <label>가입일</label>
             <span th:text="${user != null ? #temporals.format(user.createdAt, 'yyyy-MM-dd HH:mm') : '-'}"></span>
-            <br>
         </div>
+
+        <!-- 버튼 -->
+        <div class="button-container">
+            <button type="submit" class="info-save-button">저장하기</button>
+            <button type="button" class="info-cancel-button" onclick="window.location.href='/mypage'">취소</button>
+        </div>
+
     </form>
 </div>
 
@@ -94,6 +184,17 @@
             document.getElementById('preview').src = e.target.result;
         };
         reader.readAsDataURL(event.target.files[0]);
+    }
+
+    function validatePassword() {
+        const pw = document.getElementById('userPw').value;
+        const confirm = document.getElementById('userPwConfirm').value;
+
+        if (pw && pw !== confirm) {
+            alert('비밀번호가 일치하지 않습니다.');
+            return false;
+        }
+        return true;
     }
 </script>
 </body>

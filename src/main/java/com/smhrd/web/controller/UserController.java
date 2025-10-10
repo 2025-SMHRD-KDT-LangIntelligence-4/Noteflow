@@ -8,6 +8,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequiredArgsConstructor
@@ -81,7 +82,7 @@ public class UserController {
         return "MyPage"; // MyPage.html
     }
 
-    // --------------------------
+ // --------------------------
     // 마이페이지 수정 폼
     // --------------------------
     @GetMapping("/editMypage")
@@ -108,15 +109,27 @@ public class UserController {
                              @RequestParam(value = "nickname", required = false) String nickname,
                              @RequestParam(value = "userEmail", required = false) String userEmail,
                              @RequestParam(value = "userPw", required = false) String userPw,
-                             @RequestParam(value = "profileImage", required = false) MultipartFile profileImage) {
+                             @RequestParam(value = "interest_area", required = false) String interestArea,   // [추가]
+                             @RequestParam(value = "learning_area", required = false) String learningArea,   // [추가]
+                             @RequestParam(value = "profileImage", required = false) MultipartFile profileImage,
+                             @RequestParam(value = "deleteProfileImage", required = false) Boolean deleteProfileImage, // [추가]
+                             RedirectAttributes redirectAttributes) { // [추가]
 
         String userId = authentication != null ? authentication.getName() : null;
 
         if (userId != null) {
-            userService.updateUserInfo(userId, nickname, userEmail, userPw, profileImage);
+            try {
+                userService.updateUserInfo(userId, nickname, userEmail, userPw,
+                        interestArea, learningArea, profileImage, deleteProfileImage); // [수정: 인자 확장]
+                redirectAttributes.addFlashAttribute("message", "회원 정보가 성공적으로 수정되었습니다.");
+            } catch (Exception e) {
+                e.printStackTrace();
+                redirectAttributes.addFlashAttribute("error", "회원 정보 수정 중 오류가 발생했습니다.");
+            }
+        } else {
+            redirectAttributes.addFlashAttribute("error", "로그인 정보가 유효하지 않습니다.");
         }
-        // userId null일 경우 처리 생략 (보안 상 무시)
 
-        return "redirect:/mypage?editSuccess";
+        return "redirect:/mypage";
     }
 }
