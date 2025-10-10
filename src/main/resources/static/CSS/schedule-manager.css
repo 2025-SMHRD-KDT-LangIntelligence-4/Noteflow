@@ -1,86 +1,293 @@
 @charset "UTF-8";
+
+/* 기본 바디 */
 body {
-        background-color: #EAEAEA;
-    }
+    background-color: #EAEAEA;
+    font-family: "Pretendard-Regular", sans-serif;
+}
+
+/* 레이아웃 */
+.location-container {
+    display: flex;
+    justify-content: center;
+    position: relative;
+    top: 50px;
+    gap: 40px;
+}
+
+/* 달력 컨테이너 */
+.calendar-container {
+    width: 700px;
+    background-color: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* FullCalendar 자체 */
+#calendar {
+    width: 100%;
+    max-height: 700px;
+    background-color: #ffffff;
+    border-radius: 15px;
+}
+
+/* 일정 관리 컨테이너 */
+.schedule-manager-container {
+    width: 300px;
+    height: 700px;
+    background-color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* 날짜 표시 */
+.date {
+    border-bottom: 1px solid #c7c7c7;
+    width: 100%;
+    height: 46px;
+    display: flex;
+    align-items: center;
+    padding-left: 10px;
+    font-weight: 600;
+    font-size: 18px;
+}
+
+/* 일정 검색창 */
+.schedule-search {
+    border-radius: 10px;
+    border: 1px solid #c7c7c7;
+    width: 100%;
+    height: 31px;
+    padding-left: 8px;
+    font-size: 14px;
+}
+
+/* 일정 목록 */
+.schedule {
+    color: #000000;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 400;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 0 10px;
+}
+
+/* 일정 생성 입력창 */
+.schedule-create {
+    border-radius: 10px;
+    border: 1px solid #c7c7c7;
+    width: 100%;
+    height: 31px;
+    padding-left: 8px;
+    font-size: 14px;
+}
+
+/* 선택된 날짜 강조 */
+.selected-date {
+    background-color: #D3EBFF !important;
+}
+
+/* FullCalendar - 주말 색상 */
+a[aria-label="일요일"] { color: red; }
+a[aria-label="토요일"] { color: blue; }
+
+.fc-day-sun, .fc-day-sat {
+    background-color: #F5F5F5;
+}
+
+/* 오늘 날짜 강조 */
+.fc-day-today {
+    background-color: #D3EBFF !important;
+}
+
+/* FullCalendar 이벤트 */
+.fc-event {
+    border-radius: 8px;
+    font-size: 12px;
+    padding: 2px 4px;
+    color: #fff;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 버튼 스타일 */
+.schedule button {
+    margin-left: 5px;
+    padding: 2px 6px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.schedule button:hover {
+    opacity: 0.8;
+}
+
+.schedule button:nth-child(2) { /* 수정 버튼 */
+    background-color: #FFC107;
+    color: #000;
+}
+
+.schedule button:nth-child(3) { /* 삭제 버튼 */
+    background-color: #F44336;
+}
+
+/* 스크롤바 커스터마이징 */
+.schedule::-webkit-scrollbar {
+    width: 6px;
+}
+.schedule::-webkit-scrollbar-thumb {
+    background-color: rgba(0,0,0,0.2);
+    border-radius: 3px;
+}
+.schedule::-webkit-scrollbar-track {
+    background-color: transparent;
+}
+
+/* 색상 기반 일정 태그 */
+.schedule-color-picker {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+    width: 100%;
+}
+
+.color-options {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.color-option {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+}
+
+.color-option.selected {
+    border: 2px solid #000;
+}
+
+.schedule-color-filter {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+/* 색상 기반 태그 필터링 */
+.filter-options {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.filter-option {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+}
+
+.filter-option.selected {
+    border: 2px solid #000;
+}
+
+/* 모바일/태블릿 반응형 */
+@media screen and (max-width: 1024px) {
     .location-container {
-    	display:flex;
-    	justify-content: center;
-		position:relative;
-		top:50px;
-        gap: 40px;
-    }
-    #calendar {
-      width: 600px;
-      max-height: 600px;
-      background-color: #ffffff;
-    }
-    .calendar-container {
-        width: 700px;
-        background-color: #ffffff;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        border-radius: 20px;
-    }
-    .schedule-manager-container {
-        width: 300px;
-        height: 700px;
-        background-color: #ffffff;
-        display: flex;
-        justify-content: space-around;
         flex-direction: column;
-        gap : 200px;
         align-items: center;
-        border-radius: 20px;
+        gap: 20px;
+        top: 20px;
     }
+
+    .calendar-container {
+        width: 90%;
+        max-width: 600px;
+    }
+
+    #calendar {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .schedule-manager-container {
+        width: 90%;
+        max-width: 350px;
+        height: auto;
+        gap: 20px;
+        padding: 15px 0;
+    }
+
     .date {
-        border-style: solid;
-        border-color: #c7c7c7;
-        border-width: 0px 0px 1px 0px;
-        width: 249px;
-        height: 46px;
-        position: relative;
-        overflow: hidden;
-    }
-    .schedule {
-        color: #000000;
+        width: 100%;
         text-align: center;
-        font-family: "Pretendard-Regular", sans-serif;
-        font-size: 20px;
-        font-weight: 400;
-        position: relative;
-        display: flex;
-        align-items: flex-end;
-        justify-content: center;
-        width: 80%;
     }
+
     .schedule-create {
-        border-radius: 10px;
-        border-style: solid;
-        border-color: #c7c7c7;
-        border-width: 1px;
-        width: 249px;
-        height: 31px;
-        position: relative;
-        overflow: hidden;
-        }
-        
- 	.selected-date {
-      background-color: #D3EBFF !important;
+        width: 100%;
     }
-    a[aria-label="일요일"]  {
-    	color: red;
-    	
+
+    .schedule-color-picker, .schedule-color-filter {
+        width: 100%;
+        justify-content: flex-start;
+        flex-wrap: wrap;
     }
-    a[aria-label="토요일"] {
-    	color: blue;
+
+    .color-options, .filter-options {
+        flex-wrap: wrap;
+        gap: 6px;
     }
-    .fc-day-sun {
-  		background-color: #F5F5F5; 
-	}
-	.fc-day-sat {
-		background-color: #F5F5F5;
-	}
-	.fc-day-today {
-		background-color: #D3EBFF !important;
-	}
+
+    .schedule {
+        font-size: 18px;
+        word-break: break-word;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .calendar-container {
+        width: 100%;
+    }
+
+    .schedule-manager-container {
+        width: 95%;
+    }
+
+    .schedule {
+        font-size: 16px;
+    }
+
+    .color-option, .filter-option {
+        width: 20px;
+        height: 20px;
+    }
+}
