@@ -49,8 +49,9 @@ h1 {
 	border:1px solid #ccc; 
 	border-radius:5px; 
 	box-sizing:border-box; 
+	outline:none;
  }
-.login-button { 
+.check-login-button { 
 	width:100%; 
 	padding:12px; 
 	background-color:#96D0FF; 
@@ -63,7 +64,7 @@ h1 {
 	margin-top:10px; 
 	transition:background-color 0.1s; 
 }
-.login-button:hover { 
+.check-login-button:hover { 
 	background-color:#2FA1FF; 
 }
 .links { 
