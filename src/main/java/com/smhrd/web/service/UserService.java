@@ -57,15 +57,18 @@ public class UserService {
         return userRepo.findByUserId(userId).isPresent();
     }
 
-    // --------------------------
-    // 마이페이지 정보 수정
+ // --------------------------
+    // 마이페이지 정보 수정 (수정 완료 버전)
     // --------------------------
     @Transactional
     public void updateUserInfo(String userId,
                                String nickname,
                                String userEmail,
                                String userPw,
-                               MultipartFile profileImage) {
+                               String interestArea,     // [추가]
+                               String learningArea,     // [추가]
+                               MultipartFile profileImage,
+                               Boolean deleteProfileImage) {  // [추가]
 
         User user = userRepo.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
@@ -85,29 +88,59 @@ public class UserService {
             user.setUserPw(passwordEncoder.encode(userPw));
         }
 
-        // 프로필 이미지 업로드
+        // [추가] 관심분야 수정
+        if (interestArea != null && !interestArea.isBlank()) {
+            user.setInterestArea(interestArea);
+        }
+
+        // [추가] 학습중인분야 수정
+        if (learningArea != null && !learningArea.isBlank()) {
+            user.setLearningArea(learningArea);
+        }
+
+        // --------------------------
+        // 프로필 이미지 처리
+        // --------------------------
+        String uploadDir = "uploads/profile/";
+        File uploadPath = new File(uploadDir);
+        if (!uploadPath.exists()) {
+            uploadPath.mkdirs(); // 디렉토리 없을 경우 자동 생성 // [추가]
+        }
+
+        // 기존 이미지 삭제 체크박스 처리
+        if (Boolean.TRUE.equals(deleteProfileImage)) { // [추가]
+            if (user.getProfileImage() != null) {
+                File oldFile = new File(user.getProfileImage());
+                if (oldFile.exists()) {
+                    oldFile.delete();
+                }
+                user.setProfileImage(null);
+            }
+        }
+
+        // 새 프로필 이미지 업로드 처리
         if (profileImage != null && !profileImage.isEmpty()) {
             // 기존 이미지 삭제
-            if (user.getProfileImageUrl() != null) {
-                File oldFile = new File(user.getProfileImageUrl());
+            if (user.getProfileImage() != null) {
+                File oldFile = new File(user.getProfileImage());
                 if (oldFile.exists()) {
                     oldFile.delete();
                 }
             }
 
-            // 새 이미지 저장
-            String uploadDir = "uploads/profile/";
+            // 새로운 이미지 저장
             String fileName = UUID.randomUUID() + "_" + profileImage.getOriginalFilename();
             File dest = new File(uploadDir, fileName);
 
             try {
                 profileImage.transferTo(dest);
-                user.setProfileImageUrl(uploadDir + fileName);
+                user.setProfileImage(uploadDir + fileName);
             } catch (IOException e) {
                 throw new RuntimeException("프로필 이미지 업로드 실패", e);
             }
         }
 
+        // 변경사항 저장
         userRepo.save(user);
     }
 }
