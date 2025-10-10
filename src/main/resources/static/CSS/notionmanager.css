@@ -1,6 +1,14 @@
 @charset "UTF-8";
+@font-face {
+    font-family: 'Pretendard';
+    src: url('https://cdn.jsdelivr.net/gh/Project-Noonnu/noonfonts_2107@1.1/Pretendard-Thin.woff') format('woff');
+    font-weight: 100;
+    font-display: swap;
+}
 body {
-	background-color: #EAEAEA;
+    font-family: 'Pretendard';
+    background: #f7f7f7;
+            
 }
 .location-container {
 	display:flex;
