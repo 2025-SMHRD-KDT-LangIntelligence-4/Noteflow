@@ -44,6 +44,28 @@
     <div class="top-button-position-container">
         <button class ="top-button">TOP</button>
     </div>
+    
+ <script>
+	const topButtonContainer = document.querySelector('.top-button-position-container');
+	const topButton = document.querySelector('.top-button');
+	
+	// 스크롤 감지: 300px 이상 내려가면 버튼 보이기
+	window.addEventListener('scroll', () => {
+	    if (window.scrollY > 300) {
+	        topButtonContainer.style.display = 'block';
+	    } else {
+	        topButtonContainer.style.display = 'none';
+	    }
+	});
+	
+	// 클릭 시 부드럽게 맨 위로 이동
+	topButton.addEventListener('click', () => {
+	    window.scrollTo({
+	        top: 0,
+	        behavior: 'smooth'
+	    });
+	});  
+ </script>
 </header>
 </body>
 </html>

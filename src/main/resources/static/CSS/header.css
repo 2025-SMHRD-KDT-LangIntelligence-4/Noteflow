@@ -1,6 +1,11 @@
 @charset "UTF-8";
 /* src/main/resources/static/css/header.css */
-
+@font-face {
+    font-family: 'Pretendard';
+    src: url('https://cdn.jsdelivr.net/gh/Project-Noonnu/noonfonts_2107@1.1/Pretendard-Thin.woff') format('woff');
+    font-weight: 100;
+    font-display: swap;
+}    
 /* 상단 파란색 바 */
 .header-top {
     background-color: #96D0FF;
@@ -32,7 +37,7 @@
     width: 200px;
     color: #000000;
     text-align: center;
-    font-family: "Pretendard-Bold", sans-serif;
+    font-family: "Pretendard-Bold";
     font-size: 30px;
     font-weight: 700;
     display: flex;
@@ -96,6 +101,7 @@
     border-radius: 4px;
     background-color: #96D0FF;
     display: block;
+    font-family: 'Pretendard';
 }
 
 /* 로고 */
