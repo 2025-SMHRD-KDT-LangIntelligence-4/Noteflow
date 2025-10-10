@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Insert title here</title>
+<title>퀴즈 채점 결과</title>
 <link rel="stylesheet" th:href="@{/css/header.css}" />
 <link rel="stylesheet" th:href="@{/css/quizresult.css}" />
 </head>
@@ -10,17 +10,58 @@
 	<div th:replace="fragments/header :: siteHeader"></div>
 	<div class = "box-location-container">
         <div class = "quiz-result-container">
-                <div class = "score-result">채점 결과는 00점 입니다.</div>
-           
-                <div class = "quiz-commentary">정답 해설</div>
+            
+            <div class = "score-result">채점 결과는 <span class="score">85</span>점 입니다.</div>
+       
+            <div class = "quiz-commentary">정답 해설</div>
+            
+            <div class="commentary-list-wrapper">
+                <div class="commentary-list">
+                    
+                    <div class="commentary-item correct">
+                        <div class="q-num">Q1.</div>
+                        <div class="q-content">변수 선언 시 사용하는 'let'과 'const'의 가장 큰 차이점은?</div>
+                        <div class="q-answer">정답: const는 재할당이 불가능하다. (O)</div>
+                        <div class="q-explain">**[해설]** let은 재할당이 가능하지만, const는 선언 후 값의 재할당이 불가능하며, 주로 상수를 선언할 때 사용됩니다.</div>
+                    </div>
+
+                    <div class="commentary-item incorrect">
+                        <div class="q-num">Q2.</div>
+                        <div class="q-content">자바스크립트에서 '===' 연산자는 값만 비교하고 자료형은 비교하지 않는다.</div>
+                        <div class="q-answer">정답: 거짓 (X) / 내가 쓴 답: 참</div>
+                        <div class="q-explain">**[해설]** '===' 연산자는 값과 **자료형**을 모두 엄격하게 비교합니다. 값만 비교하는 것은 '==' 연산자입니다.</div>
+                    </div>
+                    
+                    <div class="commentary-item correct">
+                        <div class="q-num">Q3.</div>
+                        <div class="q-content">HTML에서 페이지 제목을 정의하는 태그는?</div>
+                        <div class="q-answer">정답: &lt;title&gt; (O)</div>
+                        <div class="q-explain">**[해설]** &lt;title&gt; 태그는 웹 페이지의 제목을 정의하며, 브라우저 탭에 표시됩니다.</div>
+                    </div>
+                    
+                    <div class="commentary-item incorrect">
+                        <div class="q-num">Q4.</div>
+                        <div class="q-content">CSS에서 요소를 수평 중앙 정렬할 때 'margin: auto;'를 사용할 수 없는 경우는?</div>
+                        <div class="q-answer">정답: display 속성이 flex일 때 (X) / 내가 쓴 답: display 속성이 block일 때</div>
+                        <div class="q-explain">**[해설]** `margin: auto;`는 `width`가 지정된 **블록(block) 요소**에만 적용됩니다. `display: flex;` 상황에서는 `justify-content: center;`를 사용해야 합니다.</div>
+                    </div>
+                    
+                    <div class="commentary-item correct">... Q5. 파이썬의 리스트와 튜플의 가장 큰 차이점은? ...</div>
+                    <div class="commentary-item incorrect">... Q6. 자바의 final 키워드는 무엇을 의미하는가? ...</div>
+                    <div class="commentary-item correct">... Q7. Git에서 원격 저장소의 내용을 가져오는 명령어는? ...</div>
+                    <div class="commentary-item incorrect">... Q8. REST API에서 자원의 생성 요청에 사용되는 HTTP 메서드는? ...</div>
+                    <div class="commentary-item correct">... Q9. 데이터베이스 정규화의 목적은 무엇인가? ...</div>
+                    <div class="commentary-item incorrect">... Q10. 클라우드 컴퓨팅에서 IaaS의 예시가 아닌 것은? ...</div>
+                    <div class="commentary-item correct">... Q11. 프론트엔드 프레임워크 Vue.js의 특징은? ...</div>
+                    <div class="commentary-item incorrect">... Q12. 알고리즘 시간 복잡도 O(n²)의 의미는? ...</div>
+
+                </div>
+            </div>
 
             <div class = "button-location">
-                <a href ="" class = "return-main">메인으로</a>
-                <a href ="" class = "lecture-recommend">강의추천</a>
+                <a href ="" class = "lecture-recommend full-width">강의추천</a>
             </div>
-            <div class = "AI-image-location-container">
-                <div class="AI-image"></div>
-            </div>
+            
         </div>
     </div>
 </body>

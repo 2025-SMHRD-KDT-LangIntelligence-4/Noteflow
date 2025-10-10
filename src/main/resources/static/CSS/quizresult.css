@@ -8,68 +8,137 @@
 body {
     font-family: 'Pretendard';
     background: #f7f7f7;
-            
 }
-    .box-location-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        position:relative;
-        top:50px;
-    }
-    .quiz-result-container {
-        width:800px;
-        height:600px;
-        background-color:white;
-        border-radius:20px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        flex-wrap: wrap;
-    }
-    .score-result {
-        width:80%;
-        height:80px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 50px;
-    }
-    .quiz-commentary {
-        width:80%;
-        height:190px;
-        border-radius: 10px;
-        border: solid 2px #C7C7C7;
-    }
-    .button-location {
-        width: 320px;
-        height: 124px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-direction: column;
-        flex-wrap: wrap;
-        gap: 20px;
-        padding-bottom: 40px;
-    }
-    .AI-image-location-container{
-        width: 150px;
-        height: 150px;
-        background-color: #C7C7C7;
-        margin-bottom: 30px;
-        margin-left: 30px;
-    }
-    .button-location a{
-        width: 320px;
-        height: 50px;
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        align-items: center;
-        box-shadow: 0px 2px 2px 3px rgba(0, 0, 0, 0.1);
-        border-radius: 10px;
-        text-decoration: none;
-        color: black;
-        position: relative;
-        
-    }
+
+/* 1. 전체 컨테이너: 중앙 정렬 */
+.box-location-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 50px; 
+    padding: 20px;
+}
+
+/* 2. 결과 박스 메인 컨테이너 */
+.quiz-result-container {
+    width: 600px;
+    background-color: white;
+    border-radius: 20px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    box-sizing: border-box;
+}
+
+/* 3. 점수 결과 영역 */
+.score-result {
+    font-size: 28px;
+    font-weight: bold;
+    text-align: center;
+    color: #333;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #eee;
+}
+.score {
+    color: #007bff; /* 점수 강조 색상 */
+    font-size: 32px;
+}
+
+/* 4. 정답 해설 제목 */
+.quiz-commentary {
+    font-size: 22px;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 5px;
+    border-left: 5px solid #007bff;
+    padding-left: 10px;
+}
+
+/* 5. 해설 목록 영역 (스크롤 적용) */
+.commentary-list-wrapper {
+    /* 스크롤을 만들기 위한 고정 높이 */
+    height: 350px; 
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    overflow-y: auto; /* 세로 스크롤 적용 */
+    padding: 10px;
+    background-color: #f9f9f9;
+}
+.commentary-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* 6. 개별 해설 항목 스타일 */
+.commentary-item {
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+/* 정답/오답에 따른 색상 구분 */
+.commentary-item.correct {
+    background-color: #e9f5ff; /* 파란색 계열 (정답) */
+    border-left: 5px solid #007bff;
+}
+.commentary-item.incorrect {
+    background-color: #ffeaea; /* 빨간색 계열 (오답) */
+    border-left: 5px solid #dc3545;
+}
+
+.q-num {
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 5px;
+}
+.q-content {
+    margin-bottom: 8px;
+    font-size: 16px;
+}
+.q-answer, .q-explain {
+    font-size: 14px;
+    line-height: 1.4;
+    color: #666;
+}
+.q-explain {
+    margin-top: 5px;
+    padding-top: 5px;
+    border-top: 1px dashed #ccc;
+}
+
+
+/* 7. 버튼 영역 */
+.button-location {
+    /* 이제 버튼이 하나이므로, justify-content를 조정할 필요 없이 깔끔하게 표시됩니다. */
+    display: flex;
+    justify-content: center; /* 버튼을 중앙에 배치 */
+    gap: 15px;
+    margin-top: 10px; 
+}
+
+/* return-main 스타일은 삭제되었습니다. */
+
+.lecture-recommend {
+    flex-grow: 1; /* flex-grow 유지 */
+    text-align: center;
+    padding: 15px 0;
+    border-radius: 10px;
+    font-size: 18px;
+    font-weight: bold;
+    text-decoration: none;
+    transition: background-color 0.2s;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+
+    /* 버튼이 하나일 때 가로 전체를 차지하도록 설정 */
+    width: 100%; 
+    max-width: 400px; /* 너무 넓어지는 것을 방지하기 위해 최대 너비 설정 */
+}
+/* 버튼 하나일 때를 위해, .full-width 클래스가 없는 경우를 대비하여 스타일을 통합 */
+.lecture-recommend {
+    background-color: #28a745; /* 녹색 버튼 */
+    color: white;
+}
+.lecture-recommend:hover {
+    background-color: #1e7e34;
+}

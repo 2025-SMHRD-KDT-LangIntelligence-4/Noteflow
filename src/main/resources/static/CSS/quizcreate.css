@@ -8,125 +8,150 @@
 body {
     font-family: 'Pretendard';
     background: #f7f7f7;
-            
 }
-.quiz-location-container{
-	display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-    top: 50px;
-    flex-wrap: wrap;
-    align-content: center;
-}
-.notion-selector {
-	width:300px;
-	height: 600px;
-	background-color: white;
-	border-radius:20px;
-	box-shadow: 0px 2px 2px 3px rgba(0, 0, 0, 0.1);
-}
-.content-location {
-	gap: 20px;
+
+/* 1. 전체 컨테이너: 중앙 정렬 및 여백 확보 */
+.selection-container {
     display: flex;
-    flex-flow: wrap;
-    margin-left: 20px;
-    width: 900px;
+    flex-direction: column; 
+    align-items: center; 
+    margin-top: 50px; 
+    padding: 20px;
+    gap: 20px;
+    max-width: 800px; 
+    margin-left: auto;
+    margin-right: auto;
+    box-sizing: border-box; 
 }
-.quiz-content-box {
-	width:900px;
-	height: 290px;
-	background-color: white;
-	border-radius:20px;
-	display:flex;
-	justify-content:center;
-	align-items:center;
-	flex-direction: column;
-	box-shadow: 0px 2px 2px 3px rgba(0, 0, 0, 0.1);
-}
-.quiz-content {
-	border: 2px solid #C7C7C7;
-	border-radius: 10px;
-	font-size:20px;
-	width:820px;
-	height:200px;
-	padding:10px;
-	margin-bottom:20px;
-}
-.answer-box {
-	width:900px;
-	height: 190px;
-	background-color: white;
-	border-radius:20px;
-	margin-bottom:20px;
-	display:flex;
-	justify-content:center;
-	align-items:center;
-	flex-direction: column;
-	box-shadow: 0px 2px 2px 3px rgba(0, 0, 0, 0.1);
-}
-.form-container {
-	height:290px;
-}
-.submit-button {
-	width:900px;
-	height:80px;
-	border:none;
-	background-color:white;
-	border-radius:20px;
-	font-size:20px;
-	box-shadow: 0px 2px 2px 3px rgba(0, 0, 0, 0.1);
-}
-.form-container button:hover {
-	background-color: #96D0FF;
-	border-radius:20px;
-}
-.answer-area {
-	border:none;
-	resize:none;
-	border: 2px solid #C7C7C7;
-	border-radius: 10px;
-	width:820px;
-	height:90px;
-	padding:10px;
-	outline: none;
-	font-size:20px;
-}
-.notion-selector {
-	justify-content: center;
-    align-items: center;
+
+/* 2. 노션 선택 메인 박스 */
+.notion-selection-box {
+    width: 100%;
+    height: 600px; 
+    background-color: white;
+    border-radius: 20px;
+    box-shadow: 0px 2px 2px 3px rgba(0, 0, 0, 0.1);
+    padding: 20px; 
+    display: flex;
     flex-direction: column;
-	display:flex;
-	gap:30px;
+    gap: 15px;
+    box-sizing: border-box; 
 }
-.select-container {
-	width:80%;
-	height:30px;
-	align-items: center;
-    display: flex;
+.section-title {
+    font-size: 24px;
+    margin: 0 0 5px 0;
+    color: #333;
 }
-.gene-button {
-	width:80%;
-	height:60px;
-	border:none;
-	background-color:white;
-	border-radius:20px;
-	font-size:20px;
-	box-shadow: 0px 2px 2px 3px rgba(0, 0, 0, 0.1);
-	margin-bottom: 20px;
+
+/* 3. 노션 트리 영역: 스크롤 및 선택 스타일 */
+.tree-wrapper {
+    flex-grow: 1; 
+    min-height: 0; 
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 5px;
+    background-color: #fff; 
 }
-.notion-select {
-	width:100%;
-	height:30px;
-}
-.tree-position {
-	width:250px;
-	height:300px;
-}
+
 .tree-container {
-	width:240px;
-	height:100%;
-	border-radius:20px;
-	font-size:20px;
-	border: 2px solid #C7C7C7;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto; 
+    padding-right: 10px; 
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+/* 안내 문구 스타일 수정: 완벽한 수직/수평 중앙 정렬 */
+.guide-text {
+    color: #333; 
+    font-weight: 500;
+    border-bottom: 1px solid #ccc; 
+    
+    /* Flexbox를 사용하여 수평 중앙 정렬 */
+    display: flex; 
+    align-items: center; /* 수직 중앙 정렬 */
+    justify-content: center; /* 수평 중앙 정렬 */
+    text-align: center; /* (보험용) */
+    
+    /* 높이 대신 수직 패딩을 사용하여 텍스트가 칸의 중앙에 오도록 함 */
+    padding: 10px 10px; /* 상하 패딩을 동일하게 적용 */
+    margin-bottom: 5px;
+}
+
+.tree-item {
+    padding: 8px 10px;
+    margin: 2px 0;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.2s;
+    user-select: none; 
+    display: flex; /* 내부 텍스트 수직 중앙 정렬 */
+    align-items: center;
+}
+.tree-item:hover {
+    background-color: #eef;
+}
+.tree-item.selected {
+    background-color: #96D0FF; 
+    color: #000;
+    font-weight: bold;
+    border: 1px solid #007bff;
+}
+
+/* 4. 정보 표시 및 완료 버튼 영역 */
+.info-area {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+.tag-display-box {
+    width: 100%;
+    min-height: 100px; 
+    background-color: white;
+    border-radius: 20px;
+    box-shadow: 0px 2px 2px 3px rgba(0, 0, 0, 0.1);
+    padding: 20px; 
+    box-sizing: border-box;
+}
+.tag-title {
+    font-size: 18px;
+    color: #555;
+    margin: 0 0 10px 0;
+}
+.tag-content {
+    min-height: 40px;
+    padding: 5px 0;
+}
+.tag-name {
+    display: inline-block;
+    padding: 5px 10px;
+    background-color: #f0ad4e; 
+    color: white;
+    border-radius: 15px;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+/* 5. 선택 완료 버튼 */
+.complete-button {
+    width: 100%;
+    height: 60px;
+    border: none;
+    background-color: #007bff; 
+    color: white;
+    border-radius: 20px;
+    font-size: 20px;
+    font-weight: bold;
+    box-shadow: 0px 2px 2px 3px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.complete-button:hover:not(:disabled) {
+    background-color: #0056b3;
+}
+.complete-button:disabled {
+    background-color: #ccc; 
+    cursor: not-allowed;
 }
