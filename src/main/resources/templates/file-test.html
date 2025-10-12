@@ -31,8 +31,9 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     let selectedIds = new Set();
-    const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
-    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+    const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
 
     // 순수 JavaScript + jQuery 조합으로 안전하게 처리
     document.addEventListener('DOMContentLoaded', function() {
@@ -104,6 +105,8 @@
             url: '/api/files/upload',
             method: 'POST',
             data: formData,
+
+            headers: { [csrfHeader]: csrfToken },
             processData: false,
             contentType: false,
             success: function() {
@@ -123,6 +126,8 @@
         $.ajax({
             url: '/api/files/list',
             method: 'GET',
+
+            headers: { [csrfHeader]: csrfToken },
             success: function(files) {
                 const fileList = $('#fileList');
                 fileList.empty();
@@ -171,13 +176,18 @@
         $.ajax({
             url: `/api/files/delete/${id}`,
             method: 'DELETE',
+            headers: { [csrfHeader]: csrfToken },   // CSRF 헤더 추가
             success: function() {
                 alert('삭제 완료');
                 loadFiles();
             },
-            error: function(xhr, status, error) {
-                console.error('삭제 실패:', error);
-                alert('삭제 실패');
+            error: function(xhr) {
+                console.error('삭제 실패:', xhr);
+                if (xhr.status === 403) {
+                    alert('권한이 없거나 CSRF 토큰이 유효하지 않습니다.');
+                } else {
+                    alert('삭제 실패');
+                }
             }
         });
     }
@@ -193,6 +203,8 @@
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify(Array.from(selectedIds)),
+
+            headers: { [csrfHeader]: csrfToken },
             xhrFields: {
                 responseType: 'blob'
             },
@@ -224,7 +236,9 @@
         const deletePromises = Array.from(selectedIds).map(function(id) {
             return $.ajax({
                 url: `/api/files/delete/${id}`,
-                method: 'DELETE'
+                method: 'DELETE',
+
+                headers: { [csrfHeader]: csrfToken },
             });
         });
 
