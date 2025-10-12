@@ -117,16 +117,17 @@
 
         <!-- 프로필 이미지 -->
         <div class="profile-image-container">
-            <th:block th:if="${user?.profileImage != null}">
-                <img th:src="@{${user.profileImage}}" alt="프로필 이미지 미리보기" id="preview"/>
-            </th:block>
-            <th:block th:if="${user?.profileImage == null}">
-                <img src="/images/default-profile.png" alt="기본 프로필 이미지" id="preview"/>
-            </th:block>
+            <img id="preview" alt="프로필 이미지 미리보기"
+                 th:src="${#strings.isEmpty(user?.profileImage)}
+               ? @{/images/default-profile.png}
+               : @{${user.profileImage}}"/>
 
             <input type="file" name="profileImage" accept="image/*" onchange="previewImage(event)"/>
             <div>
-                <label><input type="checkbox" name="deleteProfileImage" value="true"/> 기존 이미지 삭제</label>
+                <label>
+                    <input type="checkbox" name="deleteProfileImage" value="true" onchange="toggleDeleteProfile(this)"/>
+                    기존 이미지 삭제
+                </label>
             </div>
         </div>
 

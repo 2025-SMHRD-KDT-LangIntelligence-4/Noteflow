@@ -1,5 +1,7 @@
 package com.smhrd.web.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -11,6 +13,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Note {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -18,7 +21,9 @@ public class Note {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_idx", nullable = false)
+    @JsonIgnore  // 추가
     private User user;
+
 
     @Column(nullable = false)
     private String title;
@@ -64,6 +69,9 @@ public class Note {
 
     @Column(nullable = false)
     private LocalDateTime updatedAt;
+
+    @Column(name = "folder_id")
+    private Long folderId;
 
     @OneToMany(mappedBy = "note", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<NoteTag> tags;

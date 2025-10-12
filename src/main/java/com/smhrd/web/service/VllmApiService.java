@@ -2,10 +2,13 @@ package com.smhrd.web.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.smhrd.web.entity.Prompt;
+import com.smhrd.web.repository.PromptRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -19,6 +22,7 @@ public class VllmApiService {
     private final WebClient vllmWebClient;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final PromptService promptService;
+    private final PromptRepository promptRepository;
 
     @Value("${vllm.api.model}")
     private String modelName;
@@ -28,6 +32,9 @@ public class VllmApiService {
 
     @Value("${vllm.api.temperature}")
     private double temperature;
+
+    @Value("${vllm.api.url}")
+    private String apiUrl;
 
     // --------------------------
     // 노션 생성
@@ -128,4 +135,41 @@ public class VllmApiService {
         return callVllmApi(combinedPrompt);
     }
 
+    public String processContent(String content, String notionType) {
+        try {
+            // DB에서 notionType에 해당하는 Prompt 조회
+            Prompt prompt = promptRepository.findByTitle(notionType)
+                    .orElseThrow(() -> new IllegalArgumentException("프롬프트를 찾을 수 없습니다: " + notionType));
+
+            // 프롬프트 템플릿 + 실제 내용 결합
+            String fullPrompt = prompt.getContent() + "\n\n" + content;
+
+            // AI 요청 본문 구성
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("model", modelName);
+            requestBody.put("prompt", fullPrompt);
+            requestBody.put("max_tokens", maxTokens);
+            requestBody.put("temperature", temperature);
+            requestBody.put("stream", false);
+
+            Mono<Map> responseMono = vllmWebClient.post()
+                    .uri(apiUrl + "/v1/completions")
+                    .bodyValue(requestBody)
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .timeout(Duration.ofSeconds(60));
+
+            Map<String, Object> response = responseMono.block();
+            if (response != null && response.containsKey("choices")) {
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> choices = (List<Map<String, Object>>) response.get("choices");
+                if (!choices.isEmpty()) {
+                    return (String) choices.get(0).get("text");
+                }
+            }
+            return "AI 처리 중 오류가 발생했습니다.";
+        } catch (Exception e) {
+            throw new RuntimeException("vLLM API 호출 실패: " + e.getMessage(), e);
+        }
+    }
 }

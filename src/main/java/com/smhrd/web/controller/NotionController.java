@@ -1,7 +1,9 @@
 package com.smhrd.web.controller;
 
 import com.smhrd.web.entity.Note;
+import com.smhrd.web.service.FileStorageService;
 import com.smhrd.web.service.NotionContentService;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -16,6 +18,8 @@ import java.util.List;
 public class NotionController {
 
     private final NotionContentService notionContentService;
+    private final FileStorageService fileStorageService;
+
 
     // --------------------------
     // 텍스트로 노션 요약 생성
@@ -77,4 +81,15 @@ public class NotionController {
 
         return notionContentService.getNotionDetail(noteId);
     }
+
+    @GetMapping("/api/files/preview/{fileId}")
+    @ResponseBody
+    public String getFilePreview(@PathVariable String fileId, Authentication auth) {
+        return fileStorageService.getFilePreview(fileId, auth.getName());
+    }
+
+    @GetMapping("/api/notion/download/{noteId}")
+    public void downloadNote(@PathVariable Long noteId, Authentication auth, HttpServletResponse response) {
+}
+
 }
