@@ -21,6 +21,7 @@ public class UserController {
     // --------------------------
     @GetMapping("/signup")
     public String signupForm(Model model) {
+    	model.addAttribute("pageTitle", "회원가입");
         model.addAttribute("user", new User());
         return "signup"; // signup.html
     }
