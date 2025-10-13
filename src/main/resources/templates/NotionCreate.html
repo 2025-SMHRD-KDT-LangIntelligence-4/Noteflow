@@ -7,6 +7,7 @@
 <link rel="stylesheet" th:href="@{/css/notionCreate.css}"/>
 <link rel="stylesheet" th:href="@{/css/ckEditor.css}"/>
 <link rel="stylesheet" href="https://cdn.ckeditor.com/ckeditor5/47.0.0/ckeditor5.css" crossorigin>
+<link rel="stylesheet" th:href="@{/css/footer.css}" />
 </head>
 <body>
 <div th:replace="fragments/header :: siteHeader"></div>	
@@ -142,5 +143,6 @@
 	
 	    animate();
 	</script>
+<div th:replace="fragments/footer :: siteFooter"></div>
 </body>
 </html>

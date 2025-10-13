@@ -10,6 +10,7 @@
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
 <link rel="stylesheet" th:href="@{/css/schedule-manager.css}" />
 <link rel="stylesheet" th:href="@{/css/header.css}" />
+<link rel="stylesheet" th:href="@{/css/footer.css}" />
 <style>
 /* FullCalendar 기본 스타일 조정 */
 #calendar { max-width: 900px; margin: 0 auto; }
@@ -67,6 +68,6 @@
 <!-- DOMContentLoaded로 감싸면 HTML 렌더링 후 실행 -->
 <script th:src="@{/js/schedule-manager.js}"></script>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/locales/ko.global.min.js"></script>
-
+<div th:replace="fragments/footer :: siteFooter"></div>
 </body>
 </html>

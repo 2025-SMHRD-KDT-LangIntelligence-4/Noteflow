@@ -164,7 +164,8 @@ body {
         .gpt-modal-content {
             background: white;
             width: 400px;
-            max-height: 80vh;
+            height:600px;
+            max-height: 600px;
             border-radius: 16px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.2);
             overflow: hidden;
@@ -179,7 +180,7 @@ body {
         }
 
         .gpt-modal-header {
-            background: #007aff;
+            background: #96D0FF;
             color: white;
             padding: 12px 16px;
             font-size: 1.1rem;
@@ -215,7 +216,7 @@ body {
         }
 
         .gpt-input-area button {
-            background: #007aff;
+            background: #96D0FF;
             color: white;
             border: none;
             padding: 10px 14px;

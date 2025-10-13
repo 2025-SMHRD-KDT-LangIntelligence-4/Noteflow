@@ -10,6 +10,11 @@ body {
     background: #f7f7f7;
 }
 
+/* 출력 애니메이션 */
+ @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 /* 1. 전체 컨테이너: 중앙 정렬 및 여백 확보 */
 .selection-container {
     display: flex;
@@ -88,6 +93,7 @@ body {
     user-select: none; 
     display: flex; /* 내부 텍스트 수직 중앙 정렬 */
     align-items: center;
+    animation: fadeIn 1s ease;
 }
 .tree-item:hover {
     background-color: #96D0FF;

@@ -5,6 +5,7 @@
 <title>Insert title here</title>
 <link rel="stylesheet" th:href="@{/css/header.css}" />
 <link rel="stylesheet" th:href="@{/css/main.css}" />
+<link rel="stylesheet" th:href="@{/css/footer.css}" />
 </head>
 <body>
 <!-- 헤더 -->
@@ -52,5 +53,6 @@
 			</div>
 		</div>
 	</div>
+<div th:replace="fragments/footer :: siteFooter"></div>
 </body>
 </html>

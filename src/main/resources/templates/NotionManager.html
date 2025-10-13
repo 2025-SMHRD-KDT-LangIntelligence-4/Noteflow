@@ -7,6 +7,7 @@
 	<title>노션 | 파일 관리</title>
 	<link rel="stylesheet" th:href="@{/css/header.css}" />
 	<link rel="stylesheet" th:href="@{/css/notionmanager.css}" />
+	<link rel="stylesheet" th:href="@{/css/footer.css}" />
 </head>
 <body>
 <div th:replace="~{fragments/header :: siteHeader}"></div>
@@ -69,6 +70,6 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script th:src="@{/js/NotionManager.js}"></script>
 
-
+<div th:replace="fragments/footer :: siteFooter"></div>
 </body>
 </html>
