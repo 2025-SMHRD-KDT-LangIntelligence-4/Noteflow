@@ -7,6 +7,7 @@
 <link rel="stylesheet" th:href="@{/css/notionCreate.css}"/>
 <link rel="stylesheet" th:href="@{/css/ckEditor.css}"/>
 <link rel="stylesheet" href="https://cdn.ckeditor.com/ckeditor5/47.0.0/ckeditor5.css" crossorigin>
+<link rel="stylesheet" th:href="@{/css/footer.css}" />
 
 </head>
 <body>
@@ -119,7 +120,8 @@
 		for (let i = 0; i < 3; i++) { // 3번 반복
 		  originalButtons.forEach(btn => container.appendChild(btn.cloneNode(true)));
 		}
-	
+		const btn = document.createElement("button");
+		const originalSetWidth = originalButtons.reduce((acc, btn) => acc + btn.offsetWidth + 10, 0); 
 		const slider = document.querySelector('.slide-container');
 		const track = document.querySelector('.slider-wrapper');
 	    let scrollSpeed = 0.5; // 픽셀 나누기 프레임 단위
@@ -130,8 +132,8 @@
 	      if (!isPaused) {
 	    	  track.scrollLeft += scrollSpeed;
 	        // 끝에 도달하면 처음으로 돌아가기
-	        if (track.scrollLeft >= container.scrollWidth / 4) { 
-	            // 원본 버튼 1세트 길이 = 전체 길이 / 4 (원본 버튼 1세트 기준)
+	        if (track.scrollLeft >= originalSetWidth) { 
+	            //계산된 originalSetWidth 길이에 따라 무한루프 실행
 	            track.scrollLeft = 0;
 	        }
 	      }
@@ -143,5 +145,6 @@
 	
 	    animate();
 	</script>
+	<div th:replace="fragments/footer :: siteFooter"></div>
 </body>
 </html>

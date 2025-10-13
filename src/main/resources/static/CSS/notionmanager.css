@@ -108,7 +108,7 @@ body {
 	font-family: 'Pretendard';
 	background-color: #EAEAEA;
 	color: #333;
-	line-height: 1.6;
+
 }
 
 .location-container {
@@ -120,6 +120,7 @@ body {
 	gap: 20px;
 	padding: 20px;
 	animation: fadeIn 1s ease;
+	margin-bottom: 50px;
 }
 
 /* 왼쪽 노트 리스트 컨테이너 */

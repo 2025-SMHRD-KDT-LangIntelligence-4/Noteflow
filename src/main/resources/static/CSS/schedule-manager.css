@@ -26,6 +26,7 @@ body {
     top: 50px;
     gap: 40px;
     animation: fadeIn 1s ease;
+    margin-bottom: 50px;
 }
 
 /* 달력 컨테이너 */
