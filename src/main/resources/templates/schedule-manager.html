@@ -8,6 +8,11 @@
 <title>스케줄 관리 달력</title>
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+<!-- flatpickr 라이브러리 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ko.js"></script>
+
 <link rel="stylesheet" th:href="@{/css/schedule-manager.css}" />
 <link rel="stylesheet" th:href="@{/css/header.css}" />
 <link rel="stylesheet" th:href="@{/css/footer.css}" />
@@ -16,6 +21,7 @@
 #calendar { max-width: 900px; margin: 0 auto; }
 .selected-date { background-color: #d3eaff !important; }
 .fc-event-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
+.range-picker-container { margin-top: 10px; }
 </style>
 
 </head>
@@ -54,7 +60,19 @@
             </div>
         </div>
 
+        <!-- 단일 일정 입력 -->
         <input type="text" class="schedule-create" placeholder="스케줄을 입력하세요" />
+
+        <!-- 기간 선택 모드 -->
+        <div class="range-picker-container">
+            <label class="toggle-container">
+                <input type="checkbox" id="rangeModeToggle" />
+                <span>🗓️ 기간 선택 모드</span>
+            </label>
+            <div id="rangeInputs" style="display:none; margin-top:5px;">
+                <input type="text" id="rangePicker" placeholder="기간 선택" />
+            </div>
+        </div>
     </div>
 
     <!-- 우측: 달력 -->

@@ -3,9 +3,12 @@
  * 스케줄 입력, 삭제, 수정, 검색, 색상 필터, FullCalendar 연동 (자동 조회버전)
  */
 document.addEventListener('DOMContentLoaded', async () => {
-	// JS 파일 상단에 추가 필요
-	const csrfToken = document.querySelector('meta[name="_csrf"]').content;
-	const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+    // ------------------------------
+    // 0. CSRF 토큰
+    // ------------------------------
+    const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+
     // ------------------------------
     // 1. DOM 엘리먼트 참조
     // ------------------------------
@@ -13,6 +16,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const scheduleEl = document.querySelector('.schedule');
     const inputEl = document.querySelector('.schedule-create');
     const searchEl = document.querySelector('.schedule-search');
+    const rangeToggle = document.getElementById('rangeModeToggle');
+    const rangeInputs = document.getElementById('rangeInputs');
+    const rangePickerInput = document.getElementById('rangePicker');
 
     // ------------------------------
     // 2. 상태 변수
@@ -21,6 +27,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     let schedulesMap = {};
     let selectedFilter = "all";
     let selectedColor = "#3788d8"; // 기본 색상
+    let isRangeMode = false;
+    let rangePicker = null;
 
     // ------------------------------
     // 3. FullCalendar 초기화
@@ -28,11 +36,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     const calendarEl = document.getElementById('calendar');
     const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
+        selectable: true,
         locale: 'ko',
         headerToolbar: {
             left: 'prev,next today',
             center: 'title',
             right: 'dayGridMonth,timeGridWeek'
+        },
+        views: {
+            dayGridMonth: { displayEventTime: false },
+            timeGridWeek: { 
+                displayEventTime: true,
+                eventTimeFormat: { hour: '2-digit', minute: '2-digit', meridiem: false }
+            }
         },
         events: async function(info, successCallback, failureCallback) {
             try {
@@ -43,10 +59,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     method: 'GET',
                     headers: { [csrfHeader]: csrfToken }
                 });
-				console.log("응답 상태:", res.status);
                 const data = await res.json();
-                schedulesMap = {}; // 초기화
-				console.log("받은 데이터:", data);
+                schedulesMap = {};
+
                 // 날짜별 스케줄 맵핑
                 data.forEach(s => {
                     const key = s.startTime.slice(0,10);
@@ -54,39 +69,55 @@ document.addEventListener('DOMContentLoaded', async () => {
                     schedulesMap[key].push(s);
                 });
 
-                // FullCalendar에 이벤트 전달
+                // FullCalendar 이벤트 생성
                 successCallback(data.map(e => ({
                     id: e.scheduleId,
                     title: e.title,
                     start: e.startTime,
                     end: e.endTime,
-                    backgroundColor: e.colorTag || '#3788d8'
+                    backgroundColor: e.colorTag || '#3788d8',
+                    colorTag: e.colorTag || '#3788d8'
                 })));
 
-                // 현재 선택된 날짜의 일정 리스트 갱신
                 if (selectedDate) renderSchedules();
-
             } catch (err) {
                 console.error("이벤트 로딩 실패:", err);
                 failureCallback(err);
             }
         },
+        eventDidMount: function(info) {
+            const colorTag = info.event.extendedProps.colorTag || info.event.backgroundColor || '#3788d8';
+            info.el.style.color = colorTag;
+        },
         dateClick: function(info) {
-            selectedDate = info.dateStr;
-            const clickedDate = new Date(info.dateStr);
-            dateEl.innerText = `${clickedDate.getMonth() + 1}월 ${clickedDate.getDate()}일`;
-            renderSchedules();
-            highlightSelectedDate(info.dayEl);
+            if (!isRangeMode) {
+                selectedDate = info.dateStr;
+                const clickedDate = new Date(info.dateStr);
+                dateEl.innerText = `${clickedDate.getMonth() + 1}월 ${clickedDate.getDate()}일`;
+                renderSchedules();
+                highlightSelectedDate(info.dayEl);
+            }
         }
     });
 
-    // ------------------------------
-    // 4. 달력 렌더링 및 초기 데이터 로드
-    // ------------------------------
     calendar.render();
-
-    // 페이지 진입 시 현재 월 일정 자동 불러오기
     await calendar.refetchEvents();
+
+    // ------------------------------
+    // 4. 기간 선택 모드 초기화
+    // ------------------------------
+    rangeToggle.addEventListener('change', () => {
+        isRangeMode = rangeToggle.checked;
+        rangeInputs.style.display = isRangeMode ? 'block' : 'none';
+
+        if (isRangeMode && !rangePicker) {
+            rangePicker = flatpickr(rangePickerInput, {
+                mode: 'range',
+                dateFormat: 'Y-m-d',
+                locale: 'ko'
+            });
+        }
+    });
 
     // ------------------------------
     // 5. 헬퍼 함수
@@ -119,7 +150,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // ------------------------------
-    // 6. 색상 필터 클릭 이벤트
+    // 6. 색상 필터 클릭
     // ------------------------------
     document.querySelectorAll('.filter-option').forEach(option => {
         option.addEventListener('click', () => {
@@ -132,34 +163,35 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // ------------------------------
-    // 7. 일정 추가 (Enter 입력)
+    // 7. 일정 추가
     // ------------------------------
     inputEl.addEventListener('keydown', async (e) => {
         if (e.key !== 'Enter' || !inputEl.value.trim()) return;
-        if (!selectedDate) {
-            alert("먼저 날짜를 선택해주세요.");
-            return;
-        }
 
-        const scheduleObj = {
-            title: inputEl.value.trim(),
-            startTime: selectedDate + "T00:00:00",
-            endTime: selectedDate + "T23:59:59",
-            colorTag: selectedColor
-        };
+        let scheduleObj = { title: inputEl.value.trim(), colorTag: selectedColor };
+
+        if (isRangeMode && rangePicker && rangePicker.selectedDates.length === 2) {
+            scheduleObj.startTime = rangePicker.selectedDates[0].toISOString().split('T')[0] + "T00:00:00";
+            scheduleObj.endTime = rangePicker.selectedDates[1].toISOString().split('T')[0] + "T23:59:59";
+        } else {
+            if (!selectedDate) {
+                alert("먼저 날짜를 선택해주세요.");
+                return;
+            }
+            scheduleObj.startTime = selectedDate + "T00:00:00";
+            scheduleObj.endTime = selectedDate + "T23:59:59";
+        }
 
         try {
             const res = await fetch('/api/schedule/create', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    [csrfHeader]: csrfToken
-                },
+                headers: { 'Content-Type': 'application/json', [csrfHeader]: csrfToken },
                 body: JSON.stringify(scheduleObj)
             });
             if (!res.ok) throw new Error("스케줄 생성 실패");
 
             inputEl.value = '';
+            if (rangePicker) rangePicker.clear();
             await calendar.refetchEvents();
             renderSchedules();
         } catch (err) {
@@ -194,10 +226,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
         await fetch(`/api/schedule/update/${scheduleId}`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                [csrfHeader]: csrfToken
-            },
+            headers: { 'Content-Type': 'application/json', [csrfHeader]: csrfToken },
             body: JSON.stringify(scheduleObj)
         });
         await calendar.refetchEvents();
