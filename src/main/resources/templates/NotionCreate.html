@@ -7,7 +7,7 @@
 <link rel="stylesheet" th:href="@{/css/notionCreate.css}"/>
 <link rel="stylesheet" th:href="@{/css/ckEditor.css}"/>
 <link rel="stylesheet" href="https://cdn.ckeditor.com/ckeditor5/47.0.0/ckeditor5.css" crossorigin>
-<link rel="stylesheet" th:href="@{/css/footer.css}" />
+
 </head>
 <body>
 <div th:replace="fragments/header :: siteHeader"></div>	
@@ -120,15 +120,15 @@
 		  originalButtons.forEach(btn => container.appendChild(btn.cloneNode(true)));
 		}
 	
-	    const slider = document.querySelector('.slide-container');
-	    const track = document.querySelector('.slider-wrapper');
+		const slider = document.querySelector('.slide-container');
+		const track = document.querySelector('.slider-wrapper');
 	    let scrollSpeed = 0.5; // 픽셀 나누기 프레임 단위
 	    let isPaused = false; // 호버를 하기전에는 계속 동작시킬것임
 		
 	    // animate함수를 통해 슬라이드를 자동으로 부드럽게 동작시킴
 	    function animate() {
 	      if (!isPaused) {
-	        track.scrollLeft += scrollSpeed;
+	    	  track.scrollLeft += scrollSpeed;
 	        // 끝에 도달하면 처음으로 돌아가기
 	        if (track.scrollLeft >= container.scrollWidth / 4) { 
 	            // 원본 버튼 1세트 길이 = 전체 길이 / 4 (원본 버튼 1세트 기준)
@@ -143,6 +143,5 @@
 	
 	    animate();
 	</script>
-<div th:replace="fragments/footer :: siteFooter"></div>
 </body>
 </html>

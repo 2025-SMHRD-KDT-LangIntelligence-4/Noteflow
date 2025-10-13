@@ -6,7 +6,7 @@
     font-display: swap;
 }
 
-/* 출력 애니메이션 */
+/* 출력 애니메1이션 */
  @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -14,7 +14,7 @@
 
 body {
     font-family: 'Pretendard';
-    background: #f7f7f7;
+    background: #EAEAEA;
             
 }
 .a { 
