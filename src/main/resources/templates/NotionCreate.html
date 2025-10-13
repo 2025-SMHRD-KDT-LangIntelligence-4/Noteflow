@@ -50,101 +50,113 @@
 <script src="https://cdn.ckeditor.com/ckeditor5/47.0.0/ckeditor5.umd.js" crossorigin></script>
 <script src="https://cdn.ckeditor.com/ckeditor5/47.0.0/translations/ko.umd.js" crossorigin></script>
 <script th:src="@{/js/ckEditor.js}"></script>
-  	<script>
-	    const versionNames = [
-	      "심플버전", "문제중심버전", "학습 전부 기록버전", "스토리텔링버전",
-	      "액션아이템버전", "키워드버전", "인사이트중심버전", "코드로그버전",
-	      "비주얼요약버전", "감정일기버전", "짧은 Q&A버전", "성과지향버전",
-	      "멘토링버전", "리서치논문버전", "미래투영버전", "포트폴리오버전"
-	    ];
+<script th:inline="javascript">
+	document.addEventListener("DOMContentLoaded", () => {
+	  const versionData = [
+		 /*<![CDATA[*/
+		    { kor: "심플버전", eng: "Simple Version", img: [[@{/images/Group.svg}]] },
+		    { kor: "문제중심버전", eng: "Problem-Centered Version", img: [[@{/images/Group.svg}]] },
+		    { kor: "학습 전부 기록버전", eng: "Full Learning Log Version", img: [[@{/images/Group.svg}]] },
+		    { kor: "스토리텔링버전", eng: "Storytelling Version", img: [[@{/images/Group.svg}]] },
+		    { kor: "액션아이템버전", eng: "Action Item Version", img: [[@{/images/Group.svg}]] },
+		    { kor: "키워드버전", eng: "Keyword Version", img: [[@{/images/Group.svg}]] },
+		    { kor: "인사이트중심버전", eng: "Insight-Focused Version", img: [[@{/images/Group.svg}]] },
+		    { kor: "코드로그버전", eng: "Code Log Version", img: [[@{/images/Group.svg}]] },
+		    { kor: "비주얼요약버전", eng: "Visual Summary Version", img: [[@{/images/Group.svg}]] },
+		    { kor: "감정일기버전", eng: "Emotional Diary Version", img: [[@{/images/Group.svg}]] },
+		    { kor: "짧은 Q&A버전", eng: "Short Q&A Version", img: [[@{/images/Group.svg}]] },
+		    { kor: "성과지향버전", eng: "Performance-Oriented Version", img: [[@{/images/Group.svg}]] },
+		    { kor: "멘토링버전", eng: "Mentoring Version", img: [[@{/images/Group.svg}]] },
+		    { kor: "리서치논문버전", eng: "Research Paper Version", img: [[@{/images/Group.svg}]] },
+		    { kor: "미래투영버전", eng: "Future Projection Version", img: [[@{/images/Group.svg}]] },
+		    { kor: "포트폴리오버전", eng: "Portfolio Version", img: [[@{/images/Group.svg}]] }
+	    /*]]>*/
+	  ];
 	
-	    const container = document.getElementById("buttonContainer");
-	    versionNames.forEach(name => {
-	      const btn = document.createElement("button");
-	      btn.textContent = name;
-	      btn.className = "slide-btn";
-	      container.appendChild(btn);
-	    });
-	    const slideContainer = document.querySelector(".slide-container");
+	  const container = document.getElementById("buttonContainer");
 	
-	    slideContainer.addEventListener("wheel", (e) => {
-	      e.preventDefault(); // 기본 수직 스크롤 막기
-	      slideContainer.scrollBy({
-	        left: e.deltaY, // 마우스 휠 수직 이동을 좌우 스크롤로 변환
-	        behavior: "smooth"
-	      });
-	    });
-	    // 좌우 이동 버튼
-	    const wrapper = document.querySelector('.slider-wrapper');
-	    const leftBtn = document.querySelector('.arrow.left');
-	    const rightBtn = document.querySelector('.arrow.right');
-	    let scrollPosition = 0;
-	    wrapper.addEventListener("wheel", (e) => {
-	    	  e.preventDefault();
-	    	  wrapper.scrollBy({ left: e.deltaY*3, behavior: "smooth" });
-	    	});
-	    const moveSlide = (direction) => {
-	      const slideWidth = 1000; // 한 번에 이동할 픽셀
-	      scrollPosition += direction === 'right' ? -slideWidth : slideWidth;
-	      const maxScroll = -(container.scrollWidth - wrapper.offsetWidth);
-	      scrollPosition = Math.min(0, Math.max(scrollPosition, maxScroll));
-	      container.style.transform = `translateX(${scrollPosition}px)`;
-	    };
+	  // 슬라이드 버튼 생성
+	  versionData.forEach(v => {
+	    const btn = document.createElement("div");
+	    btn.className = "slide-btn";
+	    btn.innerHTML = `
+	      <img src="${v.img}" alt="${v.kor}">
+	      <div class="eng">${v.eng}</div>
+	      <div class="kor">${v.kor}</div>
+	    `;
+	    container.appendChild(btn);
+	  });
 	
-	    leftBtn.addEventListener('click', () => moveSlide('left'));
-	    rightBtn.addEventListener('click', () => moveSlide('right'));
+	  // 버튼 복제하여 무한루프 구현
+	  const originalButtons = Array.from(container.children);
+	  for (let i = 0; i < 3; i++) {
+	    originalButtons.forEach(btn => container.appendChild(btn.cloneNode(true)));
+	  }
 	
-	    // 드래그 슬라이드 기능
-	    let isDown = false;
-	    let startX;
-	    let scrollStart;
+	  const slider = document.querySelector(".slide-container");
+	  const track = document.querySelector(".slider-wrapper");
+	  const leftBtn = document.querySelector(".arrow.left");
+	  const rightBtn = document.querySelector(".arrow.right");
 	
-	    wrapper.addEventListener('mousedown', e => {
-	      isDown = true;
-	      startX = e.pageX;
-	      scrollStart = scrollPosition;
-	    });
-	    wrapper.addEventListener('mouseleave', () => isDown = false);
-	    wrapper.addEventListener('mouseup', () => isDown = false);
-	    wrapper.addEventListener('mousemove', e => {
-	      if (!isDown) return;
-	      const walk = e.pageX - startX;
-	      scrollPosition = scrollStart + walk;
-	      const maxScroll = -(container.scrollWidth - wrapper.offsetWidth);
-	      scrollPosition = Math.min(0, Math.max(scrollPosition, maxScroll));
-	      container.style.transform = `translateX(${scrollPosition}px)`;
-	    });
-	    
-	    // 슬라이드 끝까지 도달하면 버튼을 추가해서 무한루프 시킬거임
-	    const originalButtons = Array.from(container.children);
-		for (let i = 0; i < 3; i++) { // 3번 반복
-		  originalButtons.forEach(btn => container.appendChild(btn.cloneNode(true)));
-		}
-		const btn = document.createElement("button");
-		const originalSetWidth = originalButtons.reduce((acc, btn) => acc + btn.offsetWidth + 10, 0); 
-		const slider = document.querySelector('.slide-container');
-		const track = document.querySelector('.slider-wrapper');
-	    let scrollSpeed = 0.5; // 픽셀 나누기 프레임 단위
-	    let isPaused = false; // 호버를 하기전에는 계속 동작시킬것임
-		
-	    // animate함수를 통해 슬라이드를 자동으로 부드럽게 동작시킴
-	    function animate() {
-	      if (!isPaused) {
-	    	  track.scrollLeft += scrollSpeed;
-	        // 끝에 도달하면 처음으로 돌아가기
-	        if (track.scrollLeft >= originalSetWidth) { 
-	            //계산된 originalSetWidth 길이에 따라 무한루프 실행
-	            track.scrollLeft = 0;
-	        }
+	  // 자동 슬라이드 변수
+	  let scrollSpeed = 0.8;
+	  let isPaused = false;
+	  const originalSetWidth = originalButtons.reduce((acc, btn) => acc + btn.offsetWidth + 20, 0);
+	
+	  // 자동 슬라이드 함수
+	  function animate() {
+	    if (!isPaused) {
+	      track.scrollLeft += scrollSpeed;
+	      if (track.scrollLeft >= originalSetWidth) {
+	        track.scrollLeft = 0;
 	      }
-	      requestAnimationFrame(animate);
 	    }
+	    requestAnimationFrame(animate);
+	  }
 	
-	    slider.addEventListener('mouseenter', () => isPaused = true);
-	    slider.addEventListener('mouseleave', () => isPaused = false);
+	  // 마우스 오버 시 일시정지
+	  slider.addEventListener("mouseenter", () => isPaused = true);
+	  slider.addEventListener("mouseleave", () => isPaused = false);
 	
-	    animate();
-	</script>
+	  // 좌우 버튼 클릭 이동
+	  leftBtn.addEventListener("click", () => {
+	    track.scrollBy({ left: -300, behavior: "smooth" });
+	  });
+	  rightBtn.addEventListener("click", () => {
+	    track.scrollBy({ left: 300, behavior: "smooth" });
+	  });
+	
+	  // 드래그 스크롤
+	  let isDown = false;
+	  let startX;
+	  let scrollLeft;
+	
+	  track.addEventListener("mousedown", e => {
+	    isDown = true;
+	    track.classList.add("active");
+	    startX = e.pageX - track.offsetLeft;
+	    scrollLeft = track.scrollLeft;
+	  });
+	
+	  track.addEventListener("mouseleave", () => isDown = false);
+	  track.addEventListener("mouseup", () => isDown = false);
+	  track.addEventListener("mousemove", e => {
+	    if (!isDown) return;
+	    e.preventDefault();
+	    const x = e.pageX - track.offsetLeft;
+	    const walk = (x - startX) * 2;
+	    track.scrollLeft = scrollLeft - walk;
+	  });
+	
+	  // 휠 스크롤 (세로 → 가로 변환)
+	  track.addEventListener("wheel", (e) => {
+	    e.preventDefault();
+	    track.scrollBy({ left: e.deltaY, behavior: "smooth" });
+	  });
+	
+	  animate();
+	});
+</script>
 	<div th:replace="fragments/footer :: siteFooter"></div>
 </body>
 </html>
