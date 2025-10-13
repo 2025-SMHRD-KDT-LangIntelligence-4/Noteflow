@@ -31,7 +31,7 @@
             <div sec:authorize="isAnonymous()">
                 <a th:href="@{/login}" class="login-button">로그인</a>
             </div>
-            <div sec:authorize="isAuthenticated()">
+            <div sec:authorize="isAuthenticated()" class="login-button-location">
                 <a th:href="@{/mypage}" class="login-button">마이페이지</a>
                 <a th:href="@{/logout}" class="login-button">로그아웃</a>
             </div>

@@ -3,19 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <title>마이페이지 수정</title>
-    <link rel="stylesheet" th:href="@{/css/footer.css}" />
+    <link rel="stylesheet" th:href="@{/css/header.css}" />
     <link rel="stylesheet" th:href="@{/css/footer.css}" />
     <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         body {
-            font-family: Arial, sans-serif;
-            background-color: #fafafa;
+            font-family: 'Pretendard';
+            background-color: #EAEAEA;
             color: #333;
             margin: 0;
             padding: 0;
         }
 
         .mypage-container {
-            width: 60%;
+            width: 800px;
             margin: 40px auto;
             background: #fff;
             border-radius: 12px;
@@ -39,7 +40,8 @@
         label {
             display: block;
             font-weight: 600;
-            margin-bottom: 6px;
+            margin-top: 10px;
+            width: 100%;
         }
 
         input[type="text"],
@@ -58,7 +60,7 @@
         }
 
         .info-save-button, .info-cancel-button {
-            background-color: #007BFF;
+            background-color: #96D0FF;
             border: none;
             color: #fff;
             padding: 10px 20px;
@@ -85,33 +87,17 @@
             margin-bottom: 10px;
         }
 
-        .AI-container {
-            width: 60%;
-            margin: 30px auto;
-            padding: 20px;
-            background-color: #e8f0fe;
-            text-align: center;
-            border-radius: 10px;
-        }
-
-        .top-button-position-container {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-        }
-
-        .top-button-position-container button {
-            background: #007BFF;
-            color: white;
-            border: none;
-            padding: 10px 16px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-weight: bold;
+        .user-info-container {
+        	gap: 10px;
+		    display: flex;
+		    justify-content: center;
+		    flex-wrap: wrap;
         }
     </style>
 </head>
 <body>
+<!-- 헤더 -->
+    <div th:replace="fragments/header :: siteHeader"></div>
 <div class="mypage-container">
     <div class="title">마이페이지 수정</div>
 

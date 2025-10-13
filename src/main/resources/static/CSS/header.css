@@ -105,8 +105,14 @@ body {
     background-color: #96D0FF;
     display: block;
     font-family: 'Pretendard';
+    font-size: 15px;
 }
-
+.login-button-location {
+	display:flex;
+	flex-wrap:wrap;
+	align-items:center;
+	gap:10px;
+}
 /* 로고 */
 .logo {
     color: #ffffff;
