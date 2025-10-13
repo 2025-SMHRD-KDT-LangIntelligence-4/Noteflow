@@ -115,7 +115,7 @@ public class KeywordExtractionService {
             return new HashSet<>();
         }
 
-        return Arrays.stream(extractedText.toLowerCase().split("[,\\n]"))
+        return Arrays.stream(extractedText.toLowerCase().split("[,\\n]+"))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty() && s.length() > 1)
                 .collect(Collectors.toSet());

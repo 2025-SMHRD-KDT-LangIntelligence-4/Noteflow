@@ -23,6 +23,8 @@ public class Note {
     @JoinColumn(name = "user_idx", nullable = false)
     @JsonIgnore  // 추가
     private User user;
+    
+    
 
 
     @Column(nullable = false)

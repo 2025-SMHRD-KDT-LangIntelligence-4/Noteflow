@@ -53,6 +53,7 @@ public class VllmApiService {
 
             String response = vllmWebClient
                     .post()
+                    .uri("/v1/chat/completions")
                     .bodyValue(requestData)
                     .retrieve()
                     .bodyToMono(String.class)
@@ -153,7 +154,7 @@ public class VllmApiService {
             requestBody.put("stream", false);
 
             Mono<Map> responseMono = vllmWebClient.post()
-                    .uri(apiUrl + "/v1/completions")
+            		.uri("/v1/completions")
                     .bodyValue(requestBody)
                     .retrieve()
                     .bodyToMono(Map.class)

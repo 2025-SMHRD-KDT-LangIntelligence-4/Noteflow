@@ -21,5 +21,8 @@ public interface FolderRepository extends MongoRepository<Folder, String> {
     boolean existsByUserIdAndFolderNameAndParentFolderId(String userId, String folderName, String parentFolderId);
 
     void deleteByIdAndUserId(String id, String userId);
+
+	List<Folder> findByUserIdOrderByCreatedAtAsc(String userId);
+
 }
 

@@ -24,6 +24,7 @@ public class UnifiedFolderService {
     private final NoteRepository noteRepository;
     private final FileMetadataRepository fileMetadataRepository;
     private final FolderRepository mongoFolderRepository;
+    private final FolderRepository folderRepository;
 
     public List<NoteFolder> getNoteFolderTree(String userId) {
         List<NoteFolder> allFolders = noteFolderRepository.findByUserIdxOrderByFolderNameAsc(userId);
@@ -48,13 +49,13 @@ public class UnifiedFolderService {
         List<NoteFolder> subs = foldersByParent.get(folder.getFolderId());
         if (subs != null) {
             subs.forEach(sub -> {
-                // 필요 시 NoteFolder에 subfolders/notes 보조 컬렉션 필드와 add 메서드 추가
+            	folder.addSubfolder(sub);
                 buildNoteFolderTree(sub, foldersByParent, notesByFolder);
             });
         }
         List<Note> notes = notesByFolder.get(folder.getFolderId());
         if (notes != null) {
-            // 필요 시 folder에 addNote 적용
+        	notes.forEach(folder::addNote); 
         }
     }
 
@@ -62,15 +63,33 @@ public class UnifiedFolderService {
         return noteRepository.findByUser_UserIdAndFolderIdIsNullAndStatusOrderByCreatedAtDesc(userId, "ACTIVE");
     }
 
-    public List<FileMetadata> getRootFiles(String userId) {
-        return fileMetadataRepository.findByUserIdAndFolderIdIsNullOrderByOriginalNameAsc(userId);
+
+	public List<FileMetadata> getRootFiles(String userId) {
+	   return fileMetadataRepository.findRootFiles(userId); 
+	 }
+
+
+
+public List<Folder> getFileFolderTree(String userId) {
+        // 1) 모든 폴더를 parentFolderId 기준으로 그룹핑 (null → "ROOT")
+        List<Folder> allFolders = folderRepository.findByUserIdOrderByCreatedAtAsc(userId);
+        Map<String, List<Folder>> foldersByParent = allFolders.stream()
+            .collect(Collectors.groupingBy(f -> Objects.toString(f.getParentFolderId(), "ROOT")));
+
+        // 2) 모든 파일을 folderId 기준으로 그룹핑 (루트 파일은 제외; 루트는 별도로 내려감)
+        List<FileMetadata> allFiles = fileMetadataRepository.findByUserIdOrderByUploadDateDesc(userId);
+        Map<String, List<FileMetadata>> filesByFolder = allFiles.stream()
+            .filter(f -> f.getFolderId() != null && !f.getFolderId().isBlank())
+            .collect(Collectors.groupingBy(FileMetadata::getFolderId));
+
+        // 3) 루트 폴더들부터 재귀 빌드
+        List<Folder> roots = foldersByParent.getOrDefault("ROOT", List.of());
+        for (Folder root : roots) {
+            buildFolderTree(root, foldersByParent, filesByFolder);
+        }
+        return roots;
     }
 
-    public List<Folder> getFileFolderTree(String userId) {
-        List<Folder> allFolders = mongoFolderRepository.findByUserIdOrderByFolderNameAsc(userId);
-        List<FileMetadata> allFiles = fileMetadataRepository.findByUserIdOrderByUploadDateDesc(userId);
-        return buildFileFolderTree(allFolders, allFiles);
-    }
 
     private List<Folder> buildFileFolderTree(List<Folder> allFolders, List<FileMetadata> allFiles) {
         Map<String, List<Folder>> foldersByParent = allFolders.stream()
@@ -85,21 +104,21 @@ public class UnifiedFolderService {
                 .collect(Collectors.toList());
     }
 
-    private void buildFolderTree(Folder folder,
-                                 Map<String, List<Folder>> foldersByParent,
-                                 Map<String, List<FileMetadata>> filesByFolder) {
-        List<Folder> subs = foldersByParent.get(folder.getId());
-        if (subs != null) {
-            subs.forEach(sub -> {
-                // folder.addSubfolder(sub);
-                buildFolderTree(sub, foldersByParent, filesByFolder);
-            });
-        }
-        List<FileMetadata> files = filesByFolder.get(folder.getId());
-        if (files != null) {
-            // files.forEach(folder::addFile);
-        }
-    }
+
+	private void buildFolderTree(Folder folder,
+	                                 Map<String, List<Folder>> foldersByParent,
+	                                 Map<String, List<FileMetadata>> filesByFolder) {
+	        // 하위 폴더 연결
+	        List<Folder> subs = foldersByParent.getOrDefault(folder.getId(), List.of());
+	        for (Folder sub : subs) {
+	            folder.addSubfolder(sub);              // Folder에 보조 필드/메서드가 있어야 함
+	            buildFolderTree(sub, foldersByParent, filesByFolder);
+	        }
+	        // 하위 파일 연결
+	        List<FileMetadata> files = filesByFolder.get(folder.getId());
+	        if (files != null) files.forEach(folder::addFile);  
+	    }
+
 
     @Transactional
     public Long createNoteFolder(String userId, String folderName, Long parentFolderId) {
@@ -157,4 +176,17 @@ public class UnifiedFolderService {
             noteFolderRepository.deleteByFolderIdAndUserIdx(sub.getFolderId(), userId);
         }
     }
+    
+
+
+	public Map<String,Object> getFilesTree(String userId) {
+	    Map<String,Object> result = new HashMap<>();
+	    // 폴더 트리(재귀 빌드된 List<Folder>)를 반환하는 공개 메서드
+	    result.put("folders", getFileFolderTree(userId));
+	    // 루트 파일은 항상 채워서 내려줌
+	    result.put("rootFiles", fileMetadataRepository.findRootFiles(userId));
+	    return result;
+	}
+
+
 }

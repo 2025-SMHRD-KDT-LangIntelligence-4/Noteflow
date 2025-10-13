@@ -4,6 +4,7 @@ import com.smhrd.web.entity.Folder;
 import com.smhrd.web.entity.FileMetadata;
 import com.smhrd.web.service.UnifiedFolderService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -19,57 +20,72 @@ public class UnifiedFolderController {
 
     private final UnifiedFolderService unifiedFolderService;
 
-    /**
-     * 노트 폴더 트리 구조 조회 (노트 포함)
-     */
+    // ─────────────────────────────────────────────────────────────────────
+    // 내부 유틸: 인증 체크 + 401 응답 생성
+    // ─────────────────────────────────────────────────────────────────────
+    private boolean isAnonymous(Authentication auth) {
+        return auth == null
+                || !auth.isAuthenticated()
+                || "anonymousUser".equals(String.valueOf(auth.getPrincipal()));
+    }
+
+    private ResponseEntity<Map<String, Object>> unauthorized() {
+        Map<String, Object> body = Map.of("success", false, "message", "UNAUTHORIZED");
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // 노트 폴더 트리 구조 조회 (노트 포함)
+    // ─────────────────────────────────────────────────────────────────────
     @GetMapping("/notes/tree")
     public ResponseEntity<Map<String, Object>> getNoteTree(Authentication auth) {
+        if (isAnonymous(auth)) return unauthorized();
         String userId = auth.getName();
 
         Map<String, Object> result = new HashMap<>();
         result.put("folders", unifiedFolderService.getNoteFolderTree(userId));
         result.put("rootNotes", unifiedFolderService.getRootNotes(userId));
-
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * 파일 폴더 트리 구조 조회 (파일 포함)
-     */
+    // ─────────────────────────────────────────────────────────────────────
+    // 파일 폴더 트리 구조 조회 (파일 포함)
+    // ─────────────────────────────────────────────────────────────────────
     @GetMapping("/files/tree")
     public ResponseEntity<Map<String, Object>> getFileTree(Authentication auth) {
+        if (isAnonymous(auth)) return unauthorized();
         String userId = auth.getName();
 
         Map<String, Object> result = new HashMap<>();
+        // 폴더 트리
         List<Folder> fileTree = unifiedFolderService.getFileFolderTree(userId);
-
-        // 루트 파일들 추출
-        List<FileMetadata> rootFiles = fileTree.isEmpty() ?
-                unifiedFolderService.getRootFiles(userId) : List.of();
-
         result.put("folders", fileTree);
+
+        // ✅ 루트 파일은 폴더 유무와 상관 없이 항상 내려줍니다.
+        List<FileMetadata> rootFiles = unifiedFolderService.getRootFiles(userId);
         result.put("rootFiles", rootFiles);
 
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * 노트 폴더 생성
-     */
+    // ─────────────────────────────────────────────────────────────────────
+    // 노트 폴더 생성
+    // ─────────────────────────────────────────────────────────────────────
     @PostMapping("/notes/folder")
     public ResponseEntity<Map<String, Object>> createNoteFolder(
             @RequestParam String folderName,
             @RequestParam(required = false) Long parentFolderId,
             Authentication auth) {
 
-        try {
-            Long folderId = unifiedFolderService.createNoteFolder(auth.getName(), folderName, parentFolderId);
+        if (isAnonymous(auth)) return unauthorized();
+        String userId = auth.getName();
 
+        try {
+            Long folderId = unifiedFolderService.createNoteFolder(userId, folderName, parentFolderId);
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("folderId", folderId);
             response.put("message", "노트 폴더가 생성되었습니다.");
-
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, Object> response = new HashMap<>();
@@ -79,22 +95,23 @@ public class UnifiedFolderController {
         }
     }
 
-    /**
-     * 노트를 폴더로 이동
-     */
+    // ─────────────────────────────────────────────────────────────────────
+    // 노트를 폴더로 이동 (targetFolderId 없으면 루트로)
+    // ─────────────────────────────────────────────────────────────────────
     @PutMapping("/notes/move")
     public ResponseEntity<Map<String, Object>> moveNote(
             @RequestParam Long noteId,
             @RequestParam(required = false) Long targetFolderId,
             Authentication auth) {
 
-        try {
-            unifiedFolderService.moveNoteToFolder(auth.getName(), noteId, targetFolderId);
+        if (isAnonymous(auth)) return unauthorized();
+        String userId = auth.getName();
 
+        try {
+            unifiedFolderService.moveNoteToFolder(userId, noteId, targetFolderId);
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "노트가 이동되었습니다.");
-
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, Object> response = new HashMap<>();
@@ -104,21 +121,22 @@ public class UnifiedFolderController {
         }
     }
 
-    /**
-     * 노트 폴더 삭제
-     */
+    // ─────────────────────────────────────────────────────────────────────
+    // 노트 폴더 삭제
+    // ─────────────────────────────────────────────────────────────────────
     @DeleteMapping("/notes/folder/{folderId}")
     public ResponseEntity<Map<String, Object>> deleteNoteFolder(
             @PathVariable Long folderId,
             Authentication auth) {
 
-        try {
-            unifiedFolderService.deleteNoteFolder(auth.getName(), folderId);
+        if (isAnonymous(auth)) return unauthorized();
+        String userId = auth.getName();
 
+        try {
+            unifiedFolderService.deleteNoteFolder(userId, folderId);
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "노트 폴더가 삭제되었습니다.");
-
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, Object> response = new HashMap<>();
