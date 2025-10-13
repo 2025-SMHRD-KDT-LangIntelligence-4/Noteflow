@@ -8,6 +8,7 @@ import com.mongodb.client.gridfs.GridFSUploadStream;
 import com.mongodb.client.gridfs.model.GridFSUploadOptions;
 import com.smhrd.web.entity.FileMetadata;
 import com.smhrd.web.repository.FileMetadataRepository;
+import com.smhrd.web.repository.FolderRepository;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -15,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.pdfbox.Loader;
 import org.bson.Document;
 import org.bson.types.ObjectId;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -42,6 +44,10 @@ import java.nio.charset.StandardCharsets;
 @RequiredArgsConstructor
 public class FileStorageService {
 
+
+    @Autowired
+    private FolderRepository folderRepository;
+    
 	private final GridFSBucket gridFSBucket;
 	private final FileMetadataRepository fileMetadataRepository;
 

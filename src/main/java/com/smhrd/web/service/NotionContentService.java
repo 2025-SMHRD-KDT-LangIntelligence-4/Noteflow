@@ -42,7 +42,9 @@ public class NotionContentService {
 			Long folderId = autoFolderService.createOrFindFolder(userId, categoryResult);
 
 			// 4. 노트 생성 및 저장
-			User user = userRepository.findById(Long.valueOf(userId)).orElseThrow();
+
+			User user = userRepository.findByUserId(userId).orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+
 
 			Note note = Note.builder().user(user).title(title).content(processedContent).folderId(folderId) // 자동 배치된 폴더
 					.isPublic(false).status("ACTIVE").viewCount(0).likeCount(0).commentCount(0).reportCount(0)

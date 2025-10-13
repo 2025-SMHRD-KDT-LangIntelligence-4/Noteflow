@@ -145,4 +145,33 @@ public class UnifiedFolderController {
             return ResponseEntity.ok(response);
         }
     }
+    @PutMapping("/notes/folder/{folderId}/rename")
+    public ResponseEntity<Map<String, Object>> renameNoteFolder(
+            @PathVariable("folderId") Long folderId,
+            @RequestParam("newName") String newName,
+            Authentication auth) {
+
+        Map<String, Object> response = new HashMap<>();
+        try {
+            if (auth == null || !auth.isAuthenticated()) {
+                response.put("success", false);
+                response.put("message", "Unauthorized");
+                return ResponseEntity.status(401).body(response);
+            }
+            String userId = auth.getName();
+            unifiedFolderService.renameNoteFolder(userId, folderId, newName);
+
+            response.put("success", true);
+            response.put("message", "폴더 이름이 변경되었습니다.");
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException iae) {
+            response.put("success", false);
+            response.put("message", iae.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "서버 에러: " + e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
+    }
 }

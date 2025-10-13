@@ -49,33 +49,32 @@ public class KeywordExtractionService {
     /**
      * vLLM으로 키워드 추출
      */
+
     private Set<String> extractKeywords(String title, String content) {
         String prompt = buildKeywordExtractionPrompt(title, content);
-
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", modelName);
-        requestBody.put("prompt", prompt);
-        requestBody.put("max_tokens", 200);
-        requestBody.put("temperature", 0.3);
-        requestBody.put("stream", false);
-
-        try {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> response = webClient.post()
-                    .uri("/v1/completions")
-                    .bodyValue(requestBody)
+        Map<String, Object> req = new HashMap<>();
+       req.put("model", modelName);
+        req.put("max_tokens", 200);
+        req.put("temperature", 0.3);
+        req.put("stream", false);
+        Map<String, String> user = new HashMap<>();
+        user.put("role", "user");
+        user.put("content", prompt);
+        req.put("messages", List.of(user));
+       try {
+            String response = webClient.post()
+                    .uri("/v1/chat/completions")
+                    .bodyValue(req)
                     .retrieve()
-                    .bodyToMono(Map.class)
+                    .bodyToMono(String.class)
                     .block();
-
-            String extractedText = extractResponseText(response);
+           String extractedText = extractChatResponseText(response);
             return parseKeywords(extractedText);
-
         } catch (Exception e) {
-            // 실패시 제목과 내용에서 단순 키워드 추출
             return extractBasicKeywords(title, content);
         }
     }
+
 
     /**
      * 키워드 추출 프롬프트 생성
@@ -96,16 +95,16 @@ public class KeywordExtractionService {
     /**
      * API 응답에서 텍스트 추출
      */
-    private String extractResponseText(Map<String, Object> response) {
-        if (response != null && response.containsKey("choices")) {
-            @SuppressWarnings("unchecked")
-            List<Map<String, Object>> choices = (List<Map<String, Object>>) response.get("choices");
-            if (!choices.isEmpty()) {
-                return (String) choices.get(0).get("text");
-            }
+
+    private String extractChatResponseText(String responseJson) {
+        try {
+            var node = new com.fasterxml.jackson.databind.ObjectMapper().readTree(responseJson);
+            return node.path("choices").get(0).path("message").path("content").asText("");
+        } catch (Exception e) {
+            return "";
         }
-        return "";
     }
+
 
     /**
      * 추출된 텍스트를 키워드 Set으로 변환

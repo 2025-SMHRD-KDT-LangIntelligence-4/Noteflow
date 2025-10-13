@@ -29,6 +29,8 @@ window.secureFetch = async function(url, options = {}) {
 	const headers = options.headers instanceof Headers ? options.headers : new Headers(options.headers || {});
 	if (csrfToken) headers.set(csrfHeader, csrfToken);
 	options.headers = headers;
+	options.credentials = options.credentials || 'same-origin';
+	options.cache = options.cache || 'no-store';
 	return fetch(url, options);
 };
 
@@ -36,6 +38,7 @@ window.secureFetch = async function(url, options = {}) {
 let currentTab = 'notes';                 // 'notes' | 'files'
 let selectedItem = null;                  // 현재 선택 항목
 let selectedItemType = null;              // 'note' | 'file' | 'noteFolder' | 'folder'
+let selectedItems = [];  // [{type:'file', item: {...}}, ...]
 let dragging = false;
 
 const itemsData = {
@@ -59,13 +62,9 @@ document.addEventListener('DOMContentLoaded', () => {
 function bindGlobalButtons() {
 	document.getElementById('createFolderBtn')?.addEventListener('click', createFolder);
 	document.getElementById('uploadBtn')?.addEventListener('click', uploadFile);
-	document.getElementById('downloadBtn')?.addEventListener('click', () => {
-		if (!selectedItem) return showMessage('다운로드할 항목을 선택해주세요.');
-		if (selectedItemType === 'note') downloadNote();
-		else if (selectedItemType === 'file') downloadFile();
-		else showMessage('다운로드는 정리본/파일 항목에서만 가능합니다.');
-	});
-}
+	document.getElementById('downloadBtn')?.addEventListener('click', downloadSelected);
+};
+
 
 function setupEventListeners() {
 	// 탭 버튼
@@ -196,7 +195,7 @@ function renderItemList() {
 
 
 		if (Array.isArray(itemsData.files) && itemsData.files.length > 0) {
-		      itemsData.files.forEach(file => listContainer.appendChild(createFileElement(file, 0)));
+			itemsData.files.forEach(file => listContainer.appendChild(createFileElement(file, 0)));
 		} else {
 			const empty = document.createElement('div');
 			empty.className = 'empty-section';
@@ -309,6 +308,24 @@ function createFolderElement(folder, depth = 0) {
 	return div;
 }
 
+function toggleMultiFileSelection({ item, el }) {
+	const idx = selectedItems.findIndex(x => (x.item.id || x.item._id) === (item.id || item._id));
+	if (idx >= 0) {
+		selectedItems.splice(idx, 1);
+		el.classList.remove('selected');
+	} else {
+		selectedItems.push({ type: 'file', item, el });
+		el.classList.add('selected');
+	}
+	// 우측 버튼 영역 업데이트 (멀티 선택용)
+	updateButtons('multi');
+}
+function clearMultiSelection() {
+	selectedItems.forEach(({ el }) => el?.classList.remove('selected'));
+	selectedItems = [];
+}
+
+
 function createFileElement(file, depth = 0) {
 	const div = document.createElement('div');
 	div.className = 'file-item';
@@ -321,8 +338,15 @@ function createFileElement(file, depth = 0) {
 	div.addEventListener('click', (e) => {
 		if (dragging) return;
 		e.stopPropagation();
-		selectFile(file, div);
+		const multi = e.ctrlKey || e.metaKey;
+		if (multi && currentTab === 'files') {
+			toggleMultiFileSelection({ item: file, el: div });
+		} else {
+			clearMultiSelection();
+			selectFile(file, div);
+		}
 	});
+
 	div.addEventListener('contextmenu', (e) => showContextMenu(e, file, 'file'));
 	div.addEventListener('dragstart', (e) => handleDragStart(e, file, 'file'));
 	div.addEventListener('dragend', handleDragEnd);
@@ -429,9 +453,19 @@ function updateButtons(type) {
 		container.innerHTML = `
       <button class="btn-secondary" onclick="renameFolder()">✏️ 이름변경</button>
       <button class="btn-danger"    onclick="deleteFolder()">🗑️ 삭제</button>
+	  <button class="btn-warning"   onclick="downloadSelected()">📦 ZIP으로 다운로드</button>
     `;
+	} else if (type === 'multi') {
+		// 여러 파일을 선택한 경우 ZIP 다운로드 제공
+		container.innerHTML = `
+	      <button class="btn-warning" onclick="downloadSelected()">📦 ZIP으로 다운로드 (${selectedItems.length}개)</button>
+	      <button class="btn-secondary" onclick="clearMultiSelection()">❌ 선택 해제</button>
+	    `;
 	}
 }
+
+
+
 
 // ──────────────────────────────────────────────────────────────
 // 노트 편집/저장/취소/삭제/다운로드
@@ -541,6 +575,77 @@ function downloadFile() {
 	window.open(`/api/files/download/${selectedItem.gridfsId}`, '_blank');
 }
 
+// ✅ 선택된 항목을 ZIP으로 다운로드 (폴더 또는 멀티 선택)
+async function downloadSelected() {
+	if (currentTab !== 'files') {
+		showMessage('원본파일 탭에서만 ZIP 다운로드가 가능합니다.');
+		return;
+	}
+	// 1) 멀티 선택이 있으면 그걸 우선
+	let ids = [];
+	if (selectedItems.length > 0) {
+		ids = selectedItems
+			.filter(x => x.type === 'file' && (x.item.gridfsId || x.item.gridFsId || x.item.mongoDocId))
+			.map(x => x.item.gridfsId || x.item.gridFsId || x.item.mongoDocId);
+	} else if (selectedItem && selectedItemType === 'folder') {
+		// 2) 폴더를 선택한 경우: 폴더 트리를 재귀적으로 순회하여 gridfsId 수집
+		ids = collectGridIdsFromFolder(selectedItem);
+	} else if (selectedItem && selectedItemType === 'file') {
+		// 3) 단일 파일 선택: 바로 단일 다운로드로 처리
+		window.open(`/api/files/download/${selectedItem.gridfsId}`, '_blank');
+		return;
+	}
+	if (!ids || ids.length === 0) {
+		showMessage('다운로드할 파일이 없습니다.');
+		return;
+	}
+	try {
+		const res = await secureFetch('/api/files/download-zip', {
+			method: 'POST',
+			headers: new Headers({
+				'Content-Type': 'application/json',
+				[csrfHeader]: csrfToken
+			}),
+			body: JSON.stringify(ids)
+		});
+		if (!res.ok) {
+			showMessage('ZIP 다운로드 요청이 실패했습니다.');
+			return;
+		}
+		const blob = await res.blob();
+		const cd = res.headers.get('Content-Disposition') || '';
+		const fname = (cd.match(/filename\*=UTF-8''([^;]+)/)?.[1]) || 'files.zip';
+		const url = window.URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = decodeURIComponent(fname);
+		document.body.appendChild(a);
+		a.click();
+		a.remove();
+		window.URL.revokeObjectURL(url);
+	} catch (e) {
+		console.error('ZIP 다운로드 오류:', e);
+		showMessage('ZIP 다운로드 중 오류가 발생했습니다.');
+	}
+}
+// 폴더 내 모든 파일(gridfsId) 수집
+function collectGridIdsFromFolder(folder) {
+	const ids = [];
+	const walk = (f) => {
+		if (Array.isArray(f.files)) {
+			f.files.forEach(file => {
+				const gid = file.gridfsId || file.gridFsId || file.mongoDocId;
+				if (gid) ids.push(gid);
+			});
+		}
+		if (Array.isArray(f.subfolders)) {
+			f.subfolders.forEach(walk);
+		}
+	};
+	walk(folder);
+	return ids;
+}
+
 function uploadFile() {
 	document.getElementById('fileInput')?.click();
 }
@@ -578,6 +683,7 @@ async function handleFileUpload(files) {
 	}
 	loadData(); // 업로드 반영
 }
+
 
 // 드래그 앤 드롭
 function handleDragStart(e, item, type) {
@@ -804,6 +910,127 @@ function getFileIcon(filename) {
 	const icons = { pdf: '📕', docx: '📘', doc: '📘', xlsx: '📗', xls: '📗', pptx: '📙', ppt: '📙', txt: '📄', md: '📝', jpg: '🖼️', jpeg: '🖼️', png: '🖼️', gif: '🖼️', csv: '📄' };
 	return icons[ext] || '📄';
 }
+window.renderNotionItem = function(item) {
+        const titleEl = document.getElementById('itemTitle');
+        const contentEl = document.getElementById('itemContent');
+        const container = document.querySelector('.notion-content-container') || document.body;
+
+        if (!titleEl || !contentEl) {
+            console.warn('itemTitle 또는 itemContent 요소를 찾을 수 없습니다.');
+            return;
+        }
+
+        titleEl.textContent = item.title || '제목 없음';
+        contentEl.value = item.content || '';
+        contentEl.setAttribute('readonly', 'readonly');
+        contentEl.classList.add('readonly');
+
+        // 액션 버튼 컨테이너 준비
+        let actionArea = document.getElementById('itemActions');
+        if (!actionArea) {
+            actionArea = document.createElement('div');
+            actionArea.id = 'itemActions';
+            actionArea.className = 'item-actions';
+            // action area를 title 아래 또는 content 위에 배치
+            titleEl.insertAdjacentElement('afterend', actionArea);
+        }
+
+        // 항상 동일한 버튼을 렌더
+        actionArea.innerHTML = '';
+        const editBtn = document.createElement('button');
+        editBtn.id = 'editBtn';
+        editBtn.type = 'button';
+        editBtn.textContent = '수정';
+
+        const saveBtn = document.createElement('button');
+        saveBtn.id = 'saveBtn';
+        saveBtn.type = 'button';
+        saveBtn.textContent = '저장';
+        saveBtn.style.display = 'none';
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.id = 'cancelBtn';
+        cancelBtn.type = 'button';
+        cancelBtn.textContent = '취소';
+        cancelBtn.style.display = 'none';
+
+        actionArea.appendChild(editBtn);
+        actionArea.appendChild(saveBtn);
+        actionArea.appendChild(cancelBtn);
+
+        // 이벤트 핸들러
+        editBtn.onclick = () => {
+            contentEl.removeAttribute('readonly');
+            contentEl.classList.remove('readonly');
+            editBtn.style.display = 'none';
+            saveBtn.style.display = 'inline-block';
+            cancelBtn.style.display = 'inline-block';
+            contentEl.focus();
+        };
+
+        cancelBtn.onclick = () => {
+            contentEl.setAttribute('readonly', 'readonly');
+            contentEl.classList.add('readonly');
+            editBtn.style.display = 'inline-block';
+            saveBtn.style.display = 'none';
+            cancelBtn.style.display = 'none';
+            contentEl.value = item.content || '';
+        };
+
+        saveBtn.onclick = () => {
+            const updated = {
+                noteIdx: item.noteIdx,
+                title: titleEl.textContent,
+                content: contentEl.value
+            };
+
+            fetch(`/api/unified/notes/${item.noteIdx}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    [csrfHeader]: csrfToken
+                },
+                body: JSON.stringify(updated)
+            }).then(res => {
+                if (!res.ok) throw new Error('저장 실패');
+                return res.json();
+            }).then(json => {
+                if (json.success) {
+                    alert('저장되었습니다.');
+                    // 상태 복구
+                    contentEl.setAttribute('readonly', 'readonly');
+                    contentEl.classList.add('readonly');
+                    editBtn.style.display = 'inline-block';
+                    saveBtn.style.display = 'none';
+                    cancelBtn.style.display = 'none';
+                    // 가능하면 목록/트리 갱신 호출
+                    if (window.reloadNotionList) window.reloadNotionList();
+                } else {
+                    alert('저장 실패: ' + (json.message || 'unknown'));
+                }
+            }).catch(err => {
+                console.error(err);
+                alert('저장 중 오류가 발생했습니다.');
+            });
+        };
+    };
+	// helper : 노트 선택 바인딩 - 실제 프로젝트의 리스트 클릭 로직에서 사용
+	    window.bindNotionListSelection = function(listSelector) {
+	        const list = document.querySelector(listSelector);
+	        if (!list) return;
+	        list.addEventListener('click', function(e) {
+	            const li = e.target.closest('[data-note-idx]');
+	            if (!li) return;
+	            const noteIdx = li.getAttribute('data-note-idx');
+	            fetch(`/api/unified/notes/${noteIdx}`)
+	                .then(r => r.json())
+	                .then(payload => {
+	                    if (payload && payload.note) {
+	                        window.renderNotionItem(payload.note);
+	                    }
+	                });
+	        });
+	    };
 
 function escapeHtml(str) {
 	return (str || '').replace(/[&<>\"']/g, s => ({ '&': '&', '<': '<', '>': '>', '"': '"', '\'': '\'' }[s]));

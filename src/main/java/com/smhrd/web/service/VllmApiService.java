@@ -49,7 +49,7 @@ public class VllmApiService {
     // --------------------------
     private String callVllmApi(String prompt) {
         try {
-            Map<String, Object> requestData = buildApiRequest(prompt);
+        	Map<String, Object> requestData = buildChatApiRequest(prompt);
 
             String response = vllmWebClient
                     .post()
@@ -60,7 +60,7 @@ public class VllmApiService {
                     .timeout(Duration.ofMillis(60000))
                     .block();
 
-            return extractGeneratedText(response);
+            return extractChatGeneratedText(response);
 
         } catch (Exception e) {
             return "AI 서비스를 일시적으로 사용할 수 없습니다. 나중에 다시 시도해주세요.";
@@ -87,33 +87,29 @@ public class VllmApiService {
     // --------------------------
     // 유틸
     // --------------------------
-    private Map<String, Object> buildApiRequest(String prompt) {
+    private Map<String, Object> buildChatApiRequest(String prompt) {
         Map<String, Object> requestData = new HashMap<>();
         requestData.put("model", modelName);
         requestData.put("max_tokens", maxTokens);
         requestData.put("temperature", temperature);
         requestData.put("stream", false);
 
-        Map<String, String> message = new HashMap<>();
-        message.put("role", "user");
-        message.put("content", prompt);
+        Map<String, String> user = new HashMap<>();
+        user.put("role", "user");
+        user.put("content", prompt);
 
-        requestData.put("messages", List.of(message));
+        requestData.put("messages", List.of(user));
         return requestData;
     }
 
-    private String extractGeneratedText(String response) {
+    private String extractChatGeneratedText(String response) {
         try {
             JsonNode jsonNode = objectMapper.readTree(response);
             JsonNode choices = jsonNode.get("choices");
 
             if (choices != null && choices.isArray() && choices.size() > 0) {
-                JsonNode firstChoice = choices.get(0);
-                JsonNode message = firstChoice.get("message");
-                if (message != null) {
-                    JsonNode content = message.get("content");
-                    return content != null ? content.asText() : "";
-                }
+            	JsonNode content = choices.get(0).path("message").path("content");
+            	return content.isMissingNode() ? "" : content.asText();
             }
             return "AI 응답을 파싱할 수 없습니다.";
 
@@ -142,33 +138,26 @@ public class VllmApiService {
             Prompt prompt = promptRepository.findByTitle(notionType)
                     .orElseThrow(() -> new IllegalArgumentException("프롬프트를 찾을 수 없습니다: " + notionType));
 
-            // 프롬프트 템플릿 + 실제 내용 결합
+
             String fullPrompt = prompt.getContent() + "\n\n" + content;
+            Map<String, Object> req = new HashMap<>();
+            req.put("model", modelName);
+            req.put("max_tokens", maxTokens);
+            req.put("temperature", temperature);
+            req.put("stream", false);
+            Map<String, String> user = new HashMap<>();
+            user.put("role", "user");
+            user.put("content", fullPrompt);
+            req.put("messages", List.of(user));
+            String response = vllmWebClient.post()
+                    .uri("/v1/chat/completions")
+                    .bodyValue(req)
+                   .retrieve()
+                    .bodyToMono(String.class)
+                    .timeout(Duration.ofSeconds(60))
+                    .block();
+            return extractChatGeneratedText(response);
 
-            // AI 요청 본문 구성
-            Map<String, Object> requestBody = new HashMap<>();
-            requestBody.put("model", modelName);
-            requestBody.put("prompt", fullPrompt);
-            requestBody.put("max_tokens", maxTokens);
-            requestBody.put("temperature", temperature);
-            requestBody.put("stream", false);
-
-            Mono<Map> responseMono = vllmWebClient.post()
-            		.uri("/v1/completions")
-                    .bodyValue(requestBody)
-                    .retrieve()
-                    .bodyToMono(Map.class)
-                    .timeout(Duration.ofSeconds(60));
-
-            Map<String, Object> response = responseMono.block();
-            if (response != null && response.containsKey("choices")) {
-                @SuppressWarnings("unchecked")
-                List<Map<String, Object>> choices = (List<Map<String, Object>>) response.get("choices");
-                if (!choices.isEmpty()) {
-                    return (String) choices.get(0).get("text");
-                }
-            }
-            return "AI 처리 중 오류가 발생했습니다.";
         } catch (Exception e) {
             throw new RuntimeException("vLLM API 호출 실패: " + e.getMessage(), e);
         }

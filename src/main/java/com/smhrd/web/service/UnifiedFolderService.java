@@ -187,6 +187,19 @@ public List<Folder> getFileFolderTree(String userId) {
 	    result.put("rootFiles", fileMetadataRepository.findRootFiles(userId));
 	    return result;
 	}
-
+	 @Transactional
+	    public void renameNoteFolder(String userId, Long folderId, String newName) {
+	        NoteFolder folder = noteFolderRepository.findById(folderId)
+	                .orElseThrow(() -> new IllegalArgumentException("폴더를 찾을 수 없습니다."));
+	        // 사용자 검증(예시) - NoteFolder에 getUserId()가 존재한다고 가정
+	        if (folder.getUserIdx() == null || !folder.getUserIdx().equals(userId)) {
+	            throw new IllegalArgumentException("권한이 없습니다.");
+	        }
+	        if (newName == null || newName.trim().isEmpty()) {
+	            throw new IllegalArgumentException("새 폴더명은 비어 있을 수 없습니다.");
+	        }
+	        folder.setFolderName(newName.trim());
+	        noteFolderRepository.save(folder);
+	    }
 
 }

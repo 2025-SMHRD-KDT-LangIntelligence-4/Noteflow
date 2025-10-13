@@ -21,6 +21,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -46,6 +47,27 @@ public class NotionController {
 	private final AttachmentRepository attachmentRepository;
 	private final NoteRepository noteRepository;
 
+    @GetMapping("/notioncreate")
+    public String showCreateForm(Model model) {
+        return "notionCreate";  // NotionCreate.html
+    }
+    
+    @PostMapping("/notioncreate") 
+    public String handleCreateForm(
+            @RequestParam("title") String title,
+            @RequestParam("content") String content, 
+            @RequestParam("notionType") String notionType,
+            Authentication auth, Model model) {
+        try {
+            String userId = auth.getName();
+            Long noteId = notionContentService.createNotionFromText(userId, title, content, notionType);
+            return "redirect:/notioncomplete?noteId=" + noteId;
+        } catch (Exception e) {
+            model.addAttribute("error", e.getMessage());
+            return "notionCreate";
+        }
+    }
+    
 	// --------------------------
 	// 텍스트로 노션 요약 생성
 	// --------------------------
