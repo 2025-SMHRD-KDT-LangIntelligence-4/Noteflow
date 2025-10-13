@@ -39,11 +39,29 @@
     </div>
 
     <div class="AI-position-container">
-        <div class="AI-container">AI모델 이미지 공간입니다</div>
+        <div class="AI-container">
+        	<a class ="AI=button" id="aiButton"></a>
+        </div>
     </div>
 
     <div class="top-button-position-container">
         <button class ="top-button">TOP</button>
+    </div>
+    <!-- ai모달 구조 -->
+    <div class="gpt-modal-overlay" id="gptModal">
+        <div class="gpt-modal-content">
+            <div class="gpt-modal-header">
+                <span>AI 챗봇</span>
+                <button class="gpt-close-btn" id="closeModal">&times;</button>
+            </div>
+            <div class="gpt-chat-body" id="chatBody">
+                <p>안녕하세요, 무엇을 도와드릴까요?</p>
+            </div>
+            <div class="gpt-input-area">
+                <input type="text" id="userInput" placeholder="메시지를 입력하세요..." />
+                <button id="sendBtn">전송</button>
+            </div>
+        </div>
     </div>
     
  <script>
@@ -65,7 +83,43 @@
 	        top: 0,
 	        behavior: 'smooth'
 	    });
-	});  
+	});
+	
+	// 모달창 제어 구조
+	const aiButton = document.getElementById('aiButton');
+    const gptModal = document.getElementById('gptModal');
+    const closeModal = document.getElementById('closeModal');
+
+    aiButton.addEventListener('click', () => {
+        gptModal.style.display = 'flex';
+    });
+    closeModal.addEventListener('click', () => {
+        gptModal.style.display = 'none';
+    });
+    window.addEventListener('click', (e) => {
+        if (e.target === gptModal) gptModal.style.display = 'none';
+    });
+
+    // 대화 시뮬레이션
+    const sendBtn = document.getElementById('sendBtn');
+    const userInput = document.getElementById('userInput');
+    const chatBody = document.getElementById('chatBody');
+
+    sendBtn.addEventListener('click', () => {
+        const text = userInput.value.trim();
+        if (text) {
+            chatBody.innerHTML += `<p><strong>나:</strong> ${text}</p>`;
+            userInput.value = '';
+            setTimeout(() => {
+                chatBody.innerHTML += `<p> AI: "${text}"에 대한 답변입니다.</p>`;
+                chatBody.scrollTop = chatBody.scrollHeight;
+            }, 500);
+        }
+    });
+
+    userInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') sendBtn.click();
+    });
  </script>
 </header>
 </body>

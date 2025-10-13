@@ -149,4 +149,75 @@ body {
 	width:80px;
 	height:40px;
 }
+/* 모달 css */
+        .gpt-modal-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
 
+        .gpt-modal-content {
+            background: white;
+            width: 400px;
+            max-height: 80vh;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .gpt-modal-header {
+            background: #007aff;
+            color: white;
+            padding: 12px 16px;
+            font-size: 1.1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .gpt-close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.3rem;
+            cursor: pointer;
+        }
+
+        .gpt-chat-body {
+            padding: 1rem;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .gpt-input-area {
+            display: flex;
+            border-top: 1px solid #ddd;
+        }
+
+        .gpt-input-area input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            outline: none;
+        }
+
+        .gpt-input-area button {
+            background: #007aff;
+            color: white;
+            border: none;
+            padding: 10px 14px;
+            cursor: pointer;
+        }

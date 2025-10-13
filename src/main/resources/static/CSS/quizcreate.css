@@ -90,13 +90,13 @@ body {
     align-items: center;
 }
 .tree-item:hover {
-    background-color: #eef;
+    background-color: #96D0FF;
 }
 .tree-item.selected {
-    background-color: #96D0FF; 
-    color: #000;
+    background-color: #2FA1FF; 
+    color: white;
     font-weight: bold;
-    border: 1px solid #007bff;
+    border: 1px solid #2FA1FF;
 }
 
 /* 4. 정보 표시 및 완료 버튼 영역 */
@@ -139,7 +139,7 @@ body {
     width: 100%;
     height: 60px;
     border: none;
-    background-color: #007bff; 
+    background-color: #96D0FF; 
     color: white;
     border-radius: 20px;
     font-size: 20px;
@@ -149,7 +149,7 @@ body {
     transition: background-color 0.2s;
 }
 .complete-button:hover:not(:disabled) {
-    background-color: #0056b3;
+    background-color: #2FA1FF;
 }
 .complete-button:disabled {
     background-color: #ccc; 

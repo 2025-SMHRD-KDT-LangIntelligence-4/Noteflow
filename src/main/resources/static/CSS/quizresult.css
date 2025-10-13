@@ -136,9 +136,9 @@ body {
 }
 /* 버튼 하나일 때를 위해, .full-width 클래스가 없는 경우를 대비하여 스타일을 통합 */
 .lecture-recommend {
-    background-color: #28a745; /* 녹색 버튼 */
+    background-color: #96D0FF; /* 녹색 버튼 */
     color: white;
 }
 .lecture-recommend:hover {
-    background-color: #1e7e34;
+    background-color: #2FA1FF;
 }
