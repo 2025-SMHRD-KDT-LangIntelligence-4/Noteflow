@@ -1,7 +1,121 @@
 @charset "UTF-8";
-@charset "UTF-8";
-.footer {
-	width:100%;
-	height:300px;
-	background-color: #f7f7f7;
+
+@font-face {
+    font-family: 'Pretendard';
+    src: url('https://cdn.jsdelivr.net/gh/Project-Noonnu/noonfonts_2107@1.1/Pretendard-Thin.woff') format('woff');
+    font-weight: 100;
+    font-display: swap;
 }
+
+footer {
+  font-family: 'Pretendard';
+  background: #f5f5f5;
+  color: #555;
+  padding: 100px 20px 50px;
+  font-size: 0.9rem;
+  position:relative;
+  top:50px;
+
+}
+
+.footer-container {
+	width:100%;
+	display: flex;
+  	justify-content: space-between;
+  	align-items: center;
+}
+
+footer a {
+  color: #555;
+  text-decoration: none;
+  margin: 0 10px;
+}
+
+footer a:hover {
+  color: #007aff;
+}
+
+.footer-left{
+	width:30%;
+
+}
+
+.footer-logo {
+	font-size:50px;
+	width:100%;
+}
+
+.footer-rights {
+	font-size:30px;
+	width:100%;
+}
+
+.footer-center {
+	width:30%;
+}
+
+.footer-right {
+	width:30%;
+}
+ .team-toggle {
+      font-weight: bold;
+      cursor: pointer;
+      user-select: none;
+      display: inline-block;
+      margin-bottom: 5px;
+      transition: color 0.2s;
+    }
+
+    .team-toggle:hover {
+      color: #007aff;
+    }
+/* --- 슬라이드 애니메이션 효과 --- */
+    .team-list {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s ease, opacity 0.4s ease;
+      opacity: 0;
+    }
+
+    .team-list.open {
+      max-height: 500px; /* 목록 높이보다 충분히 크게 설정 */
+      opacity: 1;
+    }
+
+    .team-list p {
+      margin: 3px 0;
+    }
+/* --- 슬라이드 애니메이션 공통 --- */
+  .git-link, .qna-link {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease, opacity 0.4s ease;
+    opacity: 0;
+  }
+
+  .git-link.open, .qna-link.open {
+    max-height: 100px;
+    opacity: 1;
+  }
+
+  .git-link a, .qna-link a {
+    display: block;
+    margin-top: 5px;
+  }
+  .footer-right a {
+    text-decoration: none;
+    color: #007aff;
+  }
+
+  .git-toggle, .qna-toggle {
+    font-weight: bold;
+    cursor: pointer;
+    user-select: none;
+    display: inline-block;
+    margin-top: 8px;
+    transition: color 0.2s;
+  }
+
+  .git-toggle:hover, .qna-toggle:hover {
+    color: #007aff;
+  }

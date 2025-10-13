@@ -8,11 +8,76 @@
 <body>
 
  <footer th:fragment="siteFooter">
-	<div class = "footer">
-		<div class = "footer-content">
-			<div>아직 뭘 넣을지 고민 안해봤음 ㅇㅇ</div>
-		</div>
+  <div class="footer-container">
+    <div class="footer-left">
+      <p class="footer-logo">SAEGIM</p>
+      <p class="footer-rights">© 2025 SAEGIM. All rights reserved.</p>
+    </div>
+
+    <p class="team-toggle">팀원소개 ▼</p>
+
+      <!-- 숨겨진 팀원 목록 -->
+      <div class="team-list">
+        <p>팀장 : 배광한</p>
+        <p>팀원 : 임하현</p>
+        <p>팀원 : 김민준</p>
+        <p>팀원 : 이명준</p>
+        <p>팀원 : 백예찬</p>
+        <p>팀원 : 정명호</p>
+      </div>
+
+    <div class="footer-right">
+	  <!-- GitHub 토글 -->
+	  <p class="git-toggle">GitHub ▼</p>
+	  <div class="git-link">
+	    <a href="https://github.com/saegim" target="_blank">https://github.com/saegim</a>
+	  </div>
+	
+	  <!-- 이메일 문의 -->
+	  <p class="qna-toggle">이메일 문의하기 ▼</p>
+	  <div class="qna-link">
+	    <a href="mailto:qorhkdgks2@gmail.com" class="qna">qorhkdgks2@gmail.com</a>
+	  </div>
 	</div>
- </footer>
+  </div>
+  <script>
+  // === 팀원소개 슬라이드 토글 ===
+  const toggleBtn = document.querySelector('.team-toggle');
+  const teamList = document.querySelector('.team-list');
+
+  toggleBtn.addEventListener('click', () => {
+    const isOpen = teamList.classList.contains('open');
+
+    if (isOpen) {
+      // 닫기
+      teamList.classList.remove('open');
+      toggleBtn.textContent = '팀원소개 ▼';
+    } else {
+      // 열기
+      teamList.classList.add('open');
+      toggleBtn.textContent = '팀원소개 ▲';
+    }
+  });
+//=== GitHub 슬라이드 토글 ===
+  const gitToggle = document.querySelector('.git-toggle');
+  const gitLink = document.querySelector('.git-link');
+
+  gitToggle.addEventListener('click', () => {
+    const isOpen = gitLink.classList.contains('open');
+    gitLink.classList.toggle('open');
+    gitToggle.textContent = isOpen ? 'GitHub ▼' : 'GitHub ▲';
+  });
+
+  // === 이메일 문의 슬라이드 토글 ===
+  const qnaToggle = document.querySelector('.qna-toggle');
+  const qnaLink = document.querySelector('.qna-link');
+
+  qnaToggle.addEventListener('click', () => {
+    const isOpen = qnaLink.classList.contains('open');
+    qnaLink.classList.toggle('open');
+    qnaToggle.textContent = isOpen ? '이메일 문의하기 ▼' : '이메일 문의하기 ▲';
+  });
+  </script>
+</footer>
 </body>
 </html>
