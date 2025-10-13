@@ -48,35 +48,35 @@ public class ViewController {
 
     @GetMapping("/notion/create")
     public String notionCreate(Model model) {
-        model.addAttribute("pageTitle", "노션 작성"); 
+        model.addAttribute("pageTitle", "노션작성"); 
         model.addAttribute("activeMenu", "notionCreate");
         return "NotionCreate";
     }
 
     @GetMapping("/notion/manage")
     public String notionManager(Model model) {
-        model.addAttribute("pageTitle", "노션 관리"); 
+        model.addAttribute("pageTitle", "노션관리"); 
         model.addAttribute("activeMenu", "notionManage");
         return "NotionManager";
     }
 
     @GetMapping("/notion/complete")
     public String notionComplete(Model model) {
-        model.addAttribute("pageTitle", "노션 완료"); 
+        model.addAttribute("pageTitle", "노션완료"); 
         model.addAttribute("activeMenu", "notionComplete");
         return "notion_complete";
     }
 
     @GetMapping("/quiz/create")
     public String quizCreate(Model model) {
-        model.addAttribute("pageTitle", "문제 생성"); 
+        model.addAttribute("pageTitle", "문제생성"); 
         model.addAttribute("activeMenu", "quizCreate");
         return "quizCerate";
     }
 
     @GetMapping("/quiz/result")
     public String quizResult(Model model) {
-        model.addAttribute("pageTitle", "문제 결과"); 
+        model.addAttribute("pageTitle", "문제결과"); 
         model.addAttribute("activeMenu", "quizResult");
         return "quizResult";
     }
