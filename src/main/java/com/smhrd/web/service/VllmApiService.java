@@ -11,6 +11,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,8 @@ public class VllmApiService {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final PromptService promptService;
     private final PromptRepository promptRepository;
+
+    private final WebClient.Builder webClientBuilder;
 
     @Value("${vllm.api.model}")
     private String modelName;
@@ -39,9 +42,50 @@ public class VllmApiService {
     // --------------------------
     // 노션 생성
     // --------------------------
-    public String generateNotion(String originalText, String notionType) {
-        String prompt = buildNotionPrompt(originalText, notionType);
-        return callVllmApi(prompt);
+    public String generateNotion(String userContent, String promptTitle) {
+        try {
+            // 선택한 프롬프트의 content 가져오기
+            Prompt prompt = promptRepository.findByTitle(promptTitle)
+                    .orElseThrow(() -> new RuntimeException("프롬프트를 찾을 수 없습니다: " + promptTitle));
+            WebClient webClient = webClientBuilder
+                    .baseUrl(apiUrl)       // 또는 application.properties값 사용
+                    .build();
+            // vLLM API 요청 데이터 구성
+            Map<String, Object> requestData = new HashMap<>();
+            requestData.put("model", "your-model-name"); // 🔥 실제 모델명으로 변경 필요
+
+            // 시스템 메시지와 사용자 입력 조합
+            String fullPrompt = prompt.getContent() + "\n\n" + userContent;
+
+            List<Map<String, String>> messages = Arrays.asList(
+                    Map.of("role", "user", "content", fullPrompt)
+            );
+
+            requestData.put("messages", messages);
+            requestData.put("max_tokens", 2000);
+            requestData.put("temperature", 0.7);
+
+            // vLLM API 호출
+            String response = webClient.post()
+                    .uri("/v1/chat/completions")
+                    .bodyValue(requestData)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+
+            // JSON 파싱해서 content 추출
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode jsonNode = mapper.readTree(response);
+
+            return jsonNode.path("choices")
+                    .get(0)
+                    .path("message")
+                    .path("content")
+                    .asText();
+
+        } catch (Exception e) {
+            throw new RuntimeException("AI 요약 생성 중 오류가 발생했습니다: " + e.getMessage());
+        }
     }
 
     // --------------------------

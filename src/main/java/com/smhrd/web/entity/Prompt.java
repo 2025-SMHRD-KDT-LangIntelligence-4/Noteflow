@@ -23,7 +23,7 @@ public class Prompt {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "example_output", nullable = false, columnDefinition = "TEXT")
     private String exampleOutput;
 
     @Column(nullable = false, updatable = false)

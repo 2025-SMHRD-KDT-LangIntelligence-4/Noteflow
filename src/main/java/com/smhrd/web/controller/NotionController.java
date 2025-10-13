@@ -4,13 +4,16 @@ package com.smhrd.web.controller;
 // ── Project Entities & Repositories & Services ────────────────────────────────
 import com.smhrd.web.entity.Attachment;
 import com.smhrd.web.entity.Note;
+import com.smhrd.web.entity.Prompt;
 import com.smhrd.web.repository.AttachmentRepository;
 import com.smhrd.web.repository.NoteRepository;
+import com.smhrd.web.repository.PromptRepository;
 import com.smhrd.web.service.FileStorageService;
 import com.smhrd.web.service.NotionContentService;
 import com.smhrd.web.service.UnifiedFolderService;
 
 // ── Lombok ───────────────────────────────────────────────────────────────────
+import com.smhrd.web.service.VllmApiService;
 import lombok.RequiredArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -41,17 +44,22 @@ import java.util.zip.ZipOutputStream;
 @RequiredArgsConstructor
 public class NotionController {
 
+    private final PromptRepository promptRepository; // Prompt 데이터 조회를 위해 추가
+    private final VllmApiService vllmApiService; // AI 요약을 위해 추가
 	private final NotionContentService notionContentService;
 	private final FileStorageService fileStorageService;
 	private final UnifiedFolderService unifiedFolderService;
 	private final AttachmentRepository attachmentRepository;
 	private final NoteRepository noteRepository;
 
-    @GetMapping("/notioncreate")
-    public String showCreateForm(Model model) {
-        return "notionCreate";  // NotionCreate.html
+    @GetMapping("/notion/create")
+    public String notionCreatePage(Model model) {
+        List<Prompt> prompts = promptRepository.findAll();
+        model.addAttribute("prompts", prompts);
+        model.addAttribute("pageTitle", "노션 작성");
+        model.addAttribute("activeMenu", "notionCreate");
+        return "NotionCreate";
     }
-    
     @PostMapping("/notioncreate") 
     public String handleCreateForm(
             @RequestParam("title") String title,
@@ -67,6 +75,7 @@ public class NotionController {
             return "notionCreate";
         }
     }
+
     
 	// --------------------------
 	// 텍스트로 노션 요약 생성
@@ -83,6 +92,46 @@ public class NotionController {
 			return "error:" + e.getMessage();
 		}
 	}
+
+
+    @Getter @Setter
+    static class SaveNoteRequest {
+        private String title;
+        private String content;
+    }
+
+    @PostMapping("/api/notes")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> saveNote(@RequestBody SaveNoteRequest request, Authentication authentication) {
+        try {
+            String userId = authentication.getName();
+            // NotionContentService를 사용하여 노트 저장 (DB 스키마에 맞게 folderId 등은 null 처리)
+            Long noteId = notionContentService.createNotionFromText(userId, request.getTitle(), request.getContent(), "SUMMARY");
+            return ResponseEntity.ok(Map.of("success", true, "noteId", noteId));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+
+    @Getter @Setter
+    static class GenerateRequest {
+        private String content;
+        private String notionType; // 예: "심플버전"
+    }
+	@PostMapping("/api/notion/generate-summary")
+	@ResponseBody
+	public ResponseEntity<Map<String, String>> generateSummary(@RequestBody GenerateRequest request) {
+		try {
+			String processedContent = vllmApiService.generateNotion(request.getContent(), request.getNotionType());
+			return ResponseEntity.ok(Map.of("summary", processedContent));
+		} catch (Exception e) {
+			return ResponseEntity.status(500)
+					.body(Map.of("error", e.getMessage()));
+		}
+	}
+
+
 
 	// --------------------------
 	// 파일로 노션 생성

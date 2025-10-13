@@ -46,12 +46,12 @@ public class ViewController {
         return "schedule-manager";
     }
 
-    @GetMapping("/notion/create")
-    public String notionCreate(Model model) {
-        model.addAttribute("pageTitle", "노션작성"); 
-        model.addAttribute("activeMenu", "notionCreate");
-        return "NotionCreate";
-    }
+//    @GetMapping("/notion/create")
+//    public String notionCreate(Model model) {
+//        model.addAttribute("pageTitle", "노션작성");
+//        model.addAttribute("activeMenu", "notionCreate");
+//        return "NotionCreate";
+//    }
 
     @GetMapping("/notion/manage")
     public String notionManager(Model model) {

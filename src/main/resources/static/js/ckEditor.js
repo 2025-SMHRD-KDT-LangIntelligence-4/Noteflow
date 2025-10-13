@@ -1,168 +1,145 @@
-/**
- * This configuration was generated using the CKEditor 5 Builder. You can modify it anytime using this link:
- * https://ckeditor.com/ckeditor-5/builder/#installation/NoNgNARATAdA7PCkAsBmVAGVcCsOAcGGAjITiclPjgJyrI1Qn74jWo15RIQDWA9kgxhgxMMOFjJAXRQgAhvhoATAKYRpQA==
- */
+// const {
+// 	ClassicEditor,
+// 	Autoformat,
+// 	Autosave,
+// 	BlockQuote,
+// 	Bold,
+// 	Essentials,
+// 	FontBackgroundColor,
+// 	FontColor,
+// 	FontFamily,
+// 	FontSize,
+// 	Heading,
+// 	Indent,
+// 	IndentBlock,
+// 	Italic,
+// 	Link,
+// 	List,
+// 	Mention,
+// 	Paragraph,
+// 	TextTransformation,
+// 	TodoList,
+// 	Underline,
+// 	Emoji
+// } = window.CKEDITOR;
+//
+// // ✅ CKEditor 설정
+// const editorConfig = {
+// 	toolbar: {
+// 		items: [
+// 			'undo',
+// 			'redo',
+// 			'|',
+// 			'heading',
+// 			'|',
+// 			'fontSize',
+// 			'fontFamily',
+// 			'fontColor',
+// 			'fontBackgroundColor',
+// 			'|',
+// 			'bold',
+// 			'italic',
+// 			'underline',
+// 			'|',
+// 			'link',
+// 			'blockQuote',
+// 			'emoji',
+// 			'|',
+// 			'bulletedList',
+// 			'numberedList',
+// 			'todoList',
+// 			'outdent',
+// 			'indent'
+// 		],
+// 		shouldNotGroupWhenFull: false
+// 	},
+// 	plugins: [
+// 		Autoformat,
+// 		Autosave,
+// 		BlockQuote,
+// 		Bold,
+// 		Essentials,
+// 		FontBackgroundColor,
+// 		FontColor,
+// 		FontFamily,
+// 		FontSize,
+// 		Heading,
+// 		Indent,
+// 		IndentBlock,
+// 		Italic,
+// 		Link,
+// 		List,
+// 		Mention,
+// 		Paragraph,
+// 		TextTransformation,
+// 		TodoList,
+// 		Underline,
+// 		Emoji
+// 	],
+// 	fontFamily: {
+// 		supportAllValues: true
+// 	},
+// 	fontSize: {
+// 		options: [10, 12, 14, 'default', 18, 20, 22],
+// 		supportAllValues: true
+// 	},
+// 	heading: {
+// 		options: [
+// 			{ model: 'paragraph', title: '본문', class: 'ck-heading_paragraph' },
+// 			{ model: 'heading1', view: 'h1', title: '제목 1', class: 'ck-heading_heading1' },
+// 			{ model: 'heading2', view: 'h2', title: '제목 2', class: 'ck-heading_heading2' },
+// 			{ model: 'heading3', view: 'h3', title: '제목 3', class: 'ck-heading_heading3' }
+// 		]
+// 	},
+// 	language: 'ko',
+// 	link: {
+// 		addTargetToExternalLinks: true,
+// 		defaultProtocol: 'https://',
+// 		decorators: {
+// 			toggleDownloadable: {
+// 				mode: 'manual',
+// 				label: '파일로 다운로드',
+// 				attributes: { download: 'file' }
+// 			}
+// 		}
+// 	},
+// 	mention: {
+// 		feeds: [
+// 			{
+// 				marker: '@',
+// 				feed: []
+// 			}
+// 		]
+// 	},
+// 	placeholder: '내용을 입력하세요...'
+// };
 
-const {
-	ClassicEditor,
-	Autosave,
-	Essentials,
-	Paragraph,
-	Autoformat,
-	BlockQuote,
-	Bold,
-	Link,
-	Heading,
-	Indent,
-	IndentBlock,
-	Italic,
-	List,
-	TextTransformation,
-	TodoList,
-	Underline,
-	Emoji,
-	Mention,
-	FontBackgroundColor,
-	FontColor,
-	FontFamily,
-	FontSize
-} = window.CKEDITOR;
+// ✅ 에디터 초기화
+document.addEventListener('DOMContentLoaded', () => {
+	const editorElement = document.querySelector('#editor');
+	if (!editorElement) {
+		console.error('❌ CKEditor 초기화 실패: #editor 요소를 찾을 수 없습니다.');
+		return;
+	}
 
-const LICENSE_KEY =
-	'eyJhbGciOiJFUzI1NiJ9.eyJleHAiOjE3NjEzNTAzOTksImp0aSI6IjdlNDQ2YmE2LWMxYzItNGQxZi05MDA2LTEzYWNiYjZhMWUzYiIsInVzYWdlRW5kcG9pbnQiOiJodHRwczovL3Byb3h5LWV2ZW50LmNrZWRpdG9yLmNvbSIsImRpc3RyaWJ1dGlvbkNoYW5uZWwiOlsiY2xvdWQiLCJkcnVwYWwiLCJzaCJdLCJ3aGl0ZUxhYmVsIjp0cnVlLCJsaWNlbnNlVHlwZSI6InRyaWFsIiwiZmVhdHVyZXMiOlsiKiJdLCJ2YyI6IjJlZjVlMzA4In0.BTE6NqPFgvcMJkw6wq_z2HzR5rVVrAu85wX_EBVb2-UQwGZQTyLe9evJSHAikXhvmarF5ziwdFXbFVMsC6GdZw';
-
-const editorConfig = {
-	toolbar: {
-		items: [
-			'undo',
-			'redo',
-			'|',
-			'heading',
-			'|',
-			'fontSize',
-			'fontFamily',
-			'fontColor',
-			'fontBackgroundColor',
-			'|',
-			'bold',
-			'italic',
-			'underline',
-			'|',
-			'emoji',
-			'link',
-			'blockQuote',
-			'|',
-			'bulletedList',
-			'numberedList',
-			'todoList',
-			'outdent',
-			'indent'
-		],
-		shouldNotGroupWhenFull: false
-	},
-	plugins: [
-		Autoformat,
-		Autosave,
-		BlockQuote,
-		Bold,
-		Emoji,
-		Essentials,
-		FontBackgroundColor,
-		FontColor,
-		FontFamily,
-		FontSize,
-		Heading,
-		Indent,
-		IndentBlock,
-		Italic,
-		Link,
-		List,
-		Mention,
-		Paragraph,
-		TextTransformation,
-		TodoList,
-		Underline
-	],
-	fontFamily: {
-		supportAllValues: true
-	},
-	fontSize: {
-		options: [10, 12, 14, 'default', 18, 20, 22],
-		supportAllValues: true
-	},
-	heading: {
-		options: [
-			{
-				model: 'paragraph',
-				title: 'Paragraph',
-				class: 'ck-heading_paragraph'
-			},
-			{
-				model: 'heading1',
-				view: 'h1',
-				title: 'Heading 1',
-				class: 'ck-heading_heading1'
-			},
-			{
-				model: 'heading2',
-				view: 'h2',
-				title: 'Heading 2',
-				class: 'ck-heading_heading2'
-			},
-			{
-				model: 'heading3',
-				view: 'h3',
-				title: 'Heading 3',
-				class: 'ck-heading_heading3'
-			},
-			{
-				model: 'heading4',
-				view: 'h4',
-				title: 'Heading 4',
-				class: 'ck-heading_heading4'
-			},
-			{
-				model: 'heading5',
-				view: 'h5',
-				title: 'Heading 5',
-				class: 'ck-heading_heading5'
-			},
-			{
-				model: 'heading6',
-				view: 'h6',
-				title: 'Heading 6',
-				class: 'ck-heading_heading6'
-			}
-		]
-	},
-	initialData:
-		'',
-	language: 'ko',
-	licenseKey: LICENSE_KEY,
-	link: {
-		addTargetToExternalLinks: true,
-		defaultProtocol: 'https://',
-		decorators: {
-			toggleDownloadable: {
-				mode: 'manual',
-				label: 'Downloadable',
-				attributes: {
-					download: 'file'
-				}
-			}
-		}
-	},
-	mention: {
-		feeds: [
-			{
-				marker: '@',
-				feed: [
-					/* See: https://ckeditor.com/docs/ckeditor5/latest/features/mentions.html */
-				]
-			}
-		]
-	},
-	placeholder: '내용을 입력하세요... '
-};
-
-ClassicEditor.create(document.querySelector('#editor'), editorConfig);
+	ClassicEditor
+		.create(editorElement, {
+			language: 'ko',
+			toolbar: [
+				'undo', 'redo', '|',
+				'heading', '|',
+				'bold', 'italic', 'underline', '|',
+				'link', 'blockQuote', '|',
+				'bulletedList', 'numberedList', '|',
+				'outdent', 'indent'
+			],
+			placeholder: '내용을 입력하세요...'
+		})
+		.then(editor => {
+			console.log('✅ CKEditor 초기화 완료');
+			window.editor = editor;
+		})
+		.catch(error => {
+			console.error('❌ CKEditor 초기화 중 오류 발생:', error);
+		});
+});
