@@ -12,7 +12,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // 기본 조회
     Optional<User> findByUserId(String userId);
-
+    Optional<User> findByEmail(String email); // [추가]
     // [추가] 로그인 시 정지되지 않은 유저만 조회
     Optional<User> findByUserIdAndIsSuspendedFalse(String userId); // [추가]
 

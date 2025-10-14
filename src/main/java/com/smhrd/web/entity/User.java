@@ -34,66 +34,67 @@ public class User {
     private String email;
 
     @Column(name = "last_login")
-    private LocalDateTime lastLogin; // [수정] @Transient 제거 → DB 컬럼 매핑
+    private LocalDateTime lastLogin; // 최근 로그인 시각
 
     @Column(name = "mailing_agreed", nullable = false)
     private Boolean mailingAgreed;
 
     @Column(name = "nickname")
-    private String nickname; // [수정] @Transient 제거 및 이름 소문자 변경
+    private String nickname;
 
     @Column(name = "profile_image")
-    private String profileImage; // [수정] DB 컬럼명에 맞게 변경 (profile_image_url → profile_image)
+    private String profileImage;
 
     @Column(name = "bio")
-    private String bio; // [추가] 자기소개
+    private String bio; // 자기소개
 
     @Column(name = "interest_area")
     private String interestArea;
 
     @Column(name = "learning_area")
     private String learningArea;
-
-    @Column(name = "is_suspended")
-    private Boolean isSuspended; // [추가] 계정 정지 여부
+    
+    
+    @Column(name = "is_suspended", nullable = false)
+    private Boolean isSuspended = false; // 기본값 false
 
     @Column(name = "suspend_reason")
-    private String suspendReason; // [추가] 정지 사유
+    private String suspendReason;
 
     @Column(name = "suspend_start_date")
-    private LocalDateTime suspendStartDate; // [추가]
+    private LocalDateTime suspendStartDate;
 
     @Column(name = "suspend_end_date")
-    private LocalDateTime suspendEndDate; // [추가]
+    private LocalDateTime suspendEndDate;
 
-    @Column(name = "warning_count")
-    private Integer warningCount; // [추가]
+    @Column(name = "warning_count", nullable = false)
+    private Integer warningCount = 0; // 기본값 0
 
     @Column(name = "attachment_count", nullable = false)
-    private Integer attachmentCount;
+    private Integer attachmentCount = 0; // 기본값 0
 
-    @Column(name = "login_count")
-    private Integer loginCount; // [추가]
+    @Column(name = "login_count", nullable = false)
+    private Integer loginCount = 0; // 기본값 0
 
-    @Column(name = "note_count")
-    private Integer noteCount; // [추가]
+    @Column(name = "note_count", nullable = false)
+    private Integer noteCount = 0; // 기본값 0
 
-    @Column(name = "test_count")
-    private Integer testCount; // [추가]
+    @Column(name = "test_count", nullable = false)
+    private Integer testCount = 0; // 기본값 0
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt; // [수정] 자동 생성 시간 반영
+    private LocalDateTime createdAt; // 자동 생성 시각
 
-    // 비밀번호 확인 등 폼 전용 필드 (DB 비저장)
-    @Transient
-    private String userPwConfirm; // [유지: DB 저장 X, 폼 검증용]
 
+    // 비밀번호 확인 (폼 검증용, DB 비저장)
     @Transient
-    private String socialLogin; // [유지: 소셜 로그인 연동 시 사용]
-    
+    private String userPwConfirm;
+
+    // 소셜 로그인 연동용 (DB 비저장)
+    @Transient
+    private String socialLogin;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Note> notes = new ArrayList<>();
-    
 }

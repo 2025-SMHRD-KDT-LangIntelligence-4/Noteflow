@@ -113,3 +113,32 @@ button:hover {
 .id-check button:hover {
     background-color:#2FA1FF; 
 }
+.email-block {
+    width: 100%;
+    margin-bottom: 10px; /* 아래 항목과 간격 */
+}
+
+.email-check {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+}
+
+.email-check input[type="email"] {
+    flex: 1; /* 입력창이 남은 공간 채움 */
+}
+
+.email-check button {
+    flex-shrink: 0;
+    width: auto;
+    padding: 8px 14px;
+    background-color: #96D0FF;
+}
+
+.email-check button:hover {
+    background-color: #2FA1FF;
+}
+
+.mailing-agree {
+    margin-top: 5px;
+}

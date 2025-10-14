@@ -26,24 +26,30 @@ public class UserController {
         return "signup"; // signup.html
     }
 
-    // --------------------------
-    // 회원가입 처리
-    // --------------------------
-    @PostMapping("/signup")
-    public String signup(@ModelAttribute User user,
-                         @RequestParam("userPwConfirm") String userPwConfirm) {
-        // 비밀번호 확인 검증
-        if (!user.getUserPw().equals(userPwConfirm)) {
-            return "redirect:/signup?error=pwMismatch";
-        }
+ // --------------------------
+ // 회원가입 처리
+ // --------------------------
+ @PostMapping("/signup")
+ public String signup(@ModelAttribute User user,
+                      @RequestParam("userPwConfirm") String userPwConfirm) {
 
-        try {
-            userService.signup(user);
-        } catch (IllegalArgumentException e) {
-            return "redirect:/signup?error=duplicate";
-        }
-        return "redirect:/login?signupSuccess";
-    }
+     // 비밀번호 확인 검증
+     if (!user.getUserPw().equals(userPwConfirm)) {
+         return "redirect:/signup?error=pwMismatch";
+     }
+
+     try {
+         userService.signup(user);
+     } catch (IllegalArgumentException e) {
+         // [수정] 이메일 중복 오류를 구분하여 리다이렉트 처리
+         if (e.getMessage().contains("이메일")) {  // [추가]
+             return "redirect:/signup?error=emailDuplicate"; // [추가]
+         }
+         return "redirect:/signup?error=duplicate"; // 기존 코드 유지
+     }
+
+     return "redirect:/login?signupSuccess";
+ }
 
     // --------------------------
     // 아이디 중복 체크 (AJAX)

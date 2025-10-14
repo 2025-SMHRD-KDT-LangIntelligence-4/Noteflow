@@ -21,27 +21,32 @@ public class UserService {
     private final UserRepository userRepo;
     private final PasswordEncoder passwordEncoder;
 
-    // --------------------------
-    // 회원가입 처리
-    // --------------------------
-    public User signup(User user) {
-        // 아이디 중복 체크
-        if (userRepo.findByUserId(user.getUserId()).isPresent()) {
-            throw new IllegalArgumentException("이미 존재하는 아이디입니다.");
-        }
+ // --------------------------
+ // 회원가입 처리
+ // --------------------------
+ public User signup(User user) {
+     // 아이디 중복 체크
+     if (userRepo.findByUserId(user.getUserId()).isPresent()) {
+         throw new IllegalArgumentException("이미 존재하는 아이디입니다.");
+     }
 
-        // 비밀번호 암호화
-        user.setUserPw(passwordEncoder.encode(user.getUserPw()));
+     // [추가] 이메일 중복 체크
+     if (userRepo.findByEmail(user.getEmail()).isPresent()) {
+         throw new IllegalArgumentException("이미 등록된 이메일입니다."); // [추가]
+     }
 
-        // 기본값 세팅
-        user.setUserRole("USER");
-        user.setCreatedAt(LocalDateTime.now());
-        if (user.getAttachmentCount() == null) user.setAttachmentCount(0);
-        if (user.getMailingAgreed() == null) user.setMailingAgreed(false);
+     // 비밀번호 암호화
+     user.setUserPw(passwordEncoder.encode(user.getUserPw()));
 
-        // DB 저장
-        return userRepo.save(user);
-    }
+     // 기본값 세팅
+     user.setUserRole("USER");
+     user.setCreatedAt(LocalDateTime.now());
+     if (user.getAttachmentCount() == null) user.setAttachmentCount(0);
+     if (user.getMailingAgreed() == null) user.setMailingAgreed(false);
+
+     // DB 저장
+     return userRepo.save(user);
+ }
 
     // --------------------------
     // 마이페이지 정보 조회
