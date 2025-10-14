@@ -1,261 +1,76 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <title>노션 작성</title>
+<meta charset="UTF-8">
+<title>노션 작성</title>
 
-    <meta name="_csrf" th:content="${_csrf.token}" />
-    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
+<meta name="_csrf" th:content="${_csrf.token}" />
+<meta name="_csrf_header" th:content="${_csrf.headerName}" />
 
-    <!-- ✅ CSS -->
-    <link rel="stylesheet" th:href="@{/css/header.css}" />
-    <link rel="stylesheet" th:href="@{/css/notionCreate.css}" />
-    <link rel="stylesheet" th:href="@{/css/ckEditor.css}" />
-    <link rel="stylesheet" th:href="@{/css/footer.css}" />
+<!-- ✅ CSS -->
+<link rel="stylesheet" th:href="@{/css/header.css}" />
+<link rel="stylesheet" th:href="@{/css/notionCreate.css}" />
+<link rel="stylesheet" th:href="@{/css/ckEditor.css}" />
+<link rel="stylesheet" th:href="@{/css/footer.css}" />
+<!-- toast -->
+<link rel="stylesheet"
+	href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
+<script
+	src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
 
-    <!-- ✅ 반드시 먼저 CKEditor 본체 로드 -->
-    <script src="https://cdn.ckeditor.com/ckeditor5/41.3.1/classic/ckeditor.js"></script>
 </head>
 
 <body>
-<div th:replace="fragments/header :: siteHeader"></div>
+	<div th:replace="fragments/header :: siteHeader"></div>
 
-<div class="full-container">
-    <div class="slide-location-container">
-        <div class="slide-container">
-            <button class="arrow left">‹</button>
-            <div class="slider-wrapper">
-                <div class="button-container" id="buttonContainer"></div>
-            </div>
-            <button class="arrow right">›</button>
-        </div>
-    </div>
+	<div class="full-container">
+		<div class="slide-location-container">
+			<div class="slide-container">
+				<button class="arrow left">‹</button>
+				<div class="slider-wrapper">
+					<div class="button-container" id="buttonContainer"></div>
+				</div>
+				<button class="arrow right">›</button>
+			</div>
+		</div>
 
-    <div class="text-container">
-        <div class="input-location-container">
-            <div class="input-container">
-                <input class="title" id="inputTitle" placeholder="오늘 학습한 내용의 제목을 입력하세요" />
-                <textarea class="notion-text" id="inputContent" placeholder="여기에 학습 내용, 코드, 로그 등을 자유롭게 붙여넣으세요."></textarea>
-                <div style="display:flex; gap:20px;">
-	                <button class="submit-button" id="generateBtn">작성</button>
-	                <button class="submit-button" id="generateBtn">업로드</button>
-                </div>
-            </div>
-        </div>
+		<div class="text-container">
+			<div class="input-location-container">
+				<div class="input-container">
+					<input class="title" id="inputTitle"
+						placeholder="오늘 학습한 내용의 제목을 입력하세요" />
+					<textarea class="notion-text" id="inputContent"
+						placeholder="여기에 학습 내용, 코드, 로그 등을 자유롭게 붙여넣으세요."></textarea>
+					<div style="display: flex; gap: 20px;">
+						<button class="submit-button" id="generateBtn">작성</button>
+						<button class="submit-button" id="generateBtn">업로드</button>
+					</div>
+				</div>
+			</div>
 
-        <div class="result-location-container">
-            <div class="result-container">
-                <input class="result-title" id="resultTitle" placeholder="AI 요약 결과 제목" />
-                <div class="main-container">
-                    <div class="editor-container editor-container_classic-editor" id="editor-container">
-                        <div id="editor"></div>
-                    </div>
-                </div>
-                <button class="save-button" id="saveBtn">저장</button>
-            </div>
-        </div>
-    </div>
-</div>
+			<div class="result-location-container">
+				<div class="result-container">
+					<input class="result-title" id="resultTitle"
+						placeholder="AI 요약 결과 제목" />
+					<div class="main-container">
+						<div id="editor"></div>
+					</div>
+				</div>
+				<button class="save-button" id="saveBtn">저장</button>
+			</div>
+		</div>
+	</div>
+	</div>
 
-<!-- ✅ ckEditor.js는 반드시 ClassicEditor 로드 이후 실행 -->
-<script th:src="@{/js/ckEditor.js}"></script>
 
-<script th:inline="javascript">
+	<script th:src="@{/js/NotionCreate.js}"></script>
+
+	<script th:inline="javascript">
 	const image = /*[[@{${image}}]]*/ "";
-    document.addEventListener("DOMContentLoaded", (format, data) => {
-        // --- CSRF 토큰 설정 ---
-        const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
-        const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
-
-        // --- 전역 변수 및 요소 가져오기1 ---
-        const prompts = /*[[${prompts}]]*/ [];
-        const container = document.getElementById("buttonContainer");
-        let selectedPromptTitle = "심플버전"; // 기본값
-        let editor;
-
-        // --- CKEditor 초기화 ---
-        ClassicEditor
-            .create(document.querySelector('#editor'), {
-                language: 'ko',
-                placeholder: 'AI가 생성한 요약본이 여기에 표시됩니다. 자유롭게 편집하세요!'
-            })
-            .then(newEditor => {
-                editor = newEditor;
-
-                // 🔥 기본 심플버전의 예시를 CKEditor에 표시
-                const defaultPrompt = prompts.find(p => p.title === "심플버전");
-                if (defaultPrompt && defaultPrompt.exampleOutput) {
-                    editor.setData(defaultPrompt.exampleOutput, data);
-                }
-            })
-            .catch(error => {
-                console.error('CKEditor 초기화 오류:', error);
-            });
-
-        // --- 슬라이드 버튼 동적 생성 ---
-        prompts.forEach(prompt => {
-            const btn = document.createElement("div");
-            btn.className = "slide-btn";
-            btn.dataset.promptTitle = prompt.title;
-            btn.dataset.exampleOutput = prompt.exampleOutput; // 'example_ouptput' 오타 수정
-            btn.innerHTML = ` <img src="${image}" alt="${prompt.title}" class="slide-icon" />
-            	  <span class="kor">${prompt.title}</span>`;
-
-            // 기본 '심플버전' 선택
-            if (prompt.title === selectedPromptTitle) {
-                btn.classList.add('active');
-            }
-
-            btn.addEventListener('click', (format, data) => {
-                document.querySelectorAll('.slide-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                selectedPromptTitle = btn.dataset.promptTitle;
-
-                // 🔥 버튼 클릭 시 해당 프롬프트의 예시를 CKEditor에 표시
-                editor.setData(btn.dataset.exampleOutput, data);
-            });
-            container.appendChild(btn);
-        });
-
-        // --- 이벤트 리스너 설정 ---
-        const generateBtn = document.getElementById('generateBtn');
-        const saveBtn = document.getElementById('saveBtn');
-
-        generateBtn.addEventListener('click', handleGenerate);
-        saveBtn.addEventListener('click', handleSave);
-
-        // --- 기능 함수 ---
-        async function handleGenerate() {
-            const title = document.getElementById('inputTitle').value.trim();
-            const content = document.getElementById('inputContent').value.trim();
-
-            if (!title || !content) {
-                alert('제목과 내용을 모두 입력해주세요.');
-                return;
-            }
-
-            generateBtn.textContent = 'AI 요약 중...';
-            generateBtn.disabled = true;
-
-            try {
-                const response = await fetch('/api/notion/generate-summary', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        [csrfHeader]: csrfToken
-                    },
-                    body: JSON.stringify({
-                        content: content,
-                        notionType: selectedPromptTitle
-                    })
-                });
-
-                if (!response.ok) throw new Error('AI 요약 생성에 실패했습니다.');
-
-                const result = await response.json();
-
-                if (result.error) {
-                    throw new Error(result.error);
-                }
-
-                document.getElementById('resultTitle').value = title;
-                editor.setData(result.summary);
-
-            } catch (error) {
-                console.error('요약 생성 오류:', error);
-                alert('요약 생성 중 오류가 발생했습니다: ' + error.message);
-            } finally {
-                generateBtn.textContent = '작성';
-                generateBtn.disabled = false;
-            }
-        }
-
-        async function handleSave() {
-            const title = document.getElementById('resultTitle').value.trim();
-            const content = editor.getData();
-
-            if (!title || !content) {
-                alert('저장할 제목과 내용이 없습니다.');
-                return;
-            }
-
-            saveBtn.textContent = '저장 중...';
-            saveBtn.disabled = true;
-
-            try {
-                const response = await fetch('/api/notes', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        [csrfHeader]: csrfToken
-                    },
-                    body: JSON.stringify({ title, content })
-                });
-
-                if (!response.ok) throw new Error('저장 실패');
-
-                const result = await response.json();
-                if (result.success) {
-                    alert('노트가 성공적으로 저장되었습니다!');
-                    window.location.href = '/notion/manage'; // 저장 후 관리 페이지로 이동
-                } else {
-                    throw new Error(result.message);
-                }
-
-            } catch (error) {
-                console.error('저장 오류:', error);
-                alert('저장 중 오류가 발생했습니다.');
-            } finally {
-                saveBtn.textContent = '저장';
-                saveBtn.disabled = false;
-            }
-        }
-
-        // --- 슬라이드 UI 로직 (기존 코드 유지) ---
-        const slider = document.querySelector(".slide-container");
-        const track = document.querySelector(".slider-wrapper");
-        const leftBtn = document.querySelector(".arrow.left");
-        const rightBtn = document.querySelector(".arrow.right");
-
-        leftBtn.addEventListener("click", () => track.scrollBy({ left: -300, behavior: "smooth" }));
-        rightBtn.addEventListener("click", () => track.scrollBy({ left: 300, behavior: "smooth" }));
-        track.addEventListener("wheel", (e) => {
-            e.preventDefault();
-            track.scrollBy({ left: e.deltaY, behavior: "smooth" });
-        });
-        // 버튼 복제하여 무한루프 구현
-	  	const originalButtons = Array.from(container.children);
-	  	for (let i = 0; i < 3; i++) {
-	  	  originalButtons.forEach(btn => container.appendChild(btn.cloneNode(true)));
-	  	}
-	  	// 자동 슬라이드 변수
-	  	let scrollSpeed = 0.8;
-	  	let isPaused = false;
-	  	const originalSetWidth = originalButtons.reduce((acc, btn) => acc + btn.offsetWidth + 20, 0);
-	  	// 자동 슬라이드 함수
-	  	function animate() {
-	  	  if (!isPaused) {
-	  	    track.scrollLeft += scrollSpeed;
-	  	    if (track.scrollLeft >= originalSetWidth) {
-	  	      track.scrollLeft = 0;
-	  	    }
-	  	  }
-	  	  requestAnimationFrame(animate);
-	  	}
-	  	animate();
-	  	// 마우스 오버 시 일시정지
-		slider.addEventListener("mouseenter", () => isPaused = true);
-		slider.addEventListener("mouseleave", () => isPaused = false);
-  	
-  	  
-  	
-  	
-
-		
-    });
+    const prompts = /*[[${prompts}]]*/ [];
     
-</script>
+   </script>
 
-<div th:replace="fragments/footer :: siteFooter"></div>
+	<div th:replace="fragments/footer :: siteFooter"></div>
 </body>
 </html>
