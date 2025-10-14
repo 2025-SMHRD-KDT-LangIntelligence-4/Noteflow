@@ -15,7 +15,10 @@
 		<div class = "message-box">
 			<div class = "message">저장이 완료되었습니다.</div>
 			<div class = "AI-model-box-location-container">
-                <div class = "AI-model-box"></div>
+                <div class = "AI-model-box"><img th:src="@{/images/AI.png}" class="AI-image"/></div>
+                <div class="title">노션 제목</div>
+                <div class="date">노션 작성일</div>
+                <textarea class="keyward-box" readonly></textarea>
             </div>
             <div class="button-location-container">
                 <a th:href="@{/notion/create}" class = "return-create">작성페이지로</a> 
