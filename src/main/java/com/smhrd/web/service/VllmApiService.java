@@ -52,7 +52,7 @@ public class VllmApiService {
                     .build();
             // vLLM API 요청 데이터 구성
             Map<String, Object> requestData = new HashMap<>();
-            requestData.put("model", "your-model-name"); // 🔥 실제 모델명으로 변경 필요
+            requestData.put("model", modelName); 
 
             // 시스템 메시지와 사용자 입력 조합
             String fullPrompt = prompt.getContent() + "\n\n" + userContent;
@@ -62,8 +62,8 @@ public class VllmApiService {
             );
 
             requestData.put("messages", messages);
-            requestData.put("max_tokens", 2000);
-            requestData.put("temperature", 0.7);
+            requestData.put("max_tokens", 30000);
+            requestData.put("temperature", 0.9);
 
             // vLLM API 호출
             String response = webClient.post()
@@ -116,7 +116,7 @@ public class VllmApiService {
     // --------------------------
     private String buildNotionPrompt(String originalText, String notionType) {
         StringBuilder prompt = new StringBuilder();
-        prompt.append("다음 텍스트를 '").append(notionType).append("' 스타일로 변환해주세요.\n\n");
+        prompt.append(notionType);
 
         // DB에서 가져오기
         String instruction = promptService.getInstruction(notionType);
