@@ -116,13 +116,13 @@ body {
 /* 로고 */
 .logo {
     color: #ffffff;
-    text-align: center;
-    font-size: 30px;
-    font-weight: 700;
     position: absolute;
-    left: 78px;
-    top: 15px;
-    text-decoration: none;
+    left: 50px; 
+    top:0.5px;
+}
+.logo-image {
+	width:100px;
+	height:70px;
 }
 .AI-position-container {
 	position: fixed;       /* 화면에 고정 */
