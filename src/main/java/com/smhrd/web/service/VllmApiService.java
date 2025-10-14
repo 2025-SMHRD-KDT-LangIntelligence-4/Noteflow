@@ -6,6 +6,8 @@ import com.smhrd.web.entity.Prompt;
 import com.smhrd.web.repository.PromptRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -38,56 +40,44 @@ public class VllmApiService {
 
     @Value("${vllm.api.url}")
     private String apiUrl;
-
     // --------------------------
     // 노션 생성
     // --------------------------
     public String generateNotion(String userContent, String promptTitle) {
         try {
-            // 선택한 프롬프트의 content 가져오기
+            // 1) DB에서 프롬프트 조회
             Prompt prompt = promptRepository.findByTitle(promptTitle)
                     .orElseThrow(() -> new RuntimeException("프롬프트를 찾을 수 없습니다: " + promptTitle));
-            WebClient webClient = webClientBuilder
-                    .baseUrl(apiUrl)       // 또는 application.properties값 사용
-                    .build();
-            // vLLM API 요청 데이터 구성
-            Map<String, Object> requestData = new HashMap<>();
-            requestData.put("model", modelName); 
-
-            // 시스템 메시지와 사용자 입력 조합
             String fullPrompt = prompt.getContent() + "\n\n" + userContent;
 
-            List<Map<String, String>> messages = Arrays.asList(
-                    Map.of("role", "user", "content", fullPrompt)
+            // 2) 요청 데이터 구성: 하드코딩 제거 후 실제 프로퍼티 사용
+            Map<String,Object> requestData = new HashMap<>();
+            requestData.put("model", modelName);               // e.g. "exaone"
+            List<Map<String,String>> messages = List.of(
+                    Map.of("role","system","content","You are a helpful assistant."),
+                    Map.of("role","user","content", fullPrompt)
             );
-
             requestData.put("messages", messages);
-            requestData.put("max_tokens", 30000);
-            requestData.put("temperature", 0.9);
+            requestData.put("max_tokens", 4000);
+            requestData.put("temperature", temperature);
 
-            // vLLM API 호출
-            String response = webClient.post()
-                    .uri("/v1/chat/completions")
+
+            String response = webClientBuilder.baseUrl(apiUrl).build()
+                    .post().uri("/v1/chat/completions")
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                     .bodyValue(requestData)
-                    .retrieve()
-                    .bodyToMono(String.class)
+                    .retrieve().bodyToMono(String.class)
+                    .timeout(Duration.ofSeconds(60))
                     .block();
 
-            // JSON 파싱해서 content 추출
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode jsonNode = mapper.readTree(response);
-
-            return jsonNode.path("choices")
-                    .get(0)
-                    .path("message")
-                    .path("content")
-                    .asText();
+            // 4) 응답 파싱
+            JsonNode root = objectMapper.readTree(response);
+            return root.path("choices").get(0).path("message").path("content").asText();
 
         } catch (Exception e) {
-            throw new RuntimeException("AI 요약 생성 중 오류가 발생했습니다: " + e.getMessage());
+            throw new RuntimeException("AI 요약 생성 중 오류가 발생했습니다: " + e.getMessage(), e);
         }
     }
-
     // --------------------------
     // vLLM API 호출
     // --------------------------

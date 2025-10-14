@@ -18,7 +18,7 @@ public class WebClientConfig {
     @Bean
     public WebClient webClient() {
         return WebClient.builder()
-                .baseUrl(vllmApiUrl)
+                .baseUrl("")
                 .defaultHeader("Content-Type", "application/json")
                 .build();
     }
