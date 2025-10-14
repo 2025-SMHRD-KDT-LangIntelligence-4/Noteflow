@@ -1,0 +1,88 @@
+
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        body {
+            font-family: 'Pretendard';
+            background-color: #EAEAEA;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        .mypage-container {
+            width: 800px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            padding: 40px;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .button-container {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .info-save-button, .info-cancel-button {
+            background-color: #96D0FF;
+            border: none;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 15px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .info-cancel-button {
+            background-color: #777;
+        }
+
+        .profile-image-container {
+            text-align: center;
+        }
+
+        .profile-image-container img {
+            border-radius: 50%;
+            border: 2px solid #ddd;
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            margin-bottom: 10px;
+        }
+
+        .user-info-container {
+        	gap: 10px;
+		    display: flex;
+		    justify-content: center;
+		    flex-wrap: wrap;
+        }

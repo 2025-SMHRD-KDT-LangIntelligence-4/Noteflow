@@ -10,18 +10,15 @@ import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
 
-    // 기본 조회
     Optional<User> findByUserId(String userId);
-    Optional<User> findByEmail(String email); // [추가]
-    // [추가] 로그인 시 정지되지 않은 유저만 조회
-    Optional<User> findByUserIdAndIsSuspendedFalse(String userId); // [추가]
+    Optional<User> findByEmail(String email);
 
-    // [추가] 닉네임 및 이메일 중복 확인
-    boolean existsByNickname(String nickname); // [추가]
-    boolean existsByEmail(String email);       // [추가]
+    Optional<User> findByUserIdAndIsSuspendedFalse(String userId);
 
-    // [추가] 로그인 시각 업데이트
+    boolean existsByNickname(String nickname);
+    boolean existsByEmail(String email);
+
     @Modifying
     @Query("UPDATE User u SET u.lastLogin = CURRENT_TIMESTAMP WHERE u.userId = :userId")
-    void updateLastLogin(@Param("userId") String userId); // [추가]
+    void updateLastLogin(@Param("userId") String userId);
 }

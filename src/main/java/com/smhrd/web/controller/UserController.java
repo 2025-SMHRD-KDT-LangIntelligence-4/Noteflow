@@ -3,12 +3,17 @@ package com.smhrd.web.controller;
 import com.smhrd.web.entity.User;
 import com.smhrd.web.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Controller
 @RequiredArgsConstructor
@@ -21,35 +26,33 @@ public class UserController {
     // --------------------------
     @GetMapping("/signup")
     public String signupForm(Model model) {
-    	model.addAttribute("pageTitle", "회원가입");
+        model.addAttribute("pageTitle", "회원가입");
         model.addAttribute("user", new User());
         return "signup"; // signup.html
     }
 
- // --------------------------
- // 회원가입 처리
- // --------------------------
- @PostMapping("/signup")
- public String signup(@ModelAttribute User user,
-                      @RequestParam("userPwConfirm") String userPwConfirm) {
+    // --------------------------
+    // 회원가입 처리
+    // --------------------------
+    @PostMapping("/signup")
+    public String signup(@ModelAttribute User user,
+                         @RequestParam("userPwConfirm") String userPwConfirm) {
 
-     // 비밀번호 확인 검증
-     if (!user.getUserPw().equals(userPwConfirm)) {
-         return "redirect:/signup?error=pwMismatch";
-     }
+        if (!user.getUserPw().equals(userPwConfirm)) {
+            return "redirect:/signup?error=pwMismatch";
+        }
 
-     try {
-         userService.signup(user);
-     } catch (IllegalArgumentException e) {
-         // [수정] 이메일 중복 오류를 구분하여 리다이렉트 처리
-         if (e.getMessage().contains("이메일")) {  // [추가]
-             return "redirect:/signup?error=emailDuplicate"; // [추가]
-         }
-         return "redirect:/signup?error=duplicate"; // 기존 코드 유지
-     }
+        try {
+            userService.signup(user);
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage().contains("이메일")) {
+                return "redirect:/signup?error=emailDuplicate";
+            }
+            return "redirect:/signup?error=duplicate";
+        }
 
-     return "redirect:/login?signupSuccess";
- }
+        return "redirect:/login?signupSuccess";
+    }
 
     // --------------------------
     // 아이디 중복 체크 (AJAX)
@@ -61,9 +64,50 @@ public class UserController {
     }
 
     // --------------------------
+    // 이메일 중복 체크 (AJAX)
+    // --------------------------
+    @GetMapping("/check-email")
+    @ResponseBody
+    public Map<String, Boolean> checkEmail(@RequestParam("email") String email) {
+        boolean available = !userService.isEmailDuplicate(email);
+        Map<String, Boolean> result = new HashMap<>();
+        result.put("available", available);
+        return result;
+    }
+
+    // --------------------------
+    // 현재 비밀번호 확인 (AJAX)
+    // --------------------------
+    @PostMapping("/verify-password")
+    @ResponseBody
+    public Map<String, Boolean> verifyPassword(Authentication authentication,
+                                               @RequestParam("currentPw") String currentPw) {
+        String userId = authentication.getName();
+        boolean valid = userService.verifyPassword(userId, currentPw);
+        Map<String, Boolean> result = new HashMap<>();
+        result.put("valid", valid);
+        return result;
+    }
+
+    // --------------------------
+    // 계정 삭제 (AJAX)
+    // --------------------------
+    @PostMapping("/delete-account")
+    @ResponseBody
+    public ResponseEntity<Void> deleteAccount(Authentication authentication) {
+        String userId = authentication.getName();
+        try {
+            userService.deleteUserAccount(userId);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    // --------------------------
     // 마이페이지
     // --------------------------
-    // GET 요청 허용
     @GetMapping("/mypage")
     public String mypageGet(Authentication authentication, Model model) {
         String userId = authentication != null ? authentication.getName() : null;
@@ -71,40 +115,30 @@ public class UserController {
             userService.getUserInfo(userId)
                        .ifPresent(user -> model.addAttribute("user", user));
         } else {
-            model.addAttribute("user", new User()); // null-safe 처리
+            model.addAttribute("user", new User());
         }
-        return "MyPage"; // MyPage.html
+        return "MyPage";
     }
 
-    // POST 요청 (보안성을 위해 form에서 사용)
     @PostMapping("/mypage")
     public String mypagePost(Authentication authentication, Model model) {
-        String userId = authentication != null ? authentication.getName() : null;
-        if (userId != null) {
-            userService.getUserInfo(userId)
-                       .ifPresent(user -> model.addAttribute("user", user));
-        } else {
-            model.addAttribute("user", new User()); // null-safe 처리
-        }
-        return "MyPage"; // MyPage.html
+        return mypageGet(authentication, model);
     }
 
- // --------------------------
+    // --------------------------
     // 마이페이지 수정 폼
     // --------------------------
     @GetMapping("/editMypage")
     public String editMypage(Authentication authentication, Model model) {
         String userId = authentication != null ? authentication.getName() : null;
-
+        System.out.println("Authentication: " + authentication);
+        System.out.println("userId from auth: " + userId);
+        User user = new User(); // 기본 객체 생성
         if (userId != null) {
-            userService.getUserInfo(userId).ifPresentOrElse(
-                user -> model.addAttribute("user", user),
-                () -> model.addAttribute("user", new User()) // null-safe 기본 객체
-            );
-        } else {
-            model.addAttribute("user", new User()); // 인증 정보 없을 경우 대비
+            user = userService.getUserInfo(userId).orElse(user); // DB에서 가져오거나 기본 객체
         }
-
+        
+        model.addAttribute("user", user); // 항상 null-safe 보장
         return "editMypage";
     }
 
@@ -116,18 +150,18 @@ public class UserController {
                              @RequestParam(value = "nickname", required = false) String nickname,
                              @RequestParam(value = "userEmail", required = false) String userEmail,
                              @RequestParam(value = "userPw", required = false) String userPw,
-                             @RequestParam(value = "interest_area", required = false) String interestArea,   // [추가]
-                             @RequestParam(value = "learning_area", required = false) String learningArea,   // [추가]
+                             @RequestParam(value = "interest_area", required = false) String interestArea,
+                             @RequestParam(value = "learning_area", required = false) String learningArea,
                              @RequestParam(value = "profileImage", required = false) MultipartFile profileImage,
-                             @RequestParam(value = "deleteProfileImage", required = false) Boolean deleteProfileImage, // [추가]
-                             RedirectAttributes redirectAttributes) { // [추가]
+                             @RequestParam(value = "deleteProfileImage", required = false) Boolean deleteProfileImage,
+                             RedirectAttributes redirectAttributes) {
 
         String userId = authentication != null ? authentication.getName() : null;
 
         if (userId != null) {
             try {
                 userService.updateUserInfo(userId, nickname, userEmail, userPw,
-                        interestArea, learningArea, profileImage, deleteProfileImage); // [수정: 인자 확장]
+                        interestArea, learningArea, profileImage, deleteProfileImage);
                 redirectAttributes.addFlashAttribute("message", "회원 정보가 성공적으로 수정되었습니다.");
             } catch (Exception e) {
                 e.printStackTrace();

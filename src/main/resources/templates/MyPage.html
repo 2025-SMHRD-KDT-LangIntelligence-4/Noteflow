@@ -9,13 +9,14 @@
 </head>
 <body>
     <!-- 헤더 -->
-    <div th:replace="fragments/header :: siteHeader"></div>
+    <div th:replace="~{fragments/header :: siteHeader}"></div>
+
     <div class="location-container">
         <div class="mypage-container">
             <div class="title">
                 마이페이지
                 <button class="info-edit-button" id="editButton">
-                    수정하기<img th:src="${'/images/write.svg'}"/>
+                    수정하기<img th:src="@{/images/write.svg}"/>
                 </button>
             </div>
 
@@ -26,7 +27,7 @@
             </div>
 
             <!-- 사용자 별명 -->
-            <div class="user-name" th:text="${user.Nickname != null ? user.Nickname : '닉네임 없음'}">사용자 이름</div>
+            <div class="user-name" th:text="${user.nickname != null ? user.nickname : '닉네임 없음'}">사용자 이름</div>
 
             <!-- 사용자 정보 -->
             <div class="user-info-container">
@@ -48,18 +49,19 @@
         </div>
     </div>
 
-    <!-- JS 블록: 사용자 ID를 안전하게 사용 -->
+    <!-- JS 블록: editMypage URL로 안전하게 이동 -->
     <script th:inline="javascript">
         /*<![CDATA[*/
-        var userId = /*[[${user.userId != null ? user.userId : ''}]]*/ '';
         var editButton = document.getElementById('editButton');
         if(editButton){
             editButton.addEventListener('click', function(){
-                location.href = '/mypage/edit?userId=' + encodeURIComponent(userId);
+                // Spring Security, Controller에 맞게 /editMypage로 이동
+                location.href = /*[[@{/editMypage}]]*/ '/editMypage';
             });
         }
         /*]]>*/
     </script>
-<div th:replace="fragments/footer :: siteFooter"></div>
+
+    <div th:replace="~{fragments/footer :: siteFooter}"></div>
 </body>
 </html>
