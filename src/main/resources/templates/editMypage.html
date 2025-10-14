@@ -8,94 +8,105 @@
 <link rel="stylesheet" th:href="@{/css/editmypage.css}" />
 </head>
 <body>
-	<!-- 헤더 -->
-	<div th:replace="~{fragments/header :: siteHeader}"></div>
+    <!-- 헤더 -->
+    <div th:replace="~{fragments/header :: siteHeader}"></div>
 
-	<div class="mypage-container">
-		<div class="title">마이페이지 수정</div>
+    <div class="mypage-container">
+        <div class="title">마이페이지 수정</div>
 
-		<form th:action="@{/editMypage}" method="post"
-			enctype="multipart/form-data" onsubmit="return validatePassword()">
+        <form th:action="@{/editMypage}" method="post"
+              enctype="multipart/form-data" onsubmit="return validatePassword()">
 
-			<!-- 프로필 이미지 -->
-			<div class="profile-image-container">
-				<img id="preview" alt="프로필 이미지 미리보기"
-					th:src="${#strings.isEmpty(user?.profileImage)}
-                 ? @{/images/default-profile.png}
-                 : @{${user.profileImage}}" />
-				<input type="file" name="profileImage" accept="image/*"
-					onchange="previewImage(event)" />
-				<div>
-					<label> <input type="checkbox" name="deleteProfileImage"
-						value="true" onchange="toggleDeleteProfile(this)" /> 기존 이미지 삭제
-					</label>
-				</div>
-			</div>
+            <!-- 프로필 이미지 -->
+            <div class="profile-image-container">
+                <img id="preview" alt="프로필 이미지 미리보기"
+                     th:src="${#strings.isEmpty(user?.profileImage)} ? @{/images/default-profile.png} : @{${user.profileImage}}" />
+                <input type="file" name="profileImage" accept="image/*" onchange="previewImage(event)" />
+                <div>
+                    <label>
+                        <input type="checkbox" name="deleteProfileImage" value="true" onchange="toggleDeleteProfile(this)" />
+                        기존 이미지 삭제
+                    </label>
+                </div>
+            </div>
 
-			<!-- 유저 정보 -->
-			<div class="user-info-container">
+            <!-- 유저 정보 -->
+            <div class="user-info-container">
+                
+                <div class="user-info-item">
+                    <label for="nickname">닉네임</label>
+                    <input type="text" id="nickname" name="nickname" th:value="${user?.nickname}" required>
+                </div>
 
-				<label for="nickname">닉네임</label> <input type="text" id="nickname"
-					name="nickname" th:value="${user?.nickname}" required>
+                <div class="user-info-item">
+                    <label for="userEmail">이메일</label>
+                    <div class="email-check-container">
+                        <input type="email" id="userEmail" name="userEmail" th:value="${user?.email}" required>
+                        <button type="button" onclick="checkEmailDuplicate()">중복 확인</button>
+                    </div>
+                </div>
 
-				<!-- 이메일 + 중복 확인 -->
-				<label for="userEmail">이메일</label>
-				<div class="email-check-container">
-					<input type="email" id="userEmail" name="userEmail"
-						th:value="${user?.email}" required>
-					<button type="button" onclick="checkEmailDuplicate()">중복
-						확인</button>
-				</div>
+                <div class="user-info-item">
+                    <label for="currentPw">현재 비밀번호</label>
+                    <input type="password" id="currentPw" name="currentPw" placeholder="필수 입력">
+                </div>
 
-				<!-- 현재 비밀번호 확인 -->
-				<label for="currentPw">현재 비밀번호</label> <input type="password"
-					id="currentPw" name="currentPw" placeholder="필수 입력">
+                <div class="user-info-item">
+                    <label for="userPw">비밀번호</label>
+                    <input type="password" id="userPw" name="userPw" placeholder="변경할 경우에만 입력">
+                </div>
 
-				<!-- 새 비밀번호 -->
-				<label for="userPw">비밀번호</label> <input type="password" id="userPw"
-					name="userPw" placeholder="변경할 경우에만 입력"> <label
-					for="userPwConfirm">비밀번호 확인</label> <input type="password"
-					id="userPwConfirm" name="userPwConfirm" placeholder="비밀번호 재입력">
+                <div class="user-info-item">
+                    <label for="userPwConfirm">비밀번호 확인</label>
+                    <input type="password" id="userPwConfirm" name="userPwConfirm" placeholder="비밀번호 재입력">
+                </div>
 
-				<!-- 관심 분야 -->
-				<label for="userInterest">관심 분야</label> <input type="text"
-					id="userInterest" name="interestArea"
-					th:value="${user?.interestArea}">
+                <div class="user-info-item">
+                    <label for="userInterest">관심 분야</label>
+                    <input type="text" id="userInterest" name="interestArea" th:value="${user?.interestArea}">
+                </div>
 
-				<!-- 학습 중인 분야 -->
-				<label for="learningArea">학습 중인 분야</label> <input type="text"
-					id="learningArea" name="learningArea"
-					th:value="${user?.learningArea}">
+                <div class="user-info-item">
+                    <label for="learningArea">학습 중인 분야</label>
+                    <input type="text" id="learningArea" name="learningArea" th:value="${user?.learningArea}">
+                </div>
 
-				<!-- 메일 수신 동의 -->
-				<label> <input type="checkbox" name="mailingAgreed"
-					th:checked="${user?.mailingAgreed}" /> 이메일 수신 동의
-				</label>
+                <div class="user-info-item">
+                    <label>
+                        <input type="checkbox" name="mailingAgreed" th:checked="${user?.mailingAgreed}" />
+                        이메일 수신 동의
+                    </label>
+                </div>
 
-				<!-- 자기소개 -->
-				<label for="bio">자기소개</label>
-				<textarea id="bio" name="bio" th:text="${user?.bio}"></textarea>
+                <div class="user-info-item">
+                    <label for="bio">자기소개</label>
+                    <textarea id="bio" name="bio" th:text="${user?.bio}"></textarea>
+                </div>
 
-				<!-- 가입일 / 최근 로그인 -->
-				<label>가입일</label> <span
-					th:text="${user != null ? #temporals.format(user.createdAt, 'yyyy-MM-dd HH:mm') : '-'}"></span>
-				<br /> <label>최근 로그인</label> <span
-					th:text="${user?.lastLogin != null ? #temporals.format(user.lastLogin, 'yyyy-MM-dd HH:mm') : '-'}"></span>
+                <div class="user-info-item">
+                    <label>가입일</label>
+                    <span th:text="${user != null ? #temporals.format(user.createdAt, 'yyyy-MM-dd HH:mm') : '-'}"></span>
+                    <br />
+                    <label>최근 로그인</label>
+                    <span th:text="${user?.lastLogin != null ? #temporals.format(user.lastLogin, 'yyyy-MM-dd HH:mm') : '-'}"></span>
+                </div>
 
-			</div>
+            </div>
 
-			<!-- 버튼 -->
-			<div class="button-container">
-				<button type="submit" class="info-save-button">저장하기</button>
-				<button type="button" class="info-cancel-button"
-					onclick="window.location.href='/mypage'">취소</button>
-				<button type="button" class="info-delete-button"
-					onclick="deleteAccount()">계정 삭제</button>
-			</div>
+            <!-- 버튼 -->
+            <div class="button-container">
+                <button type="submit" class="info-save-button">저장하기</button>
+                <button type="button" class="info-cancel-button" onclick="window.location.href='/mypage'">취소</button>
+                <button type="button" class="info-delete-button" onclick="deleteAccount()">계정 삭제</button>
+            </div>
 
-		</form>
-	</div>
-	<div th:replace="~{fragments/footer :: siteFooter}"></div>
-	<script th:src="@{/js/editmypage.js}"></script>
+        </form>
+    </div>
+
+    <!-- Footer -->
+    <div th:replace="~{fragments/footer :: siteFooter}"></div>
+
+    <!-- JS -->
+    <script th:src="@{/js/editmypage.js}"></script>
 </body>
 </html>
