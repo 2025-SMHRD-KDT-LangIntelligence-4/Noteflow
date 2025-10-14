@@ -12,8 +12,12 @@ body {
 	font-family: 'Pretendard', sans-serif;
 }
 .main-container{
-	
-	width:550px !important;
+	font-family: var(--ck-content-font-family);
+    /* width: fit-content; */
+    /* margin-left: auto; */
+    /* margin-right: auto; */
+    /* height: 450px; */
+    display: contents;
 } 
 .full-container {
 	display:flex;
@@ -28,6 +32,7 @@ body {
 	display:flex;
 	justify-content:center;
 	gap:40px;
+	flex-wrap:wrap;
 }
 .slider-wrapper {
     position: relative;
@@ -55,8 +60,8 @@ body {
 }
 
 .input-container {
-	width:600px;
-	height:640px;
+	width:1210px;
+	height:700px;
 	background-color:white;
 	border-radius:20px;
 	display:flex;
@@ -64,8 +69,8 @@ body {
 	flex-wrap:wrap;
 }
 .result-container {
-	width:600px;
-	height:640px;
+	width:1210px;
+	height:700px;
 	background-color:white;
 	border-radius:20px;
 	display:flex;
@@ -73,17 +78,17 @@ body {
 	flex-wrap:wrap;
 }
 .title{
-	width:520px;
+	width:1000px;
 	height:40px;
 	border:solid 1px #c7c7c7;
 	border-radius:10px;
 	font-size:30px;
-	margin-top:20px;
+	margin-top:30px;
 	padding:10px;
 	outline: none;
 }
 .notion-text {
-	width:520px;
+	width:1000px;
 	height:450px;
 	border:solid 1px #c7c7c7;
 	border-radius:10px;
@@ -101,6 +106,10 @@ body {
 	color:white;
 	font-size:20px;
 	box-shadow: 0px 2px 2px 3px rgba(0, 0, 0, 0.1);
+	display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
 
 }
 .save-button {
@@ -113,6 +122,10 @@ body {
 	font-size:20px;
 	box-shadow: 0px 2px 2px 3px rgba(0, 0, 0, 0.1);
 	margin-top:10px;
+	display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
 }
 .submit-button:hover {
 	background-color:#2FA1FF; 
@@ -121,7 +134,7 @@ body {
 	background-color:#2FA1FF; 
 }
 .result-title {
-	width:520px;
+	width:1000px;
 	height:40px;
 	border:solid 1px #c7c7c7;
 	border-radius:10px;
@@ -130,7 +143,7 @@ body {
 	padding:10px;
 }
 .result-content {
-	width:520px;
+	width:1000px;
 	height:450px;
 	border:solid 1px #c7c7c7;
 	border-radius:10px;
@@ -234,4 +247,12 @@ h1 {
 .notion-text::placeholder {
     color: #c7c7c7;
 }
+#editor {
+	width:1000px;
+}
   
+.button-img{
+	width:24px;
+	height:24px;
+	filter: brightness(0) invert(1);
+}

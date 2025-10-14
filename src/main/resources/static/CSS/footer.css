@@ -10,6 +10,7 @@ footer {
   font-size: 0.9rem;
   top:50px;
   padding-left:15%;
+  margin-top: 100px;
 }
 footer {
   position: relative;
@@ -39,6 +40,7 @@ footer::before {
 	display: flex;
   	justify-content: space-between;
   	align-items: center;
+  	margin-left:15%;
 }
 
 footer a {
