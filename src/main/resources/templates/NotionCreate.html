@@ -36,7 +36,10 @@
             <div class="input-container">
                 <input class="title" id="inputTitle" placeholder="오늘 학습한 내용의 제목을 입력하세요" />
                 <textarea class="notion-text" id="inputContent" placeholder="여기에 학습 내용, 코드, 로그 등을 자유롭게 붙여넣으세요."></textarea>
-                <button class="submit-button" id="generateBtn">작성</button>
+                <div style="display:flex; gap:20px;">
+	                <button class="submit-button" id="generateBtn">작성</button>
+	                <button class="submit-button" id="generateBtn">업로드</button>
+                </div>
             </div>
         </div>
 
@@ -54,12 +57,11 @@
     </div>
 </div>
 
-<div th:replace="fragments/footer :: siteFooter"></div>
-
 <!-- ✅ ckEditor.js는 반드시 ClassicEditor 로드 이후 실행 -->
 <script th:src="@{/js/ckEditor.js}"></script>
 
 <script th:inline="javascript">
+	const image = /*[[@{${image}}]]*/ "";
     document.addEventListener("DOMContentLoaded", (format, data) => {
         // --- CSRF 토큰 설정 ---
         const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
@@ -96,7 +98,8 @@
             btn.className = "slide-btn";
             btn.dataset.promptTitle = prompt.title;
             btn.dataset.exampleOutput = prompt.exampleOutput; // 'example_ouptput' 오타 수정
-            btn.innerHTML = `<span class="kor">${prompt.title}</span>`;
+            btn.innerHTML = ` <img src="${image}" alt="${prompt.title}" class="slide-icon" />
+            	  <span class="kor">${prompt.title}</span>`;
 
             // 기본 '심플버전' 선택
             if (prompt.title === selectedPromptTitle) {
@@ -220,7 +223,37 @@
             e.preventDefault();
             track.scrollBy({ left: e.deltaY, behavior: "smooth" });
         });
+        // 버튼 복제하여 무한루프 구현
+	  	const originalButtons = Array.from(container.children);
+	  	for (let i = 0; i < 3; i++) {
+	  	  originalButtons.forEach(btn => container.appendChild(btn.cloneNode(true)));
+	  	}
+	  	// 자동 슬라이드 변수
+	  	let scrollSpeed = 0.8;
+	  	let isPaused = false;
+	  	const originalSetWidth = originalButtons.reduce((acc, btn) => acc + btn.offsetWidth + 20, 0);
+	  	// 자동 슬라이드 함수
+	  	function animate() {
+	  	  if (!isPaused) {
+	  	    track.scrollLeft += scrollSpeed;
+	  	    if (track.scrollLeft >= originalSetWidth) {
+	  	      track.scrollLeft = 0;
+	  	    }
+	  	  }
+	  	  requestAnimationFrame(animate);
+	  	}
+	  	animate();
+	  	// 마우스 오버 시 일시정지
+		slider.addEventListener("mouseenter", () => isPaused = true);
+		slider.addEventListener("mouseleave", () => isPaused = false);
+  	
+  	  
+  	
+  	
+
+		
     });
+    
 </script>
 
 <div th:replace="fragments/footer :: siteFooter"></div>

@@ -58,6 +58,7 @@ public class NotionController {
         model.addAttribute("prompts", prompts);
         model.addAttribute("pageTitle", "노션 작성");
         model.addAttribute("activeMenu", "notionCreate");
+        model.addAttribute("image", "/images/Group.svg");
         return "NotionCreate";
     }
     @PostMapping("/notioncreate") 

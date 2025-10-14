@@ -10,7 +10,11 @@
 body {
 	background-color: #EAEAEA;
 	font-family: 'Pretendard', sans-serif;
-}  
+}
+.main-container{
+	
+	width:550px !important;
+} 
 .full-container {
 	display:flex;
 	justify-content:center;

@@ -116,7 +116,7 @@
 
 // ✅ 에디터 초기화
 document.addEventListener('DOMContentLoaded', () => {
-	const editorElement = document.querySelector('#editor');
+
 	if (!editorElement) {
 		console.error('❌ CKEditor 초기화 실패: #editor 요소를 찾을 수 없습니다.');
 		return;
