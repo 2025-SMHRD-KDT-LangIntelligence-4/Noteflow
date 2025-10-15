@@ -42,7 +42,7 @@
                     <label for="userEmail">이메일</label>
                     <div class="email-check-container">
                         <input type="email" id="userEmail" name="userEmail" th:value="${user?.email}" required>
-                        <button type="button" onclick="checkEmailDuplicate()">중복 확인</button>
+                        <button type="button" onclick="checkEmailDuplicate()" class="check-id-button">중복 확인</button>
                     </div>
                 </div>
 
