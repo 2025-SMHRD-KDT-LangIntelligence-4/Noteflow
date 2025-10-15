@@ -6,6 +6,10 @@ body {
     margin:0px;
             
 }
+@keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 .mypage-container {
     width: 800px;
     height: 800px;
@@ -17,6 +21,7 @@ body {
     gap: 20px;
 	box-shadow: 0px 4px 4px 5px rgba(0, 0, 0, 0.1);
     padding: 50px;
+    animation: fadeIn 1s ease;
 }
 .title {
     width: 780px;
