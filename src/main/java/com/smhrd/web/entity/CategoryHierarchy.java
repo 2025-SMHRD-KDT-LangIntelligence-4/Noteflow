@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -34,6 +35,17 @@ public class CategoryHierarchy {
     @Column(name = "keywords", columnDefinition = "TEXT")
     private String keywords;
 
+    @Column(name = "confidence_score")
+    private Double confidenceScore; // LLM 랭킹 점수 반영
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    public double getConfidenceScore() {
+        return confidenceScore != null ? confidenceScore : 0.0;
+    }
+
+    public void setConfidenceScore(double score) {
+        this.confidenceScore = score;
+    }
 }

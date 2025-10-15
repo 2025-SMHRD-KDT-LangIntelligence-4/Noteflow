@@ -30,4 +30,26 @@
 	</div>
 <div th:replace="fragments/footer :: siteFooter"></div>
 </body>
+<script th:inline="javascript">
+    document.addEventListener('DOMContentLoaded', () => {
+        const titleElem = document.querySelector('.title');
+        const dateElem = document.querySelector('.date');
+        const keywordBox = document.querySelector('.keyward-box');
+
+        const noteTitle = sessionStorage.getItem('noteTitle') || '제목 없음';
+        const keywords = sessionStorage.getItem('keywords') || '';
+        const categoryPath = sessionStorage.getItem('categoryPath') || '';
+        const folderId = sessionStorage.getItem('folderId') || '';
+
+        // 제목 표시
+        titleElem.textContent = noteTitle;
+
+        // 날짜 표시
+        const today = new Date();
+        dateElem.textContent = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+
+        // 키워드 및 카테고리 표시
+        keywordBox.value = `키워드: ${keywords}\n카테고리: ${categoryPath}\n폴더ID: ${folderId}`;
+    });
+</script>
 </html>

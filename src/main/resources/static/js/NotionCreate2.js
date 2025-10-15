@@ -266,6 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ====== 저장 버튼 ======
+
     $saveBtn.addEventListener('click', async () => {
         const titleInput = document.getElementById('ResultTitle');
         const title = titleInput.value.trim();
@@ -298,11 +299,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await res.json();
             if (!data.success) throw new Error(data.error || '저장 실패');
-            
-            alert('저장 완료!');
-            
-            // 저장 완료 후 세션 스토리지 정리
-            sessionStorage.removeItem('notion.precreate');
+
+            // ✅ 세션스토리지에 데이터 저장
+            sessionStorage.setItem('noteTitle', title);
+            sessionStorage.setItem('noteContent', summary);
+            sessionStorage.setItem('keywords', (data.keywords || []).join(', '));
+            sessionStorage.setItem('categoryPath', data.categoryPath || '');
+            sessionStorage.setItem('folderId', data.folderId || '');
+
+            // ✅ 완료 페이지로 이동
+            window.location.href = '/notion/complete';
 
         } catch (err) {
             console.error(err);
@@ -312,5 +318,4 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // ====== 세션 스토리지 정리는 저장할 때만 ======
 });

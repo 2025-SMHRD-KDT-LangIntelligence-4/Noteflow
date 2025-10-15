@@ -1,8 +1,12 @@
 package com.smhrd.web.controller;
 
+import com.smhrd.web.dto.CategoryResult;
 import com.smhrd.web.entity.Prompt;
 import com.smhrd.web.entity.TestSummary;
 import com.smhrd.web.repository.PromptRepository;
+import com.smhrd.web.security.CustomUserDetails;
+import com.smhrd.web.service.AutoFolderService;
+import com.smhrd.web.service.KeywordExtractionService;
 import com.smhrd.web.service.LLMUnifiedService;
 import com.smhrd.web.service.NotionContentService;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +35,8 @@ public class NotionController {
     private final LLMUnifiedService llmService;
     private final Environment env;
     private final NotionContentService notionContentService;
-
+    private final KeywordExtractionService keywordExtractionService;
+    private final AutoFolderService autoFolderService;
     
     // -----------------------------
     // LLM 요약 데이터 입력 페이지
@@ -134,32 +140,47 @@ public class NotionController {
         }
     }
 
+
     @PostMapping("/save-note")
     @ResponseBody
-    public ResponseEntity<Map<String,Object>> saveNote(
-            @RequestBody Map<String,String> req,
-            Authentication auth) {
+    public ResponseEntity<Map<String, Object>> saveNote(@RequestBody Map<String, String> req, Authentication auth) {
+        Long userIdx = ((CustomUserDetails) auth.getPrincipal()).getUserIdx();
+        String title = req.getOrDefault("title", "제목없음");
+        String summary = req.getOrDefault("summary", "");
+        Long promptId = Long.parseLong(req.getOrDefault("promptId", "0"));
 
-        // 로그인 사용자 user_idx 직접 조회
-        Long userIdx = ((com.smhrd.web.security.CustomUserDetails) auth.getPrincipal()).getUserIdx();
-
-        // 요청 데이터
-        String title     = req.getOrDefault("title", "제목없음");
-        String summary   = req.getOrDefault("summary", "");
-        Long   promptId  = Long.parseLong(req.getOrDefault("promptId", "0"));
-
-        Map<String,Object> res = new HashMap<>();
+        Map<String, Object> res = new HashMap<>();
         try {
-            // 노트 저장
+            // 1. 노트 저장
             Long noteId = notionContentService.saveNote(userIdx, title, summary, promptId);
+
+            // 2. 키워드 + 카테고리 매칭
+            CategoryResult categoryResult = keywordExtractionService.extractAndClassifyWithRAG(title, summary);
+            List<String> keywords = new ArrayList<>(categoryResult.getExtractedKeywords());
+            if (keywords.size() > 5) keywords = keywords.subList(0, 5);
+
+            String categoryPath = categoryResult.getSuggestedFolderPath();
+            Long folderId = autoFolderService.createOrFindFolder(userIdx, categoryResult);
+
+            // 응답
             res.put("success", true);
             res.put("noteId", noteId);
+            res.put("keywords", keywords);
+            res.put("categoryPath", categoryPath);
+            res.put("folderId", folderId);
+
             return ResponseEntity.ok(res);
         } catch (Exception e) {
-            log.error("노트 저장 실패", e);
             res.put("success", false);
             res.put("error", e.getMessage());
             return ResponseEntity.status(500).body(res);
         }
     }
+
+    @GetMapping("/complete")
+    public String showCompletePage(Model model) {
+        model.addAttribute("pageTitle", "저장 완료");
+        return "NotionComplete";
+    }
+
 }
