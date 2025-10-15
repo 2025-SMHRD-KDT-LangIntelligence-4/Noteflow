@@ -12,14 +12,7 @@ body {
 	font-family: 'Pretendard', sans-serif;
 	margin:0px;
 }
-.main-container{
-	font-family: var(--ck-content-font-family);
-    /* width: fit-content; */
-    /* margin-left: auto; */
-    /* margin-right: auto; */
-    /* height: 450px; */
-    display: contents;
-} 
+
 .full-container {
 	display:flex;
 	justify-content:center;
@@ -74,15 +67,7 @@ body {
 	flex-wrap:wrap;
 	box-shadow: 0px 4px 4px 5px rgba(0, 0, 0, 0.1);
 }
-.result-container {
-	width:1240px;
-	height:600px;
-	background-color:white;
-	border-radius:20px;
-	display:flex;
-	justify-content:center;
-	flex-wrap:wrap;
-}
+
 .title{
 	width: 100%;
     height: 40px;
@@ -138,15 +123,7 @@ body {
 .save-button:hover {
 	background-color:#2FA1FF; 
 }
-.result-title {
-	width:1000px;
-	height:40px;
-	border:solid 1px #c7c7c7;
-	border-radius:10px;
-	font-size:30px;
-	margin-top:20px;
-	padding:10px;
-}
+
 .result-content {
 	width:1000px;
 	height:450px;
@@ -164,86 +141,7 @@ h1 {
     margin-bottom: 20px;
     color: #333;
 }
-.button-container {
-    display: flex;
-    transition: transform 0.3s ease;
-    background-color:white;
-  }
- .slide-btn {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
 
-    white-space: normal; /* 줄바꿈 허용 */
-    word-wrap: break-word; /* 단어가 길면 줄바꿈 */
-    text-align: center;
-
-    padding: 10px;
-    border-left: 1px solid #ccc;
-    border-right: 1px solid #ccc;
-    background: #f9f9f9;
-    cursor: pointer;
-    font-size: 1rem; /* 글자 조금 줄이기 */
-    transition: background-color 0.2s;
-    height: 200px;
-    width: 180px; /* 살짝 줄여 균형 맞추기 */
-    flex: 0 0 auto;
-    border-top: 0;
-    border-bottom: 0;
-    border-radius: 8px;
-    overflow: hidden; /* 넘친 텍스트 숨김 */
-  }
-  .slide-btn:hover {
-  	background-color:#96D0FF;
-  }
-  .slide-btn img {
-  width: 80px;
-  height: 80px;
-  object-fit: contain;
-  margin-bottom: 10px;
-}
-
-.slide-btn .eng {
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-
-.slide-btn .kor {
-  font-size: 0.8rem;
-  color: #555;
-}
-   .arrow:hover {
-    color: #666;
-  }
-
-  .arrow.left {
-    left: 0;
-  }
-
-  .arrow.right {
-    right: 0;
-  }
-  .arrow.left:hover {
-    background-color: #96D0FF;
-  }
-
-  .arrow.right:hover {
-    background-color: #96D0FF;
-  }
-   .arrow {
-    position: relative;
-    background: white;
-    border: none;
-    font-size: 2rem;
-    cursor: pointer;
-    z-index: 10;
-    padding: 0 10px;
-    transition: 0.3s;
-    height:200px;
-    display:flex;
-    align-items:center;
-  }
   .title::placeholder {
     color: #c7c7c7;
 }
@@ -251,10 +149,7 @@ h1 {
 .notion-text::placeholder {
     color: #c7c7c7;
 }
-#editor {
-	width:100%;
-	height:600px !important;
-}
+
   
 .button-img{
 	width:24px;
@@ -265,14 +160,4 @@ h1 {
 	width:25px;
 	height:25px;
 	filter: brightness(0) invert(1);
-}
-.toastui-editor-defaultUI {
-	border-radius:20px !important;
-	box-shadow: 0px 4px 4px 5px rgba(0, 0, 0, 0.1);
-}
-.toastui-editor-defaultUI-toolbar {
-	border-radius:20px 20px 0 0 !important;
-}
-.toastui-editor-mode-switch {
-	border-radius:0 0 20px 20px!important;
 }

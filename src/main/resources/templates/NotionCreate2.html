@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+<meta name="_csrf" th:content="${_csrf.token}" />
+<meta name="_csrf_header" th:content="${_csrf.headerName}" />
+<link rel="stylesheet" th:href="@{/css/header.css}" />
+<link rel="stylesheet" th:href="@{/css/footer.css}" />
+<link rel="stylesheet" th:href="@{/css/ckEditor.css}" />
+<link rel="stylesheet"
+	href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
+<script
+	src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
+</head>
+<body>
+	<div th:replace="fragments/header :: siteHeader"></div>
+	<div class="full-container">
+		<div class="slide-location-container">
+					<div class="slide-container">
+						<button class="arrow left">‹</button>
+						<div class="slider-wrapper">
+							<div class="button-container" id="buttonContainer"></div>
+						</div>
+						<button class="arrow right">›</button>
+					</div>
+				</div>
+				<div class="result-location-container">
+						<div class="result-container">
+							
+							<div class="main-container">
+								<div id="editor"></div>
+							</div>
+						</div>
+					</div>
+						<div style="width:1000px; display:flex; justify-content:center;">
+							<button class="save-button" id="saveBtn"><img th:src="@{/images/save.svg}"class="button-img2"/>저장하기</button>
+						</div>
+	</div>
+	<script th:src="@{/js/NotionCreate.js}"></script>
+	<script th:inline="javascript">
+	const image = /*[[@{${image}}]]*/ "";
+	const prompts = /*[[${prompts}]]*/ [];
+	</script>
+	<div th:replace="fragments/footer :: siteFooter"></div>
+</body>
+</html>
