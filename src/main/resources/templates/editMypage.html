@@ -21,7 +21,7 @@
             <div class="profile-image-container">
                 <img id="preview" alt="프로필 이미지 미리보기"
                      th:src="${#strings.isEmpty(user?.profileImage)} ? @{/images/default-profile.png} : @{${user.profileImage}}" />
-                <input type="file" name="profileImage" accept="image/*" onchange="previewImage(event)" />
+                <input type="file" name="profileImage" accept="image/*" onchange="previewImage(event)"/>
                 <div>
                     <label>
                         <input type="checkbox" name="deleteProfileImage" value="true" onchange="toggleDeleteProfile(this)" />

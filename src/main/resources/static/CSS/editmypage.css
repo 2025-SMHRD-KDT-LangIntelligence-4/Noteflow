@@ -1,8 +1,13 @@
 
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+    /* 출력 애니메이션1 */
+ @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
         body {
             font-family: 'Pretendard';
-            background-color: #EAEAEA;
+            background-color:white;
             color: #333;
             margin:0px;
  
@@ -10,24 +15,29 @@
 
         .mypage-container {
             width: 800px;
-            margin: 40px auto;
+            margin: 50px auto;
             background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding:20px 0px;
+            animation: fadeIn 1s ease;
         }
 
         .title {
-            font-size: 24px;
+        	height:60px;
+            font-size: 30px;
             font-weight: bold;
             text-align: center;
             margin-bottom: 30px;
+            border-bottom: solid 2px;
+    		border-color: #C7C7C7;
         }
 
         form {
             display: flex;
             flex-direction: column;
             gap: 25px;
+            padding:0 40px;
         }
 
         label {
@@ -49,10 +59,11 @@
 
         .button-container {
             text-align: center;
-            margin-top: 30px;
+            margin-top: 10px;
+            padding-bottom:10px;
         }
 
-        .info-save-button, .info-cancel-button, .info-delete-button, .check-id-button {
+        .info-save-button, .info-cancel-button, .info-delete-button, .check-id-button, #file-upload-button {
             background-color: white;
             border: none;
             padding: 10px 20px;
@@ -63,10 +74,11 @@
             box-shadow: 0 2px 6px rgba(0,0,0,0.1);
         }
 
-        .info-save-button:hover, .info-cancel-button:hover, .info-delete-button:hover, .check-id-button:hover {
+        .info-save-button:hover, .info-cancel-button:hover, .info-delete-button:hover, .check-id-button:hover, #file-upload-button:hover {
             background-color: #96D0FF;
             color: #fff;
         }
+        
 
         .profile-image-container {
             text-align: center;
@@ -86,6 +98,16 @@
 		    display: flex;
 		    justify-content: center;
 		    flex-wrap: wrap;
+		    padding: 0 100px;
+        }
+        #bio {
+        	outline:none;
+        	border: 1px solid #ddd;
+        	resize:none;
+        	border-radius:6px;
+        	font-size:14px;
+        	height:50px;
+        	padding:10px;
         }
         /* user-info-item로 각 필드 감싸고 flex column 적용 */
 .user-info-item {
