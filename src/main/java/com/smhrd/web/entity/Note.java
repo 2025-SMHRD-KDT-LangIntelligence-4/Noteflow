@@ -21,11 +21,10 @@ public class Note {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_idx", nullable = false)
-    @JsonIgnore  // 추가
+    @JsonIgnore
     private User user;
-    
-    
-
+    @Column(name = "source_id")
+    private String sourceId;
 
     @Column(nullable = false)
     private String title;

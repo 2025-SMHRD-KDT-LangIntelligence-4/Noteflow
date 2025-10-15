@@ -9,7 +9,14 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
-@Table(name = "note_folders")
+
+@Table(
+        name = "note_folders",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uq_note_folder_user_parent_name",
+                columnNames = {"user_idx", "parent_folder_id", "folder_name"}
+        ))
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -22,23 +29,24 @@ public class NoteFolder {
     private Long folderId;
 
     @Column(name = "user_idx", nullable = false)
-    private Long userIdx; // 변경: String → Long
+    private Long userIdx;
 
-    @Column(name = "folder_name", nullable = false, length = 100)
+    @Column(name = "parent_folder_id")
+    private Long parentFolderId; // NULL = 루트
+
+    @Column(name = "folder_name", nullable = false, length = 255)
     private String folderName;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_folder_id")
-    @JsonIgnore  
-    private NoteFolder parentFolder;
-    
-    @Column(name = "parent_folder_id", insertable = false, updatable = false)
-    private Long parentFolderId;
+    @Column(name = "sort_order")
+    private Integer sortOrder;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "status", length = 20)
+    private String status;
+
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     @PrePersist

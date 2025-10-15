@@ -16,8 +16,10 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class CategoryHierarchy {
 
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "category_id")
     private Long categoryId;
 
     @Column(name = "large_category", nullable = false, length = 50)
@@ -35,11 +37,11 @@ public class CategoryHierarchy {
     @Column(name = "keywords", columnDefinition = "TEXT")
     private String keywords;
 
-    @Column(name = "confidence_score")
-    private Double confidenceScore; // LLM 랭킹 점수 반영
-
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    @Column(name = "confidence_score")
+    private Double confidenceScore;
 
     public double getConfidenceScore() {
         return confidenceScore != null ? confidenceScore : 0.0;
@@ -47,5 +49,6 @@ public class CategoryHierarchy {
 
     public void setConfidenceScore(double score) {
         this.confidenceScore = score;
+
     }
 }

@@ -30,4 +30,10 @@ public interface NoteRepository extends JpaRepository<Note, Long> {
     @Modifying
     @Query("UPDATE Note n SET n.folderId = :folderId WHERE n.noteIdx = :noteIdx")
     void updateNoteFolderId(@Param("noteIdx") Long noteIdx, @Param("folderId") Long folderId);
+
+
+    @Modifying
+    @Query("UPDATE Note n SET n.sourceId = :sourceId WHERE n.noteIdx = :noteIdx")
+    void updateNoteSourceId(@Param("noteIdx") Long noteIdx, @Param("sourceId") String sourceId);
+
 }

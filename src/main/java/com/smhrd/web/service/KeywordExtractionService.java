@@ -146,13 +146,20 @@ public class KeywordExtractionService {
         }
     }
 
-    private String generateFolderPath(CategoryHierarchy category) {
-        if (category == null) return "기타/미분류";
-        return String.format("%s/%s/%s",
-                category.getLargeCategory(),
-                category.getMediumCategory(),
-                category.getSmallCategory());
+    private String cleanSegment(String s) {
+        return s == null ? "" : s.replace("/", "／").trim();
     }
+
+
+
+    private String generateFolderPath(CategoryHierarchy category) {
+        if (category == null) return "기타/미분류/일반";
+        return String.format("%s/%s/%s",
+                cleanSegment(category.getLargeCategory()),
+                cleanSegment(category.getMediumCategory()),
+                cleanSegment(category.getSmallCategory()));
+    }
+
 
     private CategoryResult getDefaultCategory() {
         return CategoryResult.builder()

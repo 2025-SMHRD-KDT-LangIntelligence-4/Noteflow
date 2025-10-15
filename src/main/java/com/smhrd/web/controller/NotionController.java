@@ -3,12 +3,10 @@ package com.smhrd.web.controller;
 import com.smhrd.web.dto.CategoryResult;
 import com.smhrd.web.entity.Prompt;
 import com.smhrd.web.entity.TestSummary;
+import com.smhrd.web.repository.NoteRepository;
 import com.smhrd.web.repository.PromptRepository;
 import com.smhrd.web.security.CustomUserDetails;
-import com.smhrd.web.service.AutoFolderService;
-import com.smhrd.web.service.KeywordExtractionService;
-import com.smhrd.web.service.LLMUnifiedService;
-import com.smhrd.web.service.NotionContentService;
+import com.smhrd.web.service.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.env.Environment;
@@ -16,6 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -37,7 +36,9 @@ public class NotionController {
     private final NotionContentService notionContentService;
     private final KeywordExtractionService keywordExtractionService;
     private final AutoFolderService autoFolderService;
-    
+    private final NoteRepository noteRepository;
+    private final FileStorageService fileStorageService;
+
     // -----------------------------
     // LLM 요약 데이터 입력 페이지
     // -----------------------------
@@ -142,6 +143,7 @@ public class NotionController {
 
 
     @PostMapping("/save-note")
+    @Transactional
     @ResponseBody
     public ResponseEntity<Map<String, Object>> saveNote(@RequestBody Map<String, String> req, Authentication auth) {
         Long userIdx = ((CustomUserDetails) auth.getPrincipal()).getUserIdx();
@@ -161,6 +163,11 @@ public class NotionController {
 
             String categoryPath = categoryResult.getSuggestedFolderPath();
             Long folderId = autoFolderService.createOrFindFolder(userIdx, categoryResult);
+            noteRepository.updateNoteFolderId(noteId, folderId);
+
+            String sourceGridId = fileStorageService.storeTextAsFile(title + ".md", summary, userIdx, folderId);
+            noteRepository.updateNoteSourceId(noteId, sourceGridId);
+
 
             // 응답
             res.put("success", true);
