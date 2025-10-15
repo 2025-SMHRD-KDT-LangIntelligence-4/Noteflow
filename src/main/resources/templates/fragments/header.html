@@ -69,6 +69,7 @@
 	const topButtonContainer = document.querySelector('.top-button-position-container');
 	const topButton = document.querySelector('.top-button');
 	
+	topButtonContainer.style.display = 'none';
 	// 스크롤 감지: 300px 이상 내려가면 버튼 보이기
 	window.addEventListener('scroll', () => {
 	    if (window.scrollY > 300) {

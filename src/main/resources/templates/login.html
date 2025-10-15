@@ -13,17 +13,23 @@
 <body>
     <div th:replace="fragments/header :: siteHeader"></div>
 
-    <div th:if="${param.error}" style="color:red">
-        로그인 실패! 아이디 또는 비밀번호를 확인해주세요.
-    </div>
-    
-    <div th:if="${param.logout}" style="color:green">
-        로그아웃되었습니다.
-    </div>
+	<div th:if="${param.error}" class="login-popup-overlay">
+	    <div class="login-popup">
+	        <p>로그인 실패! 아이디 또는 비밀번호를 확인해주세요.</p>
+	        <button onclick="closePopup()">확인</button>
+	    </div>
+	</div>
 
+	<!-- 로그아웃 -->
+	<div th:if="${param.logout}" class="login-popup-overlay">
+	    <div class="login-popup success">
+	        <p>로그아웃되었습니다.</p>
+	        <button onclick="closePopup()">확인</button>
+	    </div>
+	</div>
     <div class="a">
     	<div class="logo-container">
-    		<img th:src="@{/images/logo2.png}" class="logo-ad"/>
+    		<img th:src="@{/images/logo3.png}" class="logo-ad"/>
     	</div>
         <div class="login-wrapper">
             <h1>Login</h1>
@@ -52,5 +58,11 @@
         </div>
     </div>
 <div th:replace="fragments/footer :: siteFooter"></div>
+<script>
+  function closePopup() {
+    const popup = document.querySelector('.login-popup-overlay');
+    if (popup) popup.remove();
+  }
+</script>
 </body>
 </html>
