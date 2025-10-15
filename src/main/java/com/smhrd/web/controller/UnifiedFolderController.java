@@ -34,17 +34,21 @@ public class UnifiedFolderController {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
     }
 
+    private Long getUserIdx(Authentication auth) {
+        return ((com.smhrd.web.security.CustomUserDetails) auth.getPrincipal()).getUserIdx();
+    }
+
     // ─────────────────────────────────────────────────────────────────────
     // 노트 폴더 트리 구조 조회 (노트 포함)
     // ─────────────────────────────────────────────────────────────────────
     @GetMapping("/notes/tree")
     public ResponseEntity<Map<String, Object>> getNoteTree(Authentication auth) {
         if (isAnonymous(auth)) return unauthorized();
-        String userId = auth.getName();
+        Long userIdx = getUserIdx(auth);
 
         Map<String, Object> result = new HashMap<>();
-        result.put("folders", unifiedFolderService.getNoteFolderTree(userId));
-        result.put("rootNotes", unifiedFolderService.getRootNotes(userId));
+        result.put("folders", unifiedFolderService.getNoteFolderTree(userIdx));
+        result.put("rootNotes", unifiedFolderService.getRootNotes(userIdx));
         return ResponseEntity.ok(result);
     }
 
@@ -54,15 +58,15 @@ public class UnifiedFolderController {
     @GetMapping("/files/tree")
     public ResponseEntity<Map<String, Object>> getFileTree(Authentication auth) {
         if (isAnonymous(auth)) return unauthorized();
-        String userId = auth.getName();
+        Long userIdx = getUserIdx(auth);
 
         Map<String, Object> result = new HashMap<>();
         // 폴더 트리
-        List<Folder> fileTree = unifiedFolderService.getFileFolderTree(userId);
+        List<Folder> fileTree = unifiedFolderService.getFileFolderTree(userIdx);
         result.put("folders", fileTree);
 
         // ✅ 루트 파일은 폴더 유무와 상관 없이 항상 내려줍니다.
-        List<FileMetadata> rootFiles = unifiedFolderService.getRootFiles(userId);
+        List<FileMetadata> rootFiles = unifiedFolderService.getRootFiles(userIdx);
         result.put("rootFiles", rootFiles);
 
         return ResponseEntity.ok(result);
@@ -78,10 +82,10 @@ public class UnifiedFolderController {
             Authentication auth) {
 
         if (isAnonymous(auth)) return unauthorized();
-        String userId = auth.getName();
+        Long userIdx = getUserIdx(auth);
 
         try {
-            Long folderId = unifiedFolderService.createNoteFolder(userId, folderName, parentFolderId);
+            Long folderId = unifiedFolderService.createNoteFolder(userIdx, folderName, parentFolderId);
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("folderId", folderId);
@@ -105,10 +109,10 @@ public class UnifiedFolderController {
             Authentication auth) {
 
         if (isAnonymous(auth)) return unauthorized();
-        String userId = auth.getName();
+        Long userIdx = getUserIdx(auth);
 
         try {
-            unifiedFolderService.moveNoteToFolder(userId, noteId, targetFolderId);
+            unifiedFolderService.moveNoteToFolder(userIdx, noteId, targetFolderId);
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "노트가 이동되었습니다.");
@@ -130,10 +134,10 @@ public class UnifiedFolderController {
             Authentication auth) {
 
         if (isAnonymous(auth)) return unauthorized();
-        String userId = auth.getName();
+        Long userIdx = getUserIdx(auth);
 
         try {
-            unifiedFolderService.deleteNoteFolder(userId, folderId);
+            unifiedFolderService.deleteNoteFolder(userIdx, folderId);
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "노트 폴더가 삭제되었습니다.");
@@ -145,6 +149,7 @@ public class UnifiedFolderController {
             return ResponseEntity.ok(response);
         }
     }
+
     @PutMapping("/notes/folder/{folderId}/rename")
     public ResponseEntity<Map<String, Object>> renameNoteFolder(
             @PathVariable("folderId") Long folderId,
@@ -153,13 +158,13 @@ public class UnifiedFolderController {
 
         Map<String, Object> response = new HashMap<>();
         try {
-            if (auth == null || !auth.isAuthenticated()) {
+            if (isAnonymous(auth)) {
                 response.put("success", false);
                 response.put("message", "Unauthorized");
                 return ResponseEntity.status(401).body(response);
             }
-            String userId = auth.getName();
-            unifiedFolderService.renameNoteFolder(userId, folderId, newName);
+            Long userIdx = getUserIdx(auth);
+            unifiedFolderService.renameNoteFolder(userIdx, folderId, newName);
 
             response.put("success", true);
             response.put("message", "폴더 이름이 변경되었습니다.");

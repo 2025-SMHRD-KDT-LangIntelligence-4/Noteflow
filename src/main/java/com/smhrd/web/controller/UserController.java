@@ -1,6 +1,7 @@
 package com.smhrd.web.controller;
 
 import com.smhrd.web.entity.User;
+import com.smhrd.web.security.CustomUserDetails; // [추가]
 import com.smhrd.web.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -82,8 +83,10 @@ public class UserController {
     @ResponseBody
     public Map<String, Boolean> verifyPassword(Authentication authentication,
                                                @RequestParam("currentPw") String currentPw) {
-        String userId = authentication.getName();
-        boolean valid = userService.verifyPassword(userId, currentPw);
+
+        Long userIdx = ((CustomUserDetails) authentication.getPrincipal()).getUserIdx(); // [수정]
+        boolean valid = userService.verifyPassword(userIdx, currentPw);               // [수정]
+
         Map<String, Boolean> result = new HashMap<>();
         result.put("valid", valid);
         return result;
@@ -95,9 +98,10 @@ public class UserController {
     @PostMapping("/delete-account")
     @ResponseBody
     public ResponseEntity<Void> deleteAccount(Authentication authentication) {
-        String userId = authentication.getName();
+
+        Long userIdx = ((CustomUserDetails) authentication.getPrincipal()).getUserIdx(); // [수정]
         try {
-            userService.deleteUserAccount(userId);
+            userService.deleteUserAccount(userIdx);                                   // [수정]
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             e.printStackTrace();
@@ -110,13 +114,11 @@ public class UserController {
     // --------------------------
     @GetMapping("/mypage")
     public String mypageGet(Authentication authentication, Model model) {
-        String userId = authentication != null ? authentication.getName() : null;
-        if (userId != null) {
-            userService.getUserInfo(userId)
-                       .ifPresent(user -> model.addAttribute("user", user));
-        } else {
-            model.addAttribute("user", new User());
-        }
+
+        Long userIdx = ((CustomUserDetails) authentication.getPrincipal()).getUserIdx(); // [수정]
+        userService.getUserInfo(userIdx)                                             // [수정]
+                   .ifPresent(user -> model.addAttribute("user", user));
+
         return "MyPage";
     }
 
@@ -130,14 +132,10 @@ public class UserController {
     // --------------------------
     @GetMapping("/editMypage")
     public String editMypage(Authentication authentication, Model model) {
-        String userId = authentication != null ? authentication.getName() : null;
-        System.out.println("Authentication: " + authentication);
-        System.out.println("userId from auth: " + userId);
-        User user = new User(); // 기본 객체 생성
-        if (userId != null) {
-            user = userService.getUserInfo(userId).orElse(user); // DB에서 가져오거나 기본 객체
-        }
-        
+
+        Long userIdx = ((CustomUserDetails) authentication.getPrincipal()).getUserIdx(); // [수정]
+        User user = userService.getUserInfo(userIdx).orElse(new User());            // [수정]
+
         model.addAttribute("user", user); // 항상 null-safe 보장
         return "editMypage";
     }
@@ -156,19 +154,15 @@ public class UserController {
                              @RequestParam(value = "deleteProfileImage", required = false) Boolean deleteProfileImage,
                              RedirectAttributes redirectAttributes) {
 
-        String userId = authentication != null ? authentication.getName() : null;
+        Long userIdx = ((CustomUserDetails) authentication.getPrincipal()).getUserIdx(); // [수정]
 
-        if (userId != null) {
-            try {
-                userService.updateUserInfo(userId, nickname, userEmail, userPw,
-                        interestArea, learningArea, profileImage, deleteProfileImage);
-                redirectAttributes.addFlashAttribute("message", "회원 정보가 성공적으로 수정되었습니다.");
-            } catch (Exception e) {
-                e.printStackTrace();
-                redirectAttributes.addFlashAttribute("error", "회원 정보 수정 중 오류가 발생했습니다.");
-            }
-        } else {
-            redirectAttributes.addFlashAttribute("error", "로그인 정보가 유효하지 않습니다.");
+        try {
+            userService.updateUserInfo(userIdx, nickname, userEmail, userPw,
+                    interestArea, learningArea, profileImage, deleteProfileImage);          // [수정]
+            redirectAttributes.addFlashAttribute("message", "회원 정보가 성공적으로 수정되었습니다.");
+        } catch (Exception e) {
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("error", "회원 정보 수정 중 오류가 발생했습니다.");
         }
 
         return "redirect:/mypage";

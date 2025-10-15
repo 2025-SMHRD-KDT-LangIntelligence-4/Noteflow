@@ -28,8 +28,8 @@ public class Folder {
     @Field("parent_folder_id")
     private String parentFolderId; // null이면 루트 폴더
 
-    @Field("user_id")
-    private String userId;
+    @Field("user_idx") // 변경: user_id → user_idx
+    private Long userIdx;    // 변경: String → Long
 
     @Field("created_at")
     private LocalDateTime createdAt;

@@ -22,10 +22,10 @@ public class FolderService {
     /**
      * 사용자의 폴더 트리 구조 조회
      */
-    public List<Folder> getFolderTree(String userId) {
+    public List<Folder> getFolderTree(Long userIdx) {
         // 1. 모든 폴더와 파일 조회
-        List<Folder> allFolders = folderRepository.findByUserIdOrderByFolderNameAsc(userId);
-        List<FileMetadata> allFiles = fileMetadataRepository.findByUserIdOrderByUploadDateDesc(userId);
+        List<Folder> allFolders = folderRepository.findByUserIdxOrderByFolderNameAsc(userIdx);
+        List<FileMetadata> allFiles = fileMetadataRepository.findByUserIdxOrderByUploadDateDesc(userIdx);
 
         // 2. 폴더 ID로 그룹화
         Map<String, List<Folder>> foldersByParent = allFolders.stream()
@@ -73,23 +73,23 @@ public class FolderService {
     /**
      * 루트 레벨 파일들 (폴더에 속하지 않은 파일들)
      */
-    public List<FileMetadata> getRootFiles(String userId) {
-        return fileMetadataRepository.findByUserIdAndFolderIdIsNullOrderByOriginalNameAsc(userId);
+    public List<FileMetadata> getRootFiles(Long userIdx) {
+        return fileMetadataRepository.findByUserIdxAndFolderIdIsNullOrderByOriginalNameAsc(userIdx);
     }
 
     /**
      * 새 폴더 생성
      */
-    public String createFolder(String userId, String folderName, String parentFolderId) {
+    public String createFolder(Long userIdx, String folderName, String parentFolderId) {
         // 중복 검사
-        if (folderRepository.existsByUserIdAndFolderNameAndParentFolderId(userId, folderName, parentFolderId)) {
+        if (folderRepository.existsByUserIdxAndFolderNameAndParentFolderId(userIdx, folderName, parentFolderId)) {
             throw new IllegalArgumentException("같은 이름의 폴더가 이미 존재합니다.");
         }
 
         Folder folder = Folder.builder()
                 .folderName(folderName)
                 .parentFolderId(parentFolderId)
-                .userId(userId)
+                .userIdx(userIdx)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
@@ -100,13 +100,13 @@ public class FolderService {
     /**
      * 폴더 이름 변경
      */
-    public void renameFolder(String userId, String folderId, String newName) {
-        Folder folder = folderRepository.findByIdAndUserId(folderId, userId)
+    public void renameFolder(Long userIdx, String folderId, String newName) {
+        Folder folder = folderRepository.findByIdAndUserIdx(folderId, userIdx)
                 .orElseThrow(() -> new IllegalArgumentException("폴더를 찾을 수 없습니다."));
 
         // 같은 부모 폴더 내에서 이름 중복 검사
-        if (folderRepository.existsByUserIdAndFolderNameAndParentFolderId(
-                userId, newName, folder.getParentFolderId())) {
+        if (folderRepository.existsByUserIdxAndFolderNameAndParentFolderId(
+                userIdx, newName, folder.getParentFolderId())) {
             throw new IllegalArgumentException("같은 이름의 폴더가 이미 존재합니다.");
         }
 
@@ -118,47 +118,47 @@ public class FolderService {
     /**
      * 폴더 삭제 (하위 폴더와 파일 포함)
      */
-    public void deleteFolder(String userId, String folderId) {
-        Folder folder = folderRepository.findByIdAndUserId(folderId, userId)
+    public void deleteFolder(Long userIdx, String folderId) {
+        Folder folder = folderRepository.findByIdAndUserIdx(folderId, userIdx)
                 .orElseThrow(() -> new IllegalArgumentException("폴더를 찾을 수 없습니다."));
 
         // 하위 폴더들 재귀적 삭제
-        deleteSubfoldersRecursively(userId, folderId);
+        deleteSubfoldersRecursively(userIdx, folderId);
 
         // 폴더 내 파일들 삭제
-        List<FileMetadata> files = fileMetadataRepository.findByUserIdAndFolderIdOrderByOriginalNameAsc(userId, folderId);
-        files.forEach(file -> fileMetadataRepository.deleteByIdAndUserId(file.getId(), userId));
+        List<FileMetadata> files = fileMetadataRepository.findByUserIdxAndFolderIdOrderByOriginalNameAsc(userIdx, folderId);
+        files.forEach(file -> fileMetadataRepository.deleteByIdAndUserIdx(file.getId(), userIdx));
 
         // 폴더 자체 삭제
-        folderRepository.deleteByIdAndUserId(folderId, userId);
+        folderRepository.deleteByIdAndUserIdx(folderId, userIdx);
     }
 
-    private void deleteSubfoldersRecursively(String userId, String parentFolderId) {
-        List<Folder> subfolders = folderRepository.findByUserIdAndParentFolderIdOrderByFolderNameAsc(userId, parentFolderId);
+    private void deleteSubfoldersRecursively(Long userIdx, String parentFolderId) {
+        List<Folder> subfolders = folderRepository.findByUserIdxAndParentFolderIdOrderByFolderNameAsc(userIdx, parentFolderId);
 
         for (Folder subfolder : subfolders) {
             // 재귀적으로 하위 폴더 삭제
-            deleteSubfoldersRecursively(userId, subfolder.getId());
+            deleteSubfoldersRecursively(userIdx, subfolder.getId());
 
             // 폴더 내 파일들 삭제
-            List<FileMetadata> files = fileMetadataRepository.findByUserIdAndFolderIdOrderByOriginalNameAsc(userId, subfolder.getId());
-            files.forEach(file -> fileMetadataRepository.deleteByIdAndUserId(file.getId(), userId));
+            List<FileMetadata> files = fileMetadataRepository.findByUserIdxAndFolderIdOrderByOriginalNameAsc(userIdx, subfolder.getId());
+            files.forEach(file -> fileMetadataRepository.deleteByIdAndUserIdx(file.getId(), userIdx));
 
             // 폴더 삭제
-            folderRepository.deleteByIdAndUserId(subfolder.getId(), userId);
+            folderRepository.deleteByIdAndUserIdx(subfolder.getId(), userIdx);
         }
     }
 
     /**
      * 파일을 폴더로 이동
      */
-    public void moveFileToFolder(String userId, String fileId, String targetFolderId) {
-        FileMetadata file = fileMetadataRepository.findByIdAndUserId(fileId, userId)
+    public void moveFileToFolder(Long userIdx, String fileId, String targetFolderId) {
+        FileMetadata file = fileMetadataRepository.findByIdAndUserIdx(fileId, userIdx)
                 .orElseThrow(() -> new IllegalArgumentException("파일을 찾을 수 없습니다."));
 
         // 대상 폴더 존재 확인 (null이면 루트로 이동)
         if (targetFolderId != null) {
-            folderRepository.findByIdAndUserId(targetFolderId, userId)
+            folderRepository.findByIdAndUserIdx(targetFolderId, userIdx)
                     .orElseThrow(() -> new IllegalArgumentException("대상 폴더를 찾을 수 없습니다."));
         }
 

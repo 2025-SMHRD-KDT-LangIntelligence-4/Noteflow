@@ -32,8 +32,8 @@ public class FileMetadata {
     @Field("mime_type")
     private String mimeType;
 
-    @Field("user_id")
-    private String userId;
+    @Field("user_idx") // 변경: user_id → user_idx
+    private Long userIdx;  // 변경: String → Long
 
     @Field("folder_id")
     private String folderId; // null이면 루트 레벨

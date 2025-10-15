@@ -1,7 +1,8 @@
 package com.smhrd.web.config;
 
 import com.smhrd.web.service.CustomUserDetailsService;
-import org.springframework.context.annotation.*;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -24,66 +25,70 @@ public class SecurityConfig {
         this.passwordEncoder = passwordEncoder;
     }
 
+    // ---------------------------------------------------
+    // 인증 제공자 등록 (CustomUserDetailsService 연동)
+    // ---------------------------------------------------
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
         provider.setUserDetailsService(userDetailsService);
         provider.setPasswordEncoder(passwordEncoder);
+        provider.setHideUserNotFoundExceptions(false); // 디버깅 시 UsernameNotFoundException 확인용
         return provider;
     }
 
+    // ---------------------------------------------------
+    // Security Filter Chain 설정
+    // ---------------------------------------------------
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-//                .csrf(csrf -> csrf.disable())
+            // 인증 제공자 등록
+            .authenticationProvider(authenticationProvider())
 
-                // 인증 제공자 등록
-                .authenticationProvider(authenticationProvider())
+            // URL 접근 제어
+            .authorizeHttpRequests(auth -> auth
+                // 로그인/회원가입 페이지 및 정적 자원 접근 허용
+                .requestMatchers(HttpMethod.GET, "/login", "/signup").permitAll()
+                .requestMatchers(HttpMethod.POST, "/login", "/signup").permitAll()
+                .requestMatchers("/**","/css/**", "/js/**", "/images/**", "/fonts/**", "/static/**", "/", "/webjars/**","/fragments/**").permitAll()
+                // 그 외 요청은 인증 필요
+                .anyRequest().authenticated()
+            )
 
-                // URL 접근 제어
-                .authorizeHttpRequests(auth -> auth
-                        // 로그인 폼(GET)과 로그인 처리(POST)를 모두 허용
-                        .requestMatchers(HttpMethod.GET,  "/login").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/login").permitAll()
+            // 폼 로그인 설정
+            .formLogin(form -> form
+                .loginPage("/login")                          // 커스텀 로그인 페이지
+                .loginProcessingUrl("/perform_login")                 // 로그인 POST 처리 URL
+                .usernameParameter("user_id")                 // HTML form input name
+                .passwordParameter("user_pw")                 // HTML form input name
+                .defaultSuccessUrl("/main", true)             // 로그인 성공 시 이동 경로
+                .failureUrl("/login?error")                   // 실패 시 리다이렉트 경로
+                .permitAll()
+            )
 
-                        // 회원가입, 정적 자원
-                        .requestMatchers("/signup", "/css/**", "/js/**","/","/**","/static/**").permitAll()
+            // 로그아웃 설정
+            .logout(logout -> logout
+                .logoutRequestMatcher(new AntPathRequestMatcher("/logout", "GET"))
+                .logoutSuccessUrl("/login?logout=true")
+                .invalidateHttpSession(true)
+                .deleteCookies("JSESSIONID")
+                .permitAll()
+            );
 
-                        // 그 외 모든 요청은 인증 필요
-                        .anyRequest().authenticated()
-                )
+            // CSRF 설정 (필요 시 비활성화 가능)
 
-                // 폼 로그인 설정 (permitAll()로 GET/POST /login 자동 허용)
-                .formLogin(form -> form
-                        .loginPage("/login")
-                        .loginProcessingUrl("/login")
-                        .usernameParameter("user_id")
-                        .passwordParameter("user_pw")
-                        .defaultSuccessUrl("/main", true)
-                        .failureUrl("/login?error")
-                        .permitAll()
-                )
-
-                .logout(logout -> logout
-                	    .logoutRequestMatcher(new AntPathRequestMatcher("/logout", "GET"))
-                	    .logoutSuccessUrl("/login?logout=true")
-                	    .invalidateHttpSession(true)
-                	    .deleteCookies("JSESSIONID")
-                	    .permitAll()
-                	)
-        ;
 
         return http.build();
     }
-    
 
-	@Bean
-	public WebSecurityCustomizer webSecurityCustomizer() {
-	    return web -> web.ignoring().requestMatchers(
-	        "/css/**", "/js/**", "/images/**", "/fonts/**", "/webjars/**"
-	    );
-	}
-
-
-
+    // ---------------------------------------------------
+    // 정적 리소스 Security 필터 제외
+    // ---------------------------------------------------
+    @Bean
+    public WebSecurityCustomizer webSecurityCustomizer() {
+        return web -> web.ignoring().requestMatchers(
+                "/css/**", "/js/**", "/images/**", "/fonts/**", "/webjars/**", "/favicon.ico"
+        );
+    }
 }

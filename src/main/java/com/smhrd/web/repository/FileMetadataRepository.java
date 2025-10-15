@@ -11,23 +11,22 @@ import java.util.Optional;
 @Repository
 public interface FileMetadataRepository extends MongoRepository<FileMetadata, String> {
 
-    List<FileMetadata> findByUserIdAndFolderIdIsNullOrderByOriginalNameAsc(String userId);
+    List<FileMetadata> findByUserIdxAndFolderIdIsNullOrderByOriginalNameAsc(Long userIdx);
 
-    List<FileMetadata> findByUserIdAndFolderIdOrderByOriginalNameAsc(String userId, String folderId);
+    List<FileMetadata> findByUserIdxAndFolderIdOrderByOriginalNameAsc(Long userIdx, String folderId);
 
-    List<FileMetadata> findByUserIdOrderByUploadDateDesc(String userId);
+    List<FileMetadata> findByUserIdxOrderByUploadDateDesc(Long userIdx);
 
-    Optional<FileMetadata> findByIdAndUserId(String id, String userId);
+    Optional<FileMetadata> findByIdAndUserIdx(String id, Long userIdx);
+    
+    Optional<FileMetadata> findByGridfsId(String gridfsId);
 
-    void deleteByIdAndUserId(String id, String userId);
+    void deleteByIdAndUserIdx(String id, Long userIdx);
 
     long countByFolderId(String folderId);
-    
 
-	@Query(value = "{ 'userId': ?0, $or: [ { 'folderId': null }, { 'folderId': { $exists: false } }, { 'folderId': '' } ] }",
-	       sort  = "{ 'uploadDate': -1 }")
-	List<FileMetadata> findRootFiles(String userId);
-	
-
-
+    // 루트 파일 조회
+    @Query(value = "{ 'userIdx': ?0, $or: [ { 'folderId': null }, { 'folderId': { $exists: false } }, { 'folderId': '' } ] }",
+           sort  = "{ 'uploadDate': -1 }")
+    List<FileMetadata> findRootFilesByUserIdx(Long userIdx);
 }

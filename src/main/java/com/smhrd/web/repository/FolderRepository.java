@@ -10,19 +10,24 @@ import java.util.Optional;
 @Repository
 public interface FolderRepository extends MongoRepository<Folder, String> {
 
-    List<Folder> findByUserIdAndParentFolderIdIsNullOrderByFolderNameAsc(String userId);
+    // 루트 폴더 조회
+    List<Folder> findByUserIdxAndParentFolderIdIsNullOrderByFolderNameAsc(Long userIdx);
 
-    List<Folder> findByUserIdAndParentFolderIdOrderByFolderNameAsc(String userId, String parentFolderId);
+    // 특정 부모 폴더 하위 폴더 조회
+    List<Folder> findByUserIdxAndParentFolderIdOrderByFolderNameAsc(Long userIdx, String parentFolderId);
 
-    List<Folder> findByUserIdOrderByFolderNameAsc(String userId);
+    // 모든 폴더 조회
+    List<Folder> findByUserIdxOrderByFolderNameAsc(Long userIdx);
 
-    Optional<Folder> findByIdAndUserId(String id, String userId);
+    // 단일 폴더 조회
+    Optional<Folder> findByIdAndUserIdx(String id, Long userIdx);
 
-    boolean existsByUserIdAndFolderNameAndParentFolderId(String userId, String folderName, String parentFolderId);
+    // 폴더 존재 여부 확인
+    boolean existsByUserIdxAndFolderNameAndParentFolderId(Long userIdx, String folderName, String parentFolderId);
 
-    void deleteByIdAndUserId(String id, String userId);
+    // 폴더 삭제
+    void deleteByIdAndUserIdx(String id, Long userIdx);
 
-	List<Folder> findByUserIdOrderByCreatedAtAsc(String userId);
-
+    // 생성일 기준 정렬
+    List<Folder> findByUserIdxOrderByCreatedAtAsc(Long userIdx);
 }
-

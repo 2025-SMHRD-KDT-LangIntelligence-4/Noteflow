@@ -28,18 +28,18 @@ public class NotionContentService {
 	// [1] 텍스트로 노션 생성
 	// ------------------------------------------------------------
 	@Transactional
-	public Long createNotionFromText(String userId, String title, String content, String notionType) {
-		User user = userRepository.findByUserId(userId)
+	public Long createNotionFromText(long userIdx, String title, String content, String notionType) {
+		User user = userRepository.findByUserIdx(userIdx)
 				.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
 		// 1) LLM 요약(JSON)
-		LLMUnifiedService.UnifiedResult llm = llmUnifiedService.summarizeText(userId, content, notionType);
+		LLMUnifiedService.UnifiedResult llm = llmUnifiedService.summarizeText(userIdx, content, notionType);
 
 		// 2) 카테고리 매칭 → 폴더 경로 확정
 		LLMUnifiedService.CategoryPath finalPath =
 				llmUnifiedService.matchCategory(llm.getKeywords(), llm.getCategory());
 
-		Long folderId = llmUnifiedService.ensureNoteFolderPath(userId, finalPath);
+		Long folderId = llmUnifiedService.ensureNoteFolderPath(userIdx, finalPath);
 
 		// 3) 노트 저장
 		Note note = Note.builder()
@@ -69,22 +69,22 @@ public class NotionContentService {
 	// [2] 파일로 노션 생성
 	// ------------------------------------------------------------
 	@Transactional
-	public Long createNotionFromFile(String userId, MultipartFile file, String notionType, String customTitle) {
-		User user = userRepository.findByUserId(userId)
+	public Long createNotionFromFile(long userIdx, MultipartFile file, String notionType, String customTitle) {
+		User user = userRepository.findByUserIdx(userIdx)
 				.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
 		try {
 			// 1) 파일 저장
-			String mongoFileId = fileStorageService.storeFile(file, userId);
+			String mongoFileId = fileStorageService.storeFile(file, userIdx);
 
 			// 2) LLM 요약(JSON)
-			LLMUnifiedService.UnifiedResult llm = llmUnifiedService.summarizeFile(userId, file, notionType);
+			LLMUnifiedService.UnifiedResult llm = llmUnifiedService.summarizeFile(userIdx, file, notionType);
 
 			// 3) 카테고리 매칭 → 폴더 경로 확정
 			LLMUnifiedService.CategoryPath finalPath =
 					llmUnifiedService.matchCategory(llm.getKeywords(), llm.getCategory());
 
-			Long folderId = llmUnifiedService.ensureNoteFolderPath(userId, finalPath);
+			Long folderId = llmUnifiedService.ensureNoteFolderPath(userIdx, finalPath);
 
 			// 4) 제목 결정
 			String finalTitle = (customTitle != null && !customTitle.isBlank())
@@ -150,9 +150,9 @@ public class NotionContentService {
 		return filename.substring(filename.lastIndexOf('.') + 1);
 	}
 
-
-	// 임시용
-
+	// ------------------------------------------------------------
+	// 임시용 saveNote (user_idx 기반)
+	// ------------------------------------------------------------
 	@Transactional
 	public Long saveNote(
 			Long userIdx,
@@ -184,6 +184,5 @@ public class NotionContentService {
 		Note saved = noteRepository.save(note);
 		return saved.getNoteIdx();
 	}
-
 
 }

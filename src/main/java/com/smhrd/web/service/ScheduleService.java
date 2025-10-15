@@ -21,8 +21,8 @@ public class ScheduleService {
     private final UserRepository userRepository;
 
     // ✅ 1. 일정 생성
-    public Schedule createSchedule(String userId, Schedule schedule) {
-        User user = userRepository.findByUserId(userId)
+    public Schedule createSchedule(long userIdx, Schedule schedule) {
+        User user = userRepository.findByUserIdx(userIdx)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
         schedule.setUser(user);
@@ -31,25 +31,19 @@ public class ScheduleService {
         return scheduleRepository.save(schedule);
     }
 
-    // ✅ 2. 일정 전체 조회 (유저별)
-    public List<Schedule> getAllSchedulesByUser(String userId) {
-        User user = userRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
-        return scheduleRepository.findByUser(user);
+ // ✅ 2. 일정 전체 조회 (유저별)
+    public List<Schedule> getAllSchedulesByUser(long userIdx) {
+        return scheduleRepository.findByUser_UserIdx(userIdx);
     }
 
     // ✅ 3. 특정 기간 일정 조회 (달력용)
-    public List<Schedule> getSchedulesForPeriod(String userId, LocalDateTime start, LocalDateTime end) {
-        User user = userRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
-        return scheduleRepository.findByUserAndStartTimeLessThanEqualAndEndTimeGreaterThanEqual(user, end, start);
+    public List<Schedule> getSchedulesForPeriod(long userIdx, LocalDateTime start, LocalDateTime end) {
+        return scheduleRepository.findByUser_UserIdxAndStartTimeLessThanEqualAndEndTimeGreaterThanEqual(userIdx, end, start);
     }
 
     // ✅ 4. 일정 검색 (키워드 기반, title만 검색)
-    public List<Schedule> searchSchedules(String userId, String keyword) {
-        User user = userRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
-        return scheduleRepository.findByUserAndTitleContainingIgnoreCase(user, keyword);
+    public List<Schedule> searchSchedules(long userIdx, String keyword) {
+        return scheduleRepository.findByUser_UserIdxAndTitleContainingIgnoreCase(userIdx, keyword);
     }
 
     // ✅ 5. 일정 수정

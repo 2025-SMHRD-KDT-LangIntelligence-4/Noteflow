@@ -1,10 +1,8 @@
 package com.smhrd.web.controller;
 
 import com.smhrd.web.entity.Schedule;
-import com.smhrd.web.entity.User;
-import com.smhrd.web.repository.ScheduleRepository;
-import com.smhrd.web.service.ScheduleService;
 import com.smhrd.web.dto.ScheduleEventDto;
+import com.smhrd.web.service.ScheduleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -32,8 +30,8 @@ public class ScheduleController {
     @ResponseBody
     public ResponseEntity<Schedule> createSchedule(@RequestBody Schedule schedule,
                                                    Authentication authentication) {
-        String userId = authentication.getName();
-        Schedule saved = scheduleService.createSchedule(userId, schedule);
+        Long userIdx = ((com.smhrd.web.security.CustomUserDetails) authentication.getPrincipal()).getUserIdx();
+        Schedule saved = scheduleService.createSchedule(userIdx, schedule);
         return ResponseEntity.ok(saved);
     }
 
@@ -43,8 +41,8 @@ public class ScheduleController {
     @GetMapping
     @ResponseBody
     public ResponseEntity<List<ScheduleEventDto>> getSchedulesOnLoad(Authentication authentication) {
-        String userId = authentication.getName();
-        List<Schedule> schedules = scheduleService.getAllSchedulesByUser(userId);
+        Long userIdx = ((com.smhrd.web.security.CustomUserDetails) authentication.getPrincipal()).getUserIdx();
+        List<Schedule> schedules = scheduleService.getAllSchedulesByUser(userIdx);
 
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
@@ -53,8 +51,7 @@ public class ScheduleController {
                         s.getScheduleId(),
                         s.getTitle(),
                         s.getStartTime() != null ? s.getStartTime().format(fmt) : null,
-                        		// → 수정: FullCalendar의 end가 exclusive 이므로, 포함시키려면 끝 시각을 1초 뒤로 밀어 반환
-                        s.getEndTime() != null ? s.getEndTime().plusSeconds(1).format(fmt) : null,
+                        s.getEndTime() != null ? s.getEndTime().plusSeconds(1).format(fmt) : null, // end 포함
                         s.getColorTag()
                 ))
                 .collect(Collectors.toList());
@@ -72,16 +69,15 @@ public class ScheduleController {
             @RequestParam(required = false) String start,
             @RequestParam(required = false) String end
     ) {
-        String userId = authentication.getName();
+        Long userIdx = ((com.smhrd.web.security.CustomUserDetails) authentication.getPrincipal()).getUserIdx();
 
-        // start, end가 없을 때 전체 조회로 fallback
         List<Schedule> schedules;
         if (start == null || end == null) {
-            schedules = scheduleService.getAllSchedulesByUser(userId);
+            schedules = scheduleService.getAllSchedulesByUser(userIdx);
         } else {
-        	LocalDateTime startDate = LocalDate.parse(start.substring(0,10)).atStartOfDay();
-        	LocalDateTime endDate = LocalDate.parse(end.substring(0,10)).atTime(23, 59, 59);
-            schedules = scheduleService.getSchedulesForPeriod(userId, startDate, endDate);
+            LocalDateTime startDate = LocalDate.parse(start.substring(0, 10)).atStartOfDay();
+            LocalDateTime endDate = LocalDate.parse(end.substring(0, 10)).atTime(23, 59, 59);
+            schedules = scheduleService.getSchedulesForPeriod(userIdx, startDate, endDate);
         }
 
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
@@ -108,8 +104,8 @@ public class ScheduleController {
             Authentication authentication,
             @RequestParam String keyword) {
 
-        String userId = authentication.getName();
-        List<Schedule> results = scheduleService.searchSchedules(userId, keyword);
+        Long userIdx = ((com.smhrd.web.security.CustomUserDetails) authentication.getPrincipal()).getUserIdx();
+        List<Schedule> results = scheduleService.searchSchedules(userIdx, keyword);
 
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 

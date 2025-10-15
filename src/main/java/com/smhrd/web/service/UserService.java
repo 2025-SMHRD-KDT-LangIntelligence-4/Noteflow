@@ -21,6 +21,7 @@ public class UserService {
     private final UserRepository userRepo;
     private final PasswordEncoder passwordEncoder;
 
+    // 회원가입 로직: userId, email 중복 검사는 그대로 유지
     public User signup(User user) {
         if (userRepo.findByUserId(user.getUserId()).isPresent()) {
             throw new IllegalArgumentException("이미 존재하는 아이디입니다.");
@@ -39,10 +40,12 @@ public class UserService {
         return userRepo.save(user);
     }
 
-    public Optional<User> getUserInfo(String userId) {
-        return userRepo.findByUserId(userId);
+    // ✅ user_idx 기반 조회로 변경
+    public Optional<User> getUserInfo(Long userIdx) { // 기존 String userId → Long userIdx [수정]
+        return userRepo.findByUserIdx(userIdx); // findByUserId → findByUserIdx [수정]
     }
 
+    // 중복 검사는 여전히 userId, email 기반으로 유지
     public boolean isUserIdDuplicate(String userId) {
         return userRepo.findByUserId(userId).isPresent();
     }
@@ -51,17 +54,21 @@ public class UserService {
         return userRepo.existsByEmail(email);
     }
 
-    public boolean verifyPassword(String userId, String rawPassword) {
-        User user = userRepo.findByUserId(userId).orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+    // ✅ 비밀번호 검증도 user_idx 기반으로 변경
+    public boolean verifyPassword(Long userIdx, String rawPassword) { // [수정]
+        User user = userRepo.findByUserIdx(userIdx) // findByUserId → findByUserIdx [수정]
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
         return passwordEncoder.matches(rawPassword, user.getUserPw());
     }
 
+    // ✅ 회원정보 수정도 user_idx 기반으로 변경
     @Transactional
-    public void updateUserInfo(String userId, String nickname, String userEmail, String userPw,
+    public void updateUserInfo(Long userIdx, String nickname, String userEmail, String userPw,
                                String interestArea, String learningArea,
-                               MultipartFile profileImage, Boolean deleteProfileImage) {
+                               MultipartFile profileImage, Boolean deleteProfileImage) { // [수정]
 
-        User user = userRepo.findByUserId(userId).orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+        User user = userRepo.findByUserIdx(userIdx) // findByUserId → findByUserIdx [수정]
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
         if (nickname != null && !nickname.isBlank()) user.setNickname(nickname);
         if (userEmail != null && !userEmail.isBlank()) user.setEmail(userEmail);
@@ -97,9 +104,11 @@ public class UserService {
         userRepo.save(user);
     }
 
+    // ✅ 회원탈퇴도 user_idx 기반으로 변경
     @Transactional
-    public void deleteUserAccount(String userId) {
-        User user = userRepo.findByUserId(userId).orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+    public void deleteUserAccount(Long userIdx) { // [수정]
+        User user = userRepo.findByUserIdx(userIdx) // findByUserId → findByUserIdx [수정]
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
         userRepo.delete(user);
     }
 }

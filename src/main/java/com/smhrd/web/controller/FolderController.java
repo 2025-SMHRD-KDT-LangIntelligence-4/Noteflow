@@ -1,7 +1,6 @@
 package com.smhrd.web.controller;
 
-import com.smhrd.web.entity.Folder;
-import com.smhrd.web.entity.FileMetadata;
+import com.smhrd.web.repository.UserRepository;
 import com.smhrd.web.service.FolderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -9,7 +8,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -18,24 +16,27 @@ import java.util.Map;
 public class FolderController {
 
     private final FolderService folderService;
+    private final UserRepository userRepository;
 
-    /**
-     * 폴더 트리 구조 조회 (파일 포함)
-     */
+    // --------------------------
+    // 폴더 트리 조회
+    // --------------------------
     @GetMapping("/tree")
     public ResponseEntity<Map<String, Object>> getFolderTree(Authentication auth) {
-        String userId = auth.getName();
+        String username = auth.getName();
+        Long userIdx = userRepository.findByUserId(username)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다: " + username))
+                .getUserIdx();
 
         Map<String, Object> result = new HashMap<>();
-        result.put("folders", folderService.getFolderTree(userId));
-        result.put("rootFiles", folderService.getRootFiles(userId));
-
+        result.put("folders", folderService.getFolderTree(userIdx));
+        result.put("rootFiles", folderService.getRootFiles(userIdx));
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * 새 폴더 생성
-     */
+    // --------------------------
+    // 새 폴더 생성
+    // --------------------------
     @PostMapping
     public ResponseEntity<Map<String, Object>> createFolder(
             @RequestParam String folderName,
@@ -43,7 +44,12 @@ public class FolderController {
             Authentication auth) {
 
         try {
-            String folderId = folderService.createFolder(auth.getName(), folderName, parentFolderId);
+            String username = auth.getName();
+            Long userIdx = userRepository.findByUserId(username)
+                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다: " + username))
+                    .getUserIdx();
+
+            String folderId = folderService.createFolder(userIdx, folderName, parentFolderId);
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -59,9 +65,9 @@ public class FolderController {
         }
     }
 
-    /**
-     * 폴더 이름 변경
-     */
+    // --------------------------
+    // 폴더 이름 변경
+    // --------------------------
     @PutMapping("/{folderId}/rename")
     public ResponseEntity<Map<String, Object>> renameFolder(
             @PathVariable String folderId,
@@ -69,7 +75,12 @@ public class FolderController {
             Authentication auth) {
 
         try {
-            folderService.renameFolder(auth.getName(), folderId, newName);
+            String username = auth.getName();
+            Long userIdx = userRepository.findByUserId(username)
+                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다: " + username))
+                    .getUserIdx();
+
+            folderService.renameFolder(userIdx, folderId, newName);
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -84,16 +95,21 @@ public class FolderController {
         }
     }
 
-    /**
-     * 폴더 삭제
-     */
+    // --------------------------
+    // 폴더 삭제
+    // --------------------------
     @DeleteMapping("/{folderId}")
     public ResponseEntity<Map<String, Object>> deleteFolder(
             @PathVariable String folderId,
             Authentication auth) {
 
         try {
-            folderService.deleteFolder(auth.getName(), folderId);
+            String username = auth.getName();
+            Long userIdx = userRepository.findByUserId(username)
+                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다: " + username))
+                    .getUserIdx();
+
+            folderService.deleteFolder(userIdx, folderId);
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -108,9 +124,9 @@ public class FolderController {
         }
     }
 
-    /**
-     * 파일을 폴더로 이동
-     */
+    // --------------------------
+    // 파일을 폴더로 이동
+    // --------------------------
     @PutMapping("/move-file")
     public ResponseEntity<Map<String, Object>> moveFile(
             @RequestParam String fileId,
@@ -118,7 +134,13 @@ public class FolderController {
             Authentication auth) {
 
         try {
-            folderService.moveFileToFolder(auth.getName(), fileId, targetFolderId);
+            String username = auth.getName();
+            Long userIdx = userRepository.findByUserId(username)
+                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다: " + username))
+                    .getUserIdx();
+
+            // [수정] userIdx 기반으로 FolderService 호출
+            folderService.moveFileToFolder(userIdx, fileId, targetFolderId);
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);

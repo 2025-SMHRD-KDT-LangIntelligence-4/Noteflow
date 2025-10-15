@@ -1,4 +1,3 @@
-// src/main/java/com/smhrd/web/service/AutoFolderService.java
 package com.smhrd.web.service;
 
 import com.smhrd.web.dto.CategoryResult;
@@ -18,33 +17,33 @@ public class AutoFolderService {
     private final NoteFolderRepository noteFolderRepository;
 
     @Transactional
-    public Long createOrFindFolder(String userId, CategoryResult categoryResult) {
+    public Long createOrFindFolder(Long userIdx, CategoryResult categoryResult) { // userId → userIdx
         if (categoryResult.getMatchedCategory() == null) {
             return null;
         }
         String[] path = categoryResult.getSuggestedFolderPath().split("/");
         Long parentId = null;
         for (String name : path) {
-            parentId = findOrCreate(userId, name, parentId);
+            parentId = findOrCreate(userIdx, name, parentId);
         }
         return parentId;
     }
 
-    private Long findOrCreate(String userId, String folderName, Long parentId) {
+    private Long findOrCreate(Long userIdx, String folderName, Long parentId) { // userId → userIdx
         List<NoteFolder> siblings = (parentId == null)
-                ? noteFolderRepository.findByUserIdxAndParentFolderIdIsNullOrderByFolderNameAsc(userId)
-                : noteFolderRepository.findByUserIdxAndParentFolderIdOrderByFolderNameAsc(userId, parentId);
+                ? noteFolderRepository.findByUserIdxAndParentFolderIdIsNullOrderByFolderNameAsc(userIdx)
+                : noteFolderRepository.findByUserIdxAndParentFolderIdOrderByFolderNameAsc(userIdx, parentId);
 
         return siblings.stream()
                 .filter(f -> f.getFolderName().equals(folderName))
                 .findFirst()
                 .map(NoteFolder::getFolderId)
-                .orElseGet(() -> createNewFolder(userId, folderName, parentId));
+                .orElseGet(() -> createNewFolder(userIdx, folderName, parentId));
     }
 
-    private Long createNewFolder(String userId, String folderName, Long parentFolderId) {
+    private Long createNewFolder(Long userIdx, String folderName, Long parentFolderId) { // userId → userIdx
         NoteFolder folder = NoteFolder.builder()
-                .userIdx(userId) // 통일: String
+                .userIdx(userIdx) // String → Long
                 .folderName(folderName)
                 .parentFolderId(parentFolderId)
                 .createdAt(LocalDateTime.now())

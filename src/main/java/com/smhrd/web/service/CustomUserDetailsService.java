@@ -2,11 +2,11 @@ package com.smhrd.web.service;
 
 import com.smhrd.web.entity.User;
 import com.smhrd.web.repository.UserRepository;
+import com.smhrd.web.security.CustomUserDetails; // [추가]
 import org.springframework.security.core.userdetails.*;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -30,15 +30,8 @@ public class CustomUserDetailsService implements UserDetailsService {
                 new SimpleGrantedAuthority("ROLE_" + user.getUserRole().toUpperCase())
         );
 
-        return org.springframework.security.core.userdetails.User.builder()
-                .username(user.getUserId())
-                .password(user.getUserPw())
-                .authorities(authorities)
-                .accountExpired(false)
-                .accountLocked(false)
-                .credentialsExpired(false)
-                .disabled(false)
-                .build();
+        // 기존 코드 → Spring의 기본 User 객체 반환
+        // → 수정 코드 → CustomUserDetails 반환
+        return new CustomUserDetails(user, authorities); // [수정]
     }
-
 }

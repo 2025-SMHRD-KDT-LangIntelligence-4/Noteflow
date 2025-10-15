@@ -22,11 +22,10 @@ public class NoteFolder {
     private Long folderId;
 
     @Column(name = "user_idx", nullable = false)
-    private String userIdx;
+    private Long userIdx; // 변경: String → Long
 
     @Column(name = "folder_name", nullable = false, length = 100)
     private String folderName;
-
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_folder_id")
@@ -61,6 +60,4 @@ public class NoteFolder {
 
     public void addSubfolder(NoteFolder f) { this.subfolders.add(f); }
     public void addNote(Note n) { this.notes.add(n); }
-
-
 }

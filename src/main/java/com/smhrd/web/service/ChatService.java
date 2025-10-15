@@ -19,9 +19,9 @@ public class ChatService {
     private final VllmApiService vllmApiService;
     private final UserRepository userRepository;
 
-    public ChatResponse processChat(String userId, String message) {
+    public ChatResponse processChat(Long userIdx, String message) {
         // 1. 기존 대화 이력 조회 (키워드 매칭)
-        List<Chat> relevantHistory = findRelevantHistory(userId, message);
+        List<Chat> relevantHistory = findRelevantHistory(userIdx, message);
 
         // 2. 컨텍스트 구성
         String contextualPrompt = buildContextualPrompt(message, relevantHistory);
@@ -30,15 +30,15 @@ public class ChatService {
         String aiResponse = vllmApiService.generateResponse(contextualPrompt);
 
         // 4. 대화 저장
-        saveConversation(userId, message, aiResponse);
+        saveConversation(userIdx, message, aiResponse);
 
         return new ChatResponse(aiResponse, relevantHistory.size());
     }
 
-    private List<Chat> findRelevantHistory(String userId, String message) {
+    private List<Chat> findRelevantHistory(Long userIdx, String message) {
         String keyword = extractKeyword(message);
-        // ChatRepository의 기본 메서드만 사용하여 필터링
-        return chatRepository.findByUserUserIdOrderByCreatedAtDesc(userId).stream()
+        // userIdx 기반으로 대화 조회
+        return chatRepository.findByUser_UserIdxOrderByCreatedAtDesc(userIdx).stream()
                 .filter(c ->
                         c.getQuestion().toLowerCase().contains(keyword) ||
                                 c.getAnswer().toLowerCase().contains(keyword))
@@ -46,8 +46,8 @@ public class ChatService {
                 .collect(Collectors.toList());
     }
 
-    public List<Chat> getUserChatHistory(String userId) {
-        return chatRepository.findByUserUserIdOrderByCreatedAtDesc(userId);
+    public List<Chat> getUserChatHistory(Long userIdx) {
+        return chatRepository.findByUser_UserIdxOrderByCreatedAtDesc(userIdx);
     }
 
     private String buildContextualPrompt(String message, List<Chat> history) {
@@ -60,8 +60,8 @@ public class ChatService {
         return sb.toString();
     }
 
-    private void saveConversation(String userId, String question, String answer) {
-        User user = userRepository.findByUserId(userId)
+    private void saveConversation(Long userIdx, String question, String answer) {
+        User user = userRepository.findByUserIdx(userIdx)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid user"));
         Chat chat = Chat.builder()
                 .user(user)

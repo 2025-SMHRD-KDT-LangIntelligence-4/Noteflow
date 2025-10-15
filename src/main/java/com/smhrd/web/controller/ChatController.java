@@ -19,16 +19,18 @@ public class ChatController {
     private final ChatService chatService;
 
     @PostMapping("/send")
-    public ChatResponse sendMessage(@RequestBody ChatRequest request,
-                                    Authentication auth) {
-        String userId = auth.getName();
-        return chatService.processChat(userId, request.getMessage());
+    public ChatResponse sendMessage(@RequestBody ChatRequest request, Authentication auth) {
+        // Authentication에서 CustomUserDetails로 캐스팅 후 user_idx 가져오기
+        Long userIdx = ((com.smhrd.web.security.CustomUserDetails) auth.getPrincipal()).getUserIdx();
+
+        return chatService.processChat(userIdx, request.getMessage());
     }
 
     @GetMapping("/history")
     public List<Chat> getChatHistory(Authentication auth) {
-        String userId = auth.getName();
-        return chatService.getUserChatHistory(userId);
+        Long userIdx = ((com.smhrd.web.security.CustomUserDetails) auth.getPrincipal()).getUserIdx();
+
+        return chatService.getUserChatHistory(userIdx);
     }
 
     @Getter

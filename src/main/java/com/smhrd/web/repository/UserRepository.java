@@ -10,7 +10,7 @@ import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
 
-    Optional<User> findByUserIdx(String userId);
+    Optional<User> findByUserId(String userId);
     Optional<User> findByEmail(String email);
 
     Optional<User> findByUserIdAndIsSuspendedFalse(String userId);
@@ -21,5 +21,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Modifying
     @Query("UPDATE User u SET u.lastLogin = CURRENT_TIMESTAMP WHERE u.userId = :userId")
     void updateLastLogin(@Param("userId") String userId);
+    
     Optional<User> findByUserIdx(Long userIdx);
 }

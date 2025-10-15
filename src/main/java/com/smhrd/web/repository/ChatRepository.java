@@ -8,5 +8,7 @@ import java.util.List;
 
 @Repository
 public interface ChatRepository extends JpaRepository<Chat, Long> {
-    List<Chat> findByUserUserIdOrderByCreatedAtDesc(String userId);
+
+    // user_id 기반 → user_idx(Long) 기반으로 변경
+    List<Chat> findByUser_UserIdxOrderByCreatedAtDesc(Long userIdx);
 }

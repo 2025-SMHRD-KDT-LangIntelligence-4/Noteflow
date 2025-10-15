@@ -12,20 +12,20 @@ import java.util.Optional;
 public interface NoteFolderRepository extends JpaRepository<NoteFolder, Long> {
 
     // 전체 폴더
-    List<NoteFolder> findByUserIdxOrderByFolderNameAsc(String userIdx);
+    List<NoteFolder> findByUserIdxOrderByFolderNameAsc(long userIdx);
 
     // 루트 레벨 폴더
-    List<NoteFolder> findByUserIdxAndParentFolderIdIsNullOrderByFolderNameAsc(String userIdx);
+    List<NoteFolder> findByUserIdxAndParentFolderIdIsNullOrderByFolderNameAsc(long userIdx);
 
     // 특정 부모 하위 폴더
-    List<NoteFolder> findByUserIdxAndParentFolderIdOrderByFolderNameAsc(String userIdx, Long parentFolderId);
+    List<NoteFolder> findByUserIdxAndParentFolderIdOrderByFolderNameAsc(long userIdx, Long parentFolderId);
 
     // 단일 폴더(권한 확인)
-    Optional<NoteFolder> findByFolderIdAndUserIdx(Long folderId, String userIdx);
+    Optional<NoteFolder> findByFolderIdAndUserIdx(Long folderId, long userIdx);
 
     // 중복 확인
-    boolean existsByUserIdxAndFolderNameAndParentFolderId(String userIdx, String folderName, Long parentFolderId);
+    boolean existsByUserIdxAndFolderNameAndParentFolderId(long userIdx, String folderName, Long parentFolderId);
 
     // 폴더 삭제
-    void deleteByFolderIdAndUserIdx(Long folderId, String userIdx);
+    void deleteByFolderIdAndUserIdx(Long folderId, long userIdx);
 }
