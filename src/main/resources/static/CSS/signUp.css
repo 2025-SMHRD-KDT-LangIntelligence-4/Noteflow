@@ -10,8 +10,8 @@
 
 body {
     font-family: 'Pretendard';
-    background: #EAEAEA;
-            
+    background: white; 
+    margin:0px;        
 }
 
 .signup-location-container {

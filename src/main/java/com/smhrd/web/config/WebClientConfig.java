@@ -5,20 +5,19 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
 
+/**
+ * vLLM 호출용 WebClient를 baseUrl 포함으로 통일해 둡니다.
+ */
 @Configuration
 public class WebClientConfig {
 
     @Value("${vllm.api.url}")
     private String vllmApiUrl;
 
-    /**
-     * 전역 WebClient 빈 정의
-     * 이름 없이 등록하면 모든 @Autowired WebClient 주입에 사용됩니다.
-     */
     @Bean
-    public WebClient webClient() {
+    public WebClient vllmWebClient() {
         return WebClient.builder()
-                .baseUrl(vllmApiUrl)
+                .baseUrl(vllmApiUrl)              // 예: http://localhost:8000
                 .defaultHeader("Content-Type", "application/json")
                 .build();
     }

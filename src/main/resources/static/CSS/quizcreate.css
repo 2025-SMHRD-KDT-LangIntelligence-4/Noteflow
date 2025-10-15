@@ -2,10 +2,11 @@
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 body {
     font-family: 'Pretendard';
-    background: #EAEAEA;
+    background: white; 
+    margin:0px;
 }
 
-/* 출력 애니메이션 */
+/* 출력 애니메이션1 */
  @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -16,9 +17,9 @@ body {
     flex-direction: column; 
     align-items: center; 
     margin-top: 50px; 
-    padding: 20px;
+
     gap: 20px;
-    max-width: 800px; 
+    max-width: 1240px; 
     margin-left: auto;
     margin-right: auto;
     box-sizing: border-box; 
@@ -106,6 +107,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 20px;
+    align-items: center;
 }
 .tag-display-box {
     width: 100%;
@@ -137,7 +139,7 @@ body {
 
 /* 5. 선택 완료 버튼 */
 .complete-button {
-    width: 100%;
+    width: 240px;
     height: 60px;
     border: none;
     background-color: #96D0FF; 

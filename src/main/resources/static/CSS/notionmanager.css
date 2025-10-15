@@ -101,9 +101,9 @@
 
 body {
 	font-family: 'Pretendard';
-	background-color: #EAEAEA;
+	background: white; 
 	color: #333;
-
+	margin:0px;
 }
 
 .location-container {
@@ -113,7 +113,6 @@ body {
 	position: relative;
 	top: 50px;
 	gap: 20px;
-	padding: 20px;
 	animation: fadeIn 1s ease;
 	margin-bottom: 50px;
 }

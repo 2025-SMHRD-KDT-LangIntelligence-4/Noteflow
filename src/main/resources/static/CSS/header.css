@@ -8,8 +8,7 @@
 }
 body {
     font-family: 'Pretendard';
-    background: #EAEAEA;
-            
+    background: white;           
 } 
 /* 상단 파란색 바 */
 .header-top {
@@ -19,7 +18,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    overflow-x: auto;
+    overflow: hidden;
     box-sizing: border-box;
 }
 
@@ -116,9 +115,9 @@ body {
 /* 로고 */
 .logo {
     color: #ffffff;
-    position: absolute;
-    left: 50px; 
-    top:0.5px;
+    position: relative !important;
+    left: 50px;
+    top: 5px; 
 }
 .logo-image {
 	width:100px;
