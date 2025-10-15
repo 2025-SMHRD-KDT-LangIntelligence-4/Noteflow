@@ -17,14 +17,14 @@
             width: 800px;
             margin: 50px auto;
             background: #fff;
-            border-radius: 12px;
+            border-radius: 20px;
             box-shadow: 0px 4px 4px 5px rgba(0, 0, 0, 0.1);
-            padding: 40px;
+            padding:20px 0px;
             animation: fadeIn 1s ease;
         }
 
         .title {
-        	height:80px;
+        	height:60px;
             font-size: 30px;
             font-weight: bold;
             text-align: center;
@@ -37,6 +37,7 @@
             display: flex;
             flex-direction: column;
             gap: 25px;
+            padding:0 40px;
         }
 
         label {
@@ -58,7 +59,8 @@
 
         .button-container {
             text-align: center;
-            margin-top: 30px;
+            margin-top: 10px;
+            padding-bottom:10px;
         }
 
         .info-save-button, .info-cancel-button, .info-delete-button, .check-id-button, #file-upload-button {
@@ -96,6 +98,7 @@
 		    display: flex;
 		    justify-content: center;
 		    flex-wrap: wrap;
+		    padding: 0 100px;
         }
         #bio {
         	outline:none;
