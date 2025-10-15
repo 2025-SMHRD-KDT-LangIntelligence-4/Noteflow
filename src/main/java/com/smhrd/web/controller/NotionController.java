@@ -37,7 +37,9 @@ public class NotionController {
     // -----------------------------
     
     @GetMapping("/precreate")
-    public String showDataPage() {
+    public String preCreatePage(@RequestParam(required=false) String title, Model model) {
+        model.addAttribute("preTitle", title != null ? title : "");
+        // prompts 등도 추가
         return "NotionCreate";
     }
     

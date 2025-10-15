@@ -296,4 +296,7 @@ public class FileStorageService {
         private final LocalDateTime uploadedAt;
         private final String uploaderIdx; // long -> String
     }
+    public String storeFile(MultipartFile file, Long userIdx) throws IOException {
+        return storeFile(file, userIdx, null);
+    }
 }
