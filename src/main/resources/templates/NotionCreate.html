@@ -4,19 +4,15 @@
 <meta charset="UTF-8">
 <title>노션 작성</title>
 
-<meta name="_csrf" th:content="${_csrf.token}" />
-<meta name="_csrf_header" th:content="${_csrf.headerName}" />
+
 
 <!-- ✅ CSS -->
 <link rel="stylesheet" th:href="@{/css/header.css}" />
 <link rel="stylesheet" th:href="@{/css/notionCreate.css}" />
-<link rel="stylesheet" th:href="@{/css/ckEditor.css}" />
+
 <link rel="stylesheet" th:href="@{/css/footer.css}" />
 <!-- toast -->
-<link rel="stylesheet"
-	href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
-<script
-	src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
+
 
 </head>
 
@@ -33,45 +29,20 @@
 					<textarea class="notion-text" id="inputContent"
 						placeholder="여기에 학습 내용, 코드, 로그 등을 자유롭게 붙여넣으세요."></textarea>
 					<div style="display: flex; gap: 20px;">
-						<button class="submit-button" id="generateBtn"><img th:src="@{/images/write.svg}" class="button-img"/>작성하기</button>
-						<button class="submit-button" id="generateBtn"><img th:src="@{/images/upload.svg}" class="button-img"/>파일업로드</button>
+						<button class="submit-button" id="file-upload"><img th:src="@{/images/upload.svg}" class="button-img"/>파일업로드</button>
+						<button class="submit-button" id="template"><img th:src="@{/images/write.svg}" class="button-img"/>템플릿정하기</button>
 					</div>
 				</div>
 			</div>
 
 		</div>
-		<div class="slide-location-container">
-			<div class="slide-container">
-				<button class="arrow left">‹</button>
-				<div class="slider-wrapper">
-					<div class="button-container" id="buttonContainer"></div>
-				</div>
-				<button class="arrow right">›</button>
 			</div>
-		</div>
-		<div class="result-location-container">
-				<div class="result-container">
-					
-					<div class="main-container">
-						<div id="editor"></div>
-					</div>
-				</div>
-			</div>
-				<div style="width:1000px; display:flex; justify-content:center;">
-					<button class="save-button" id="saveBtn"><img th:src="@{/images/save.svg}"class="button-img2"/>저장하기</button>
-				</div>
-	</div>
 	</div>
 
 
-	<script th:src="@{/js/NotionCreate.js}"></script>
+	
 
 	<script th:inline="javascript">
-	const image = /*[[@{${image}}]]*/ "";
-    const prompts = /*[[${prompts}]]*/ [];
-    window.onload = function() {
-        window.scrollTo(0, 0);
-      };
    </script>
 
 	<div th:replace="fragments/footer :: siteFooter"></div>
