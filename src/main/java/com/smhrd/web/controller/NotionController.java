@@ -31,6 +31,17 @@ public class NotionController {
     private final Environment env;
     private final NotionContentService notionContentService;
 
+    
+    // -----------------------------
+    // LLM 요약 데이터 입력 페이지
+    // -----------------------------
+    
+    @GetMapping("/precreate")
+    public String showDataPage() {
+        return "NotionCreate";
+    }
+    
+    
     // -----------------------------
     // LLM 요약 생성 페이지
     // -----------------------------
@@ -45,7 +56,7 @@ public class NotionController {
         model.addAttribute("pageTitle", "노션 작성");
         model.addAttribute("activeMenu", "notionCreate");
         model.addAttribute("image", "/images/Group.svg");
-        return "NotionCreate";
+        return "NotionCreate2";
     }
 
     // -----------------------------
