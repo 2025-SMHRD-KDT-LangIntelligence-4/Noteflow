@@ -95,3 +95,63 @@ h1 {
 	}
 	
 }
+.login-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 0.3s ease;
+  z-index: 10000;
+}
+
+/* 팝업창 스타일 */
+.login-popup {
+  background-color: #fff;
+  padding: 25px 30px;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  animation: slideUp 0.3s ease;
+  width: 320px;
+}
+
+.login-popup p {
+  margin-bottom: 15px;
+  font-size: 15px;
+  color: #333;
+}
+
+.login-popup button {
+  background-color: #96d0ff;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.login-popup button:hover {
+  background-color: #6dbaff;
+}
+
+/* 성공창 색상 */
+.login-popup.success p {
+  color: #96d0ff;
+}
+
+/* 애니메이션 */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
