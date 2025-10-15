@@ -1,49 +1,60 @@
 <!DOCTYPE html>
-<html>
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
 <meta charset="UTF-8">
-<title>Insert title here</title>
+<title>노션 작성</title>
 <meta name="_csrf" th:content="${_csrf.token}" />
 <meta name="_csrf_header" th:content="${_csrf.headerName}" />
+
 <link rel="stylesheet" th:href="@{/css/header.css}" />
 <link rel="stylesheet" th:href="@{/css/footer.css}" />
-<link rel="stylesheet" th:href="@{/css/ckEditor.css}" />
-<link rel="stylesheet"
-	href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
-<link rel="stylesheet" th:href="@{/css/notionCreate2.css}"/>
-<script
-	src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
+<link rel="stylesheet" th:href="@{/css/notionCreate2.css}" />
+<link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
+
+<script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
 </head>
 <body>
-	<div th:replace="fragments/header :: siteHeader"></div>
-	<div class="full-container">
-		<div class="slide-location-container">
-					<div class="slide-container">
-						<button class="arrow left">‹</button>
-						<div class="slider-wrapper">
-							<div class="button-container" id="buttonContainer"></div>
-						</div>
-						<button class="arrow right">›</button>
-					</div>
-				</div>
-				<div class="result-location-container">
-						<div class="result-container">
-							
-							<div class="main-container">
-								<div id="editor"></div>
-							</div>
-						</div>
-					</div>
-						<div style="width:1000px; display:flex; justify-content:center; gap:20px;">
-							<button class="template-setting" id="temsetBtn"><img th:src="@{/images/save.svg}"class="button-img2"/>확정하기</button>
-							<button class="save-button" id="saveBtn"><img th:src="@{/images/save.svg}"class="button-img2"/>저장하기</button>
-						</div>
-	</div>
-	<script th:inline="javascript">
-		const image = /*[[@{${image}}]]*/ "";
-		const prompts = /*[[${prompts}]]*/ [];
-	</script>
-	<script th:src="@{/js/NotionCreate2.js}"></script>
-	<div th:replace="fragments/footer :: siteFooter"></div>
+<div th:replace="fragments/header :: siteHeader"></div>
+
+<div class="full-container">
+  <!-- 슬라이드 영역 -->
+  <div class="slide-location-container">
+    <div class="slide-container">
+      <button class="arrow left">‹</button>
+      <div class="slider-wrapper">
+        <div class="button-container" id="buttonContainer"></div>
+      </div>
+      <button class="arrow right">›</button>
+    </div>
+  </div>
+
+  <!-- 에디터 영역 -->
+  <div class="result-location-container">
+    <div class="result-container">
+      <div class="main-container">
+        <div id="editor"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 버튼 영역 -->
+  <div style="width:1000px; display:flex; justify-content:center; gap:20px; margin-top:20px;">
+    <button class="template-setting" id="temsetBtn">
+      <img th:src="@{/images/save.svg}" class="button-img2"/>확정하기
+    </button>
+    <button class="save-button" id="saveBtn">
+      <img th:src="@{/images/save.svg}" class="button-img2"/>저장하기
+    </button>
+  </div>
+</div>
+
+
+<!-- ✅ 서버 데이터 JS로 전달 -->
+<script th:inline="javascript">
+    window.prompts = /*[[${prompts}]]*/ [];
+</script>
+<script th:src="@{/js/NotionCreate2.js}"></script>
+
+<div th:replace="fragments/footer :: siteFooter"></div>
 </body>
 </html>

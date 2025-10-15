@@ -50,8 +50,40 @@ public class FileStorageService {
     // --------------------------
     // 파일 저장
     // --------------------------
-    public String storeFile(MultipartFile file, Long userIdx) throws IOException {
-        return storeFile(file, userIdx, null);
+    public String storeFile(MultipartFile file, Long userIdx, String folderId) throws IOException {
+        String filename = file.getOriginalFilename();
+        String storedFilename = generateStoredFilename(filename);
+
+        Document metadata = new Document()
+            .append("originalFilename", filename)
+            .append("mimeType", file.getContentType())
+            .append("size", file.getSize())
+            .append("uploadedAt", Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()))
+            .append("uploaderIdx", userIdx);
+
+        GridFSUploadOptions options = new GridFSUploadOptions().metadata(metadata);
+
+        ObjectId objectId;
+        try (GridFSUploadStream uploadStream = gridFSBucket.openUploadStream(storedFilename, options)) {
+            uploadStream.write(file.getBytes());
+            objectId = uploadStream.getObjectId(); // ✅ 실제 Mongo ObjectId
+        }
+
+        // MongoDB 메타데이터 저장
+        FileMetadata meta = FileMetadata.builder()
+            .originalName(filename)
+            .storedName(storedFilename)
+            .fileSize(file.getSize())
+            .mimeType(file.getContentType())
+            .userIdx(userIdx)
+            .folderId((folderId == null || folderId.isBlank()) ? null : folderId)
+            .uploadDate(LocalDateTime.now())
+            .gridfsId(objectId.toHexString()) // ✅ ObjectId를 문자열로 저장
+            .build();
+
+        fileMetadataRepository.save(meta);
+
+        return objectId.toHexString(); // ✅ ObjectId 반환
     }
 
     private String generateStoredFilename(String originalFilename) {
@@ -69,37 +101,7 @@ public class FileStorageService {
         return uuid + ext;
     }
 
-    public String storeFile(MultipartFile file, Long userIdx, String folderId) throws IOException {
-        String filename = file.getOriginalFilename();
-        String storedFilename = generateStoredFilename(filename);
-
-        Document metadata = new Document()
-                .append("originalFilename", filename)
-                .append("mimeType", file.getContentType())
-                .append("size", file.getSize())
-                .append("uploadedAt", Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()))
-                .append("uploaderIdx", userIdx);
-
-        GridFSUploadOptions options = new GridFSUploadOptions().metadata(metadata);
-
-        try (GridFSUploadStream uploadStream = gridFSBucket.openUploadStream(storedFilename, options)) {
-            uploadStream.write(file.getBytes());
-        }
-
-        FileMetadata meta = FileMetadata.builder()
-                .originalName(filename)
-                .storedName(storedFilename)
-                .fileSize(file.getSize())
-                .mimeType(file.getContentType())
-                .userIdx(userIdx)
-                .folderId((folderId == null || folderId.isBlank()) ? null : folderId)
-                .uploadDate(LocalDateTime.now())
-                .gridfsId(storedFilename) // GridFS objectId 대신 storedFilename 사용 가능
-                .build();
-
-        fileMetadataRepository.save(meta);
-        return storedFilename;
-    }
+    
 
     // --------------------------
     // 파일 다운로드

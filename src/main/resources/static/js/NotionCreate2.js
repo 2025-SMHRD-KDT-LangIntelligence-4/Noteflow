@@ -1,189 +1,139 @@
-document.addEventListener("DOMContentLoaded", (format, data) => {
-        // --- CSRF 토큰 설정 ---
-        const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
-        const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+document.addEventListener('DOMContentLoaded', () => {
+  const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+  const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
 
-        // --- 전역 변수 및 요소 가져오기1 ---
+  const $slider = document.getElementById('buttonContainer');
+  const $slideContainer = document.querySelector('.slide-container');
+  const $leftArrow = document.querySelector('.arrow.left');
+  const $rightArrow = document.querySelector('.arrow.right');
+  const $temsetBtn = document.getElementById('temsetBtn');
+  const $saveBtn = document.getElementById('saveBtn');
 
-        const container = document.getElementById("buttonContainer");
-        let selectedPromptTitle = "심플버전"; // 기본값
+  let autoSlideInterval;
 
+  const promptsData = window.prompts || [];
 
-     	// ✅ Toast Editor 초기화 
-     	const editor = new toastui.Editor({
-     		el: document.querySelector('#editor'), 
-     		height: '480px', 
-     		initialEditType: 'markdown', 
-     		previewStyle: 'vertical', 
-     		language: 'ko', 
-     		placeholder: 'AI가 생성한 요약본이 여기에 표시됩니다. 자유롭게 편집하세요!', 
-     		usageStatistics: false }); 
-        // 기본 프롬프트 예시 표시 
-        const defaultPrompt = prompts.find(p => p.title === "심플버전"); 
-        if (defaultPrompt && defaultPrompt.exampleOutput) { 
-        	editor.setMarkdown(defaultPrompt.exampleOutput); }
-
-        // --- 슬라이드 버튼 동적 생성 ---
-        prompts.forEach(prompt => {
-            const btn = document.createElement("div");
-            btn.className = "slide-btn";
-            btn.dataset.promptTitle = prompt.title;
-            btn.dataset.exampleOutput = prompt.exampleOutput; // 'example_ouptput' 오타 수정
-            btn.innerHTML = ` <img src="${image}" alt="${prompt.title}" class="slide-icon" />
-            	  <span class="kor">${prompt.title}</span>`;
-
-            // 기본 '심플버전' 선택
-            if (prompt.title === selectedPromptTitle) {
-                btn.classList.add('active');
-            }
-
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.slide-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                selectedPromptTitle = btn.dataset.promptTitle;
-
-                const scrollY = window.scrollY; // 현재 페이지 스크롤 저장
-                editor.setMarkdown(btn.dataset.exampleOutput);
-                setTimeout(() => {
-                    window.scrollTo(0, scrollY); // 페이지 스크롤 원래 위치로 복원
-                }, 0);
-            });
-            container.appendChild(btn);
-        });
-
-        // --- 이벤트 리스너 설정 ---
-        const generateBtn = document.getElementById('generateBtn');
-        const saveBtn = document.getElementById('saveBtn');
-
-        generateBtn.addEventListener('click', handleGenerate);
-        saveBtn.addEventListener('click', handleSave);
-
-        // --- 기능 함수 ---
-        async function handleGenerate() {
-            const title = document.getElementById('inputTitle').value.trim();
-            const content = document.getElementById('inputContent').value.trim();
-
-            if (!title || !content) {
-                alert('제목과 내용을 모두 입력해주세요.');
-                return;
-            }
-
-            generateBtn.textContent = 'AI 요약 중...';
-            generateBtn.disabled = true;
-
-            try {
-                const response = await fetch('/api/notion/generate-summary', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        [csrfHeader]: csrfToken
-                    },
-                    body: JSON.stringify({
-                        content: content,
-                        notionType: selectedPromptTitle
-                    })
-                });
-
-                if (!response.ok) throw new Error('AI 요약 생성에 실패했습니다.');
-
-                const result = await response.json();
-
-                if (result.error) {
-                    throw new Error(result.error);
-                }
-
-                document.getElementById('resultTitle').value = title;
-                editor.setData(result.summary);
-
-            } catch (error) {
-                console.error('요약 생성 오류:', error);
-                alert('요약 생성 중 오류가 발생했습니다: ' + error.message);
-            } finally {
-                generateBtn.textContent = '작성';
-                generateBtn.disabled = false;
-            }
-        }
-
-        async function handleSave() {
-            const title = document.getElementById('resultTitle').value.trim();
-            const content = editor.getData();
-
-            if (!title || !content) {
-                alert('저장할 제목과 내용이 없습니다.');
-                return;
-            }
-
-            saveBtn.textContent = '저장 중...';
-            saveBtn.disabled = true;
-
-            try {
-                const response = await fetch('/api/notes', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        [csrfHeader]: csrfToken
-                    },
-                    body: JSON.stringify({ title, content })
-                });
-
-                if (!response.ok) throw new Error('저장 실패');
-
-                const result = await response.json();
-                if (result.success) {
-                    alert('노트가 성공적으로 저장되었습니다!');
-                    window.location.href = '/notion/manage'; // 저장 후 관리 페이지로 이동
-                } else {
-                    throw new Error(result.message);
-                }
-
-            } catch (error) {
-                console.error('저장 오류:', error);
-                alert('저장 중 오류가 발생했습니다.');
-            } finally {
-                saveBtn.textContent = '저장';
-                saveBtn.disabled = false;
-            }
-        }
-
-        // --- 슬라이드 UI 로직 (기존 코드 유지) ---
-        const slider = document.querySelector(".slide-container");
-        const track = document.querySelector(".slider-wrapper");
-        const leftBtn = document.querySelector(".arrow.left");
-        const rightBtn = document.querySelector(".arrow.right");
-
-        leftBtn.addEventListener("click", () => track.scrollBy({ left: -300, behavior: "smooth" }));
-        rightBtn.addEventListener("click", () => track.scrollBy({ left: 300, behavior: "smooth" }));
-        track.addEventListener("wheel", (e) => {
-            e.preventDefault();
-            track.scrollBy({ left: e.deltaY, behavior: "smooth" });
-        });
-        // 버튼 복제하여 무한루프 구현
-	  	const originalButtons = Array.from(container.children);
-	  	for (let i = 0; i < 3; i++) {
-	  	  originalButtons.forEach(btn => container.appendChild(btn.cloneNode(true)));
-	  	}
-	  	// 자동 슬라이드 변수
-	  	let scrollSpeed = 0.8;
-	  	let isPaused = false;
-	  	const originalSetWidth = originalButtons.reduce((acc, btn) => acc + btn.offsetWidth + 20, 0);
-	  	// 자동 슬라이드 함수
-	  	function animate() {
-	  	  if (!isPaused) {
-	  	    track.scrollLeft += scrollSpeed;
-	  	    if (track.scrollLeft >= originalSetWidth) {
-	  	      track.scrollLeft = 0;
-	  	    }
-	  	  }
-	  	  requestAnimationFrame(animate);
-	  	}
-	  	animate();
-	  	// 마우스 오버 시 일시정지
-		slider.addEventListener("mouseenter", () => isPaused = true);
-		slider.addEventListener("mouseleave", () => isPaused = false);
-  	
-  	  
-  	
-  	
-
-		
+  // ====== 프롬프트 버튼 렌더링 ======
+  promptsData.forEach((p, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'slide-btn';
+    btn.innerHTML = `<img src="/images/Group.svg" alt="icon"><div class="kor">${p.title}</div>`;
+    btn.dataset.index = idx;
+    btn.addEventListener('click', () => {
+      selectPrompt(idx);
+      pauseSlider();
     });
+    $slider.appendChild(btn);
+  });
+
+  const promptButtons = document.querySelectorAll('.slide-btn');
+
+  // ====== Toast UI Editor 초기화 ======
+  const editor = new toastui.Editor({
+    el: document.querySelector('#editor'),
+    height: '500px',
+    initialEditType: 'markdown',
+    previewStyle: 'vertical'
+  });
+
+  // ====== 무한 캐러셀 구현 ======
+  $slider.innerHTML += $slider.innerHTML;
+  const slideWidth = 180;
+  let currentIndex = 0;
+  let isPaused = false;
+  let autoSlideFrame;
+  
+
+  // ⚙️ clone 대신 무한 루프 방식 (translateX 순환)
+  function moveSlider(direction = 1) {
+    currentIndex += direction;
+    if (currentIndex >= promptsData.length) currentIndex = 0;
+    if (currentIndex < 0) currentIndex = promptsData.length - 1;
+
+    $slider.style.transition = 'transform 0.5s cubic-bezier(0.45, 0, 0.55, 1)';
+    $slider.style.transform = `translateX(-${currentIndex * slideWidth}px)`;
+  }
+
+  function animateLoop() {
+    if (!isPaused) moveSlider(1);
+    autoSlideFrame = setTimeout(animateLoop, 2000);
+  }
+
+  function startAutoSlide() {
+    clearTimeout(autoSlideFrame);
+    animateLoop();
+  }
+
+  function pauseSlider() { isPaused = true; }
+  function resumeSlider() { isPaused = false; }
+
+  $leftArrow.addEventListener('click', () => { moveSlider(-1); pauseSlider(); });
+  $rightArrow.addEventListener('click', () => { moveSlider(1); pauseSlider(); });
+  $slideContainer.addEventListener('mouseenter', pauseSlider);
+  $slideContainer.addEventListener('mouseleave', resumeSlider);
+
+  startAutoSlide();
+
+  // ====== 프롬프트 선택 ======
+  let selectedPrompt = null;
+  function selectPrompt(index) {
+    promptButtons.forEach(btn => btn.classList.remove('active'));
+    promptButtons[index].classList.add('active');
+    selectedPrompt = promptsData[index];
+    // ✅ 프롬프트 예시를 에디터에 삽입
+    if (selectedPrompt.exampleOutput) {
+      editor.setMarkdown(selectedPrompt.exampleOutput);
+    } else if (selectedPrompt.content) {
+      editor.setMarkdown(selectedPrompt.content);
+    }
+  }
+
+  // ====== LLM 요청 ======
+  $temsetBtn.addEventListener('click', async () => {
+    if (!selectedPrompt) { alert('프롬프트를 선택하세요.'); return; }
+    const content = editor.getMarkdown();
+    if (!content.trim()) { alert('에디터에 내용이 없습니다.'); return; }
+
+    try {
+		$temsetBtn.textContent = '요약 중...';
+      $temsetBtn.disabled = true;
+      const res = await fetch('/notion/create-text', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(csrfHeader && csrfToken ? { [csrfHeader]: csrfToken } : {}) },
+        body: JSON.stringify({ content, promptTitle: selectedPrompt.title })
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'LLM 요청 실패');
+      editor.setMarkdown(data.summary || '');
+      alert('LLM 요약이 적용되었습니다.');
+    } catch (err) {
+      console.error(err);
+      alert('LLM 요청 중 오류: ' + err.message);
+    } finally {
+      $temsetBtn.disabled = false;
+    }
+  });
+
+  // ====== 저장 버튼 ======
+  $saveBtn.addEventListener('click', async () => {
+    const summary = editor.getMarkdown();
+    if (!summary.trim()) { alert('저장할 내용이 없습니다.'); return; }
+
+    try {
+      $saveBtn.disabled = true;
+      const res = await fetch('/notion/save-note', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(csrfHeader && csrfToken ? { [csrfHeader]: csrfToken } : {}) },
+        body: JSON.stringify({ title: selectedPrompt ? selectedPrompt.title : '제목없음', summary, promptId: selectedPrompt ? selectedPrompt.promptId : 0 })
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || '저장 실패');
+      alert('저장 완료!');
+    } catch (err) {
+      console.error(err);
+      alert('저장 중 오류: ' + err.message);
+    } finally {
+      $saveBtn.disabled = false;
+    }
+  });
+});
