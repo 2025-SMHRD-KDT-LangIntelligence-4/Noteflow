@@ -10,6 +10,7 @@
 <link rel="stylesheet" th:href="@{/css/ckEditor.css}" />
 <link rel="stylesheet"
 	href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
+<link rel="stylesheet" th:href="@{/css/notionCreate2.css}"/>
 <script
 	src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
 </head>
@@ -38,11 +39,11 @@
 							<button class="save-button" id="saveBtn"><img th:src="@{/images/save.svg}"class="button-img2"/>저장하기</button>
 						</div>
 	</div>
-	<script th:src="@{/js/NotionCreate.js}"></script>
 	<script th:inline="javascript">
 	const image = /*[[@{${image}}]]*/ "";
 	const prompts = /*[[${prompts}]]*/ [];
 	</script>
+	<script th:src="@{/js/NotionCreate2.js}"></script>
 	<div th:replace="fragments/footer :: siteFooter"></div>
 </body>
 </html>

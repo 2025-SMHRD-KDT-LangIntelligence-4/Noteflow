@@ -19,10 +19,11 @@ body {
 	height: 100vh; 
 	margin:0; 
 	font-family:Arial,sans-serif;
-	animation: fadeIn 1s ease; 
+	animation: fadeIn 1s ease;
+	gap:100px;
 }
 .login-wrapper { 
-	width:500px; 
+	width:300px; 
 	padding:40px;
 	height:400px; 
 	background-color:#fff; 
@@ -80,4 +81,17 @@ h1 {
 }
 .links a:hover { 
 	background-color:#2FA1FF; 
+}
+.logo-container{
+	width:500px;
+	height:450px;
+	
+}
+.logo-ad{
+	width:100%;
+	height:100%;
+	img {
+	  filter: invert(73%) sepia(14%) saturate(743%) hue-rotate(176deg) brightness(102%) contrast(103%);
+	}
+	
 }
