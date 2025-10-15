@@ -177,4 +177,21 @@ body {
 }
 .toastui-editor-mode-switch {
 	border-radius:0 0 20px 20px!important;
-} 
+}
+.save-button, .template-setting {
+	width:150px;
+	height:40px;
+	border:none;
+	border-radius:5px;
+	background-color:#96D0FF;
+	color:white;
+	font-size:15px;
+	box-shadow: 0px 2px 2px 3px rgba(0, 0, 0, 0.1);
+	display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+.save-button:hover, .template-setting:hover {
+	background-color:#2FA1FF; 
+}
