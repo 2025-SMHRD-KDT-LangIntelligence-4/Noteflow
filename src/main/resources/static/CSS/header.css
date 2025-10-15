@@ -159,6 +159,11 @@ body {
 	color:black;
 	width:80px;
 	height:40px;
+	box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+
+}
+.top-button:hover {
+	font-weight:bold;
 }
 /* 모달 css */
         .gpt-modal-overlay {
