@@ -42,7 +42,7 @@ public class ScheduleService {
     public List<Schedule> getSchedulesForPeriod(String userId, LocalDateTime start, LocalDateTime end) {
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
-        return scheduleRepository.findByUserAndStartTimeBetween(user, start, end);
+        return scheduleRepository.findByUserAndStartTimeLessThanEqualAndEndTimeGreaterThanEqual(user, end, start);
     }
 
     // ✅ 4. 일정 검색 (키워드 기반, title만 검색)

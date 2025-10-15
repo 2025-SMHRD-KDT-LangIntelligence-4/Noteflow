@@ -53,7 +53,8 @@ public class ScheduleController {
                         s.getScheduleId(),
                         s.getTitle(),
                         s.getStartTime() != null ? s.getStartTime().format(fmt) : null,
-                        s.getEndTime() != null ? s.getEndTime().format(fmt) : null,
+                        		// → 수정: FullCalendar의 end가 exclusive 이므로, 포함시키려면 끝 시각을 1초 뒤로 밀어 반환
+                        s.getEndTime() != null ? s.getEndTime().plusSeconds(1).format(fmt) : null,
                         s.getColorTag()
                 ))
                 .collect(Collectors.toList());

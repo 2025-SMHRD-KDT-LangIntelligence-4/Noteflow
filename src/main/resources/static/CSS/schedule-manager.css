@@ -300,3 +300,34 @@ a[aria-label="토요일"] { color: blue; }
         height: 20px;
     }
 }
+/* 시간 선택 영역 스타일 */
+.time-picker-container {
+    border-top: 1px solid #ddd;
+    padding-top: 10px;
+}
+
+.time-picker-label {
+    font-weight: bold;
+    color: #333;
+    display: block;
+}
+
+.time-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.time-input {
+    flex: 1;
+    padding: 6px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.auto-time-tip {
+    color: #777;
+    font-size: 0.85em;
+}

@@ -6,9 +6,12 @@
 <meta name="_csrf_header" th:content="${_csrf.headerName}" />
 
 <title>스케줄 관리 달력</title>
+
+<!-- FullCalendar -->
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
-<!-- flatpickr 라이브러리 -->
+
+<!-- flatpickr -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ko.js"></script>
@@ -16,20 +19,31 @@
 <link rel="stylesheet" th:href="@{/css/schedule-manager.css}" />
 <link rel="stylesheet" th:href="@{/css/header.css}" />
 <link rel="stylesheet" th:href="@{/css/footer.css}" />
+
 <style>
 /* FullCalendar 기본 스타일 조정 */
 #calendar { max-width: 900px; margin: 0 auto; }
 .selected-date { background-color: #d3eaff !important; }
 .fc-event-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
 .range-picker-container { margin-top: 10px; }
+.time-row { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+.time-row span { min-width: 80px; font-size: 14px; }
+input[type="time"] {
+    padding: 4px 6px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    width: 110px;
+}
+.auto-time-tip small { color: #666; font-size: 12px; }
 </style>
-
 </head>
+
 <body>
 <div th:replace="fragments/header :: siteHeader"></div>
 
 <div class="location-container">
-    <!-- 좌측: 일정 관리 패널 -->
+
+    <!-- 좌측 일정 관리 패널 -->
     <div class="schedule-manager-container">
         <div class="date">날짜를 선택하세요</div>
         <input type="text" class="schedule-search" placeholder="검색어 입력 후 Enter" />
@@ -39,12 +53,12 @@
         <div class="schedule-color-filter">
             <span>카테고리 필터:</span>
             <div class="filter-options">
-                <div class="filter-option" data-color="all" style="background-color: #000; color: #fff;">전체</div>
-                <div class="filter-option" data-color="#3788d8" style="background-color: #3788d8;"></div>
-                <div class="filter-option" data-color="#FF5722" style="background-color: #FF5722;"></div>
-                <div class="filter-option" data-color="#4CAF50" style="background-color: #4CAF50;"></div>
-                <div class="filter-option" data-color="#FFC107" style="background-color: #FFC107;"></div>
-                <div class="filter-option" data-color="#9C27B0" style="background-color: #9C27B0;"></div>
+                <div class="filter-option" data-color="all" style="background-color:#000;color:#fff;">전체</div>
+                <div class="filter-option" data-color="#3788d8" style="background-color:#3788d8;"></div>
+                <div class="filter-option" data-color="#FF5722" style="background-color:#FF5722;"></div>
+                <div class="filter-option" data-color="#4CAF50" style="background-color:#4CAF50;"></div>
+                <div class="filter-option" data-color="#FFC107" style="background-color:#FFC107;"></div>
+                <div class="filter-option" data-color="#9C27B0" style="background-color:#9C27B0;"></div>
             </div>
         </div>
 
@@ -52,18 +66,72 @@
         <div class="schedule-color-picker">
             <span>카테고리 색상:</span>
             <div class="color-options">
-                <div class="color-option" data-color="#3788d8" style="background-color: #3788d8;"></div>
-                <div class="color-option" data-color="#FF5722" style="background-color: #FF5722;"></div>
-                <div class="color-option" data-color="#4CAF50" style="background-color: #4CAF50;"></div>
-                <div class="color-option" data-color="#FFC107" style="background-color: #FFC107;"></div>
-                <div class="color-option" data-color="#9C27B0" style="background-color: #9C27B0;"></div>
+                <div class="color-option" data-color="#3788d8" style="background-color:#3788d8;"></div>
+                <div class="color-option" data-color="#FF5722" style="background-color:#FF5722;"></div>
+                <div class="color-option" data-color="#4CAF50" style="background-color:#4CAF50;"></div>
+                <div class="color-option" data-color="#FFC107" style="background-color:#FFC107;"></div>
+                <div class="color-option" data-color="#9C27B0" style="background-color:#9C27B0;"></div>
             </div>
         </div>
 
         <!-- 단일 일정 입력 -->
         <input type="text" class="schedule-create" placeholder="스케줄을 입력하세요" />
 
+        <!-- ========================== -->
+        <!-- 시간 선택 섹션 -->
+        <!-- ========================== -->
+        <div class="time-picker-container" style="margin-top:15px;">
+            <label class="time-picker-label">⏰ 시간 선택</label>
+
+            <!-- 단기 일정 -->
+            <div id="singleDayTime" style="margin-top:8px;">
+                <div class="time-row">
+                    <span>시작 시간:</span>
+                    <input type="time" id="startTime" name="startTime" step="600" />
+                </div>
+                <div class="time-row">
+                    <span>종료 시간:</span>
+                    <input type="time" id="endTime" name="endTime" step="600" />
+                </div>
+                <div class="auto-time-tip">
+                    <small>※ 미입력 시 기본값: 01:00 ~ 23:00 </small>
+                </div>
+            </div>
+
+            <!-- 장기 일정 -->
+            <div id="multiDayOption" style="display:none; margin-top:10px;">
+                <label>
+                    <input type="checkbox" id="applyToAllDays" checked />
+                    <span>📅 전체 기간에 동일한 시간 적용</span>
+                </label>
+
+                <div id="multiTimeInputs" style="margin-top:8px;">
+                    <div class="time-row">
+                        <span>시작 시간:</span>
+                        <input type="time" id="multiStartTime" name="multiStartTime" step="600" />
+                    </div>
+                    <div class="time-row">
+                        <span>종료 시간:</span>
+                        <input type="time" id="multiEndTime" name="multiEndTime" step="600" />
+                    </div>
+                </div>
+
+                <div id="rangeTimeInputs" style="display:none; margin-top:8px;">
+                    <div class="time-row">
+                        <span>시작 시간:</span>
+                        <input type="time" id="rangeStartTime" name="rangeStartTime" step="600" />
+                    </div>
+                    <div class="time-row">
+                        <span>종료 시간:</span>
+                        <input type="time" id="rangeEndTime" name="rangeEndTime" step="600" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================== -->
         <!-- 기간 선택 모드 -->
+        <!-- ========================== -->
         <div class="range-picker-container">
             <label class="toggle-container">
                 <input type="checkbox" id="rangeModeToggle" />
@@ -75,17 +143,18 @@
         </div>
     </div>
 
-    <!-- 우측: 달력 -->
+    <!-- 우측 달력 -->
     <div class="calendar-container">
         <div id="calendar"></div>
     </div>
 </div>
 
-<!-- ======================================== -->
-<!-- JS: 스크립트 영역 -->
-<!-- DOMContentLoaded로 감싸면 HTML 렌더링 후 실행 -->
+<!-- ========================== -->
+<!-- JS 스크립트 -->
+<!-- ========================== -->
 <script th:src="@{/js/schedule-manager.js}"></script>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/locales/ko.global.min.js"></script>
+
 <div th:replace="fragments/footer :: siteFooter"></div>
 </body>
 </html>

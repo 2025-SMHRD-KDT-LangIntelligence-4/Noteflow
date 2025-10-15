@@ -19,4 +19,7 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
 
     // ✅ 제목에 특정 키워드가 포함된 일정 검색 (description 제거 반영)
     List<Schedule> findByUserAndTitleContainingIgnoreCase(User user, String title);
+ // ScheduleRepository.java 에 추가
+    List<Schedule> findByUserAndStartTimeLessThanEqualAndEndTimeGreaterThanEqual(User user, LocalDateTime end, LocalDateTime start);
+
 }
