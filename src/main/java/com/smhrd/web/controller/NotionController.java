@@ -48,6 +48,7 @@ public class NotionController {
     @GetMapping("/precreate")
     public String preCreatePage(@RequestParam(required=false) String title, Model model,@AuthenticationPrincipal UserDetails userDetails) {
         model.addAttribute("preTitle", title != null ? title : "");
+        model.addAttribute("activeMenu", "notionCreate");
         if (userDetails != null) {
             // userDetails에서 닉네임 가져오기 (예: CustomUserDetails 사용)
         	String nickname = ((CustomUserDetails) userDetails).getNickname();
@@ -205,6 +206,7 @@ public class NotionController {
     @GetMapping("/complete")
     public String showCompletePage(Model model,@AuthenticationPrincipal UserDetails userDetails) {
         model.addAttribute("pageTitle", "저장 완료");
+        
         if (userDetails != null) {
             // userDetails에서 닉네임 가져오기 (예: CustomUserDetails 사용)
         	String nickname = ((CustomUserDetails) userDetails).getNickname();
