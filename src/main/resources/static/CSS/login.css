@@ -21,6 +21,8 @@ body {
 	font-family:Arial,sans-serif;
 	animation: fadeIn 1s ease;
 	gap:100px;
+	position:relative;
+	top:100px;
 }
 .login-wrapper { 
 	width:300px; 

@@ -13,6 +13,8 @@ import org.springframework.core.env.Environment;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
@@ -44,8 +46,15 @@ public class NotionController {
     // -----------------------------
     
     @GetMapping("/precreate")
-    public String preCreatePage(@RequestParam(required=false) String title, Model model) {
+    public String preCreatePage(@RequestParam(required=false) String title, Model model,@AuthenticationPrincipal UserDetails userDetails) {
         model.addAttribute("preTitle", title != null ? title : "");
+        if (userDetails != null) {
+            // userDetails에서 닉네임 가져오기 (예: CustomUserDetails 사용)
+        	String nickname = ((CustomUserDetails) userDetails).getNickname();
+            model.addAttribute("nickname", nickname);
+            String email = ((CustomUserDetails) userDetails).getEmail();
+            model.addAttribute("email", email);
+        }
         // prompts 등도 추가
         return "NotionCreate";
     }
@@ -55,7 +64,7 @@ public class NotionController {
     // LLM 요약 생성 페이지
     // -----------------------------
     @GetMapping("/create")
-    public String showCreatePage(Model model) {
+    public String showCreatePage(Model model,@AuthenticationPrincipal UserDetails userDetails) {
         model.addAttribute("vllmBaseUrl", env.getProperty("vllm.api.url"));
         model.addAttribute("vllmApiModel", env.getProperty("vllm.api.model"));
         model.addAttribute("vllmApiMaxTokens", env.getProperty("vllm.api.max-tokens"));
@@ -65,6 +74,14 @@ public class NotionController {
         model.addAttribute("pageTitle", "노션 작성");
         model.addAttribute("activeMenu", "notionCreate");
         model.addAttribute("image", "/images/Group.svg");
+        if (userDetails != null) {
+            // userDetails에서 닉네임 가져오기 (예: CustomUserDetails 사용)
+        	String nickname = ((CustomUserDetails) userDetails).getNickname();
+            model.addAttribute("nickname", nickname);
+            String email = ((CustomUserDetails) userDetails).getEmail();
+            model.addAttribute("email", email);
+        }
+
         return "NotionCreate2";
     }
 
@@ -122,6 +139,7 @@ public class NotionController {
             result.put("error", e.getMessage());
             return ResponseEntity.status(500).body(result);
         }
+        
     }
 
     @PostMapping(value = "/api/notion/save-text", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -130,7 +148,7 @@ public class NotionController {
             @RequestParam("title") String title,
             @RequestParam("content") String content,
             @RequestParam("notionType") String notionType,
-            Authentication auth
+            Authentication auth,@AuthenticationPrincipal UserDetails userDetails
     ) {
         Long userIdx = ((com.smhrd.web.security.CustomUserDetails) auth.getPrincipal()).getUserIdx();
         try {
@@ -185,8 +203,15 @@ public class NotionController {
     }
 
     @GetMapping("/complete")
-    public String showCompletePage(Model model) {
+    public String showCompletePage(Model model,@AuthenticationPrincipal UserDetails userDetails) {
         model.addAttribute("pageTitle", "저장 완료");
+        if (userDetails != null) {
+            // userDetails에서 닉네임 가져오기 (예: CustomUserDetails 사용)
+        	String nickname = ((CustomUserDetails) userDetails).getNickname();
+            model.addAttribute("nickname", nickname);
+            String email = ((CustomUserDetails) userDetails).getEmail();
+            model.addAttribute("email", email);
+        }
         return "NotionComplete";
     }
 

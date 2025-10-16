@@ -16,13 +16,15 @@ body {
     display: flex;
     flex-direction: column; 
     align-items: center; 
-    margin-top: 50px; 
+    position:relative;
+    top: 150px; 
 	animation: fadeIn 1s ease;
     gap: 20px;
     max-width: 1240px; 
     margin-left: auto;
     margin-right: auto;
     box-sizing: border-box; 
+    padding-bottom:150px;
 }
 
 /* 2. 노션 선택 메인 박스 */

@@ -10,13 +10,17 @@ public class CustomUserDetails implements UserDetails {
     private final Long userIdx;           // [추가] user_idx 저장
     private final String userId;
     private final String password;
+    private final String nickname;
+    private final String email;
     private final Collection<? extends GrantedAuthority> authorities;
-
+    
     public CustomUserDetails(User user, Collection<? extends GrantedAuthority> authorities) {
         this.userIdx = user.getUserIdx();
         this.userId = user.getUserId();
         this.password = user.getUserPw();
         this.authorities = authorities;
+        this.nickname = user.getNickname();
+        this.email = user.getEmail();
     }
 
     public Long getUserIdx() {
@@ -57,4 +61,11 @@ public class CustomUserDetails implements UserDetails {
     public boolean isEnabled() {
         return true;
     }
+    
+	public String getNickname() {
+		return nickname;
+	}
+	public String getEmail() {
+		return email;
+	}
 }
