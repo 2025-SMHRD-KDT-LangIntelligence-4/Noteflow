@@ -9,6 +9,8 @@ import com.smhrd.web.security.CustomUserDetails;
 import com.smhrd.web.service.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -40,6 +42,8 @@ public class NotionController {
     private final AutoFolderService autoFolderService;
     private final NoteRepository noteRepository;
     private final FileStorageService fileStorageService;
+    private final FileParseService fileParseService;
+    
 
     // -----------------------------
     // LLM 요약 데이터 입력 페이지
@@ -87,6 +91,63 @@ public class NotionController {
     }
 
     // -----------------------------
+    // 파일 id 기반 차단
+    // -----------------------------
+    
+
+
+@PostMapping("/create-by-id")
+@ResponseBody
+public ResponseEntity<Map<String, Object>> createFromFileId(
+        @RequestBody Map<String, String> req,
+        @AuthenticationPrincipal(expression = "userIdx") Long userIdx,
+        @Value("${notion.summary.normal-max-bytes:51200}") int normalMaxBytes,   // 50KB
+        @Value("${notion.summary.economy-max-bytes:512000}") int economyMaxBytes // 500KB
+) {
+    String gridfsId = req.get("fileId");
+    String promptTitle = req.getOrDefault("promptTitle", "심플버전");
+    Map<String, Object> out = new HashMap<>();
+    try {
+        FileStorageService.FileInfo meta = fileStorageService.previewFile(gridfsId);
+        if (meta == null) return ResponseEntity.ok(Map.of("success", false, "error", "파일을 찾을 수 없습니다."));
+
+        long size = meta.getSize();
+        if (size > economyMaxBytes) {
+            // 500KB 초과 → 요약 차단(저장만)
+            out.put("success", false);
+            out.put("mode", "blocked");
+            out.put("message", "[안내] 파일이 너무 커서 요약을 진행하지 않습니다. 텍스트를 줄이거나 파일을 나눠 업로드해 주세요.");
+            return ResponseEntity.ok(out);
+        }
+
+        // 500KB 이하만 파싱 진행
+        byte[] bytes = fileStorageService.downloadFile(gridfsId);
+        String filename = meta.getOriginalName() == null ? "file" : meta.getOriginalName();
+        String fullText = fileParseService.extractText(bytes, filename);
+
+        // 길이 기준으로 normal/economy 결정
+        int textBytes = fullText.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
+        LLMUnifiedService.SummaryResult unified;
+        if (textBytes <= normalMaxBytes) {
+            unified = llmService.summarizeWithPolicy(userIdx, promptTitle, fullText, "normal");
+        } else {
+            unified = llmService.summarizeWithPolicy(userIdx, promptTitle, fullText, "economy");
+        }
+
+        out.put("success", unified.isSuccess());
+        out.put("mode", unified.getMode());
+        out.put("summary", unified.getSummaryMarkdown());
+        out.put("keywords", unified.getKeywords());
+        out.put("message", unified.getMessage());
+        return ResponseEntity.ok(out);
+    } catch (Exception e) {
+        return ResponseEntity.status(500).body(Map.of("success", false, "error", e.getMessage()));
+    }
+}
+
+
+    
+    // -----------------------------
     // 텍스트 기반 요약 생성
     // -----------------------------
     @PostMapping("/create-text")
@@ -117,31 +178,48 @@ public class NotionController {
     // -----------------------------
     // 파일 기반 요약 생성
     // -----------------------------
-    @PostMapping("/create-file")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> createFromFile(@RequestParam("file") MultipartFile file,
-                                                              @RequestParam("promptTitle") String promptTitle,
-                                                              Authentication auth) throws IOException {
-        Long userIdx = ((com.smhrd.web.security.CustomUserDetails) auth.getPrincipal()).getUserIdx();
-        log.info("[FILE] LLM 요약 요청 - file: {}", file.getOriginalFilename());
 
-        Map<String, Object> result = new HashMap<>();
-        try {
-            TestSummary summary = llmService.processFile(userIdx, file, promptTitle);
-            result.put("success", true);
-            result.put("summary", summary.getAiSummary());
-            result.put("status", summary.getStatus());
-            result.put("fileName", summary.getFileName());
-            result.put("fileSize", summary.getFileSize());
-            result.put("processingTimeMs", summary.getProcessingTimeMs());
-            return ResponseEntity.ok(result);
-        } catch (Exception e) {
+@PostMapping("/create-file")
+@ResponseBody
+public ResponseEntity<Map<String, Object>> createFromFile(
+        @RequestParam("file") MultipartFile file,
+        @RequestParam("promptTitle") String promptTitle,
+        Authentication auth,
+        @Value("${notion.summary.normal-max-bytes:51200}") int normalMaxBytes,   // 50KB
+        @Value("${notion.summary.economy-max-bytes:512000}") int economyMaxBytes // 500KB
+) throws IOException {
+    Long userIdx = ((com.smhrd.web.security.CustomUserDetails) auth.getPrincipal()).getUserIdx();
+    Map<String, Object> result = new HashMap<>();
+    try {
+        long size = file.getSize();
+        if (size > economyMaxBytes) {
             result.put("success", false);
-            result.put("error", e.getMessage());
-            return ResponseEntity.status(500).body(result);
+            result.put("mode", "blocked");
+            result.put("message", "[안내] 파일이 너무 커서 요약을 진행하지 않습니다. 텍스트를 줄이거나 파일을 나눠 업로드해 주세요.");
+            return ResponseEntity.ok(result);
         }
-        
+        // 파싱 및 텍스트 길이에 따른 normal/economy
+        String text = fileParseService.extractText(file);
+        int textBytes = text.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
+        LLMUnifiedService.SummaryResult unified;
+        if (textBytes <= normalMaxBytes) {
+            unified = llmService.summarizeWithPolicy(userIdx, promptTitle, text, "normal");
+        } else {
+            unified = llmService.summarizeWithPolicy(userIdx, promptTitle, text, "economy");
+        }
+        result.put("success", unified.isSuccess());
+        result.put("mode", unified.getMode());
+        result.put("summary", unified.getSummaryMarkdown());
+        result.put("keywords", unified.getKeywords());
+        result.put("message", unified.getMessage());
+        return ResponseEntity.ok(result);
+    } catch (Exception e) {
+        result.put("success", false);
+        result.put("error", e.getMessage());
+        return ResponseEntity.status(500).body(result);
     }
+}
+
 
     @PostMapping(value = "/api/notion/save-text", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody

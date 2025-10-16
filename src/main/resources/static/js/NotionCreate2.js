@@ -234,7 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             const promptContent = selectedPrompt.content || '';
-            contentToSend = `${originalContent}\n\n프롬프트: ${promptContent}\n\n##keywords## 주요 키워드 5개 추출 및 대·중·소 분류`;
+            contentToSend = `${originalContent}\n\n프롬프트: ${promptContent}\n\n`;
         } else {
             // 재요청: 에디터의 현재 내용 사용
             contentToSend = editor.getMarkdown().trim();
@@ -242,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('요약할 내용이 없습니다.');
                 return;
             }
-            contentToSend += '\n\n##keywords## 주요 키워드 5개 추출 및 대·중·소 분류';
+            ;
         }
 
         try {
@@ -251,7 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const summary = await makeLLMRequest(contentToSend, selectedPrompt.title);
             
             // 키워드 부분 제거하고 요약만 표시
-            const cleanSummary = summary.replace(/##keywords##.*$/gis, '').trim();
+            const cleanSummary = summary
             editor.setMarkdown(cleanSummary);
             
             hasProcessedOnce = true;

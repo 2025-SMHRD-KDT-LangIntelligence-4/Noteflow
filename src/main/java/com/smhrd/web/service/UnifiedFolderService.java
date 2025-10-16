@@ -22,7 +22,6 @@ public class UnifiedFolderService {
     private final NoteFolderRepository noteFolderRepository;
     private final NoteRepository noteRepository;
     private final FileMetadataRepository fileMetadataRepository;
-    private final FolderRepository mongoFolderRepository;
     private final FolderRepository folderRepository;
 
     // --------------------------
