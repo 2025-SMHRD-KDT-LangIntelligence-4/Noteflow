@@ -14,12 +14,12 @@ body {
 /* 1. 전체 컨테이너: 중앙 정렬 및 여백 확보 */
 .selection-container {
     display: flex;
-    flex-direction: column; 
+    flex-wrap:wrap;
     align-items: center; 
     position:relative;
     top: 150px; 
 	animation: fadeIn 1s ease;
-    gap: 20px;
+    gap: 40px;
     max-width: 1240px; 
     margin-left: auto;
     margin-right: auto;
@@ -29,7 +29,7 @@ body {
 
 /* 2. 노션 선택 메인 박스 */
 .notion-selection-box {
-    width: 100%;
+    width: 600px;
     height: 600px; 
     background-color: white;
     border-radius: 20px;
@@ -94,13 +94,13 @@ body {
     animation: fadeIn 1s ease;
 }
 .tree-item:hover {
-    background-color: #96D0FF;
+    background-color: #c7c7c7;
 }
 .tree-item.selected {
-    background-color: #2FA1FF; 
+    background-color: #96d0ff; 
     color: white;
     font-weight: bold;
-    border: 1px solid #2FA1FF;
+    border: 1px solid #96d0ff;
 }
 
 /* 4. 정보 표시 및 완료 버튼 영역 */
@@ -159,4 +159,10 @@ body {
 .complete-button:disabled {
     background-color: #ccc; 
     cursor: not-allowed;
+}
+.notion-wrapper-full-size{
+	width:100%;	
+}
+.notion-selection-box{
+	width:600px;
 }

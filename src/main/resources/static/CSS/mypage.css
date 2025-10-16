@@ -87,7 +87,7 @@ body {
     display: flex;
     justify-content: center;
 }
-.id, .pw, .social-login, .interesting{
+.id, .bio, .social-login, .interesting{
     width:240px;
     height:50px;
     display: flex;
@@ -97,7 +97,7 @@ body {
     border-color: #C7C7C7;
     align-items: center;
 }
-.user-id, .user-pw, .user-social-login, .user-interesting {
+.user-id, .user-bio, .user-social-login, .user-interesting {
     width:500px;
     height:50px;
 

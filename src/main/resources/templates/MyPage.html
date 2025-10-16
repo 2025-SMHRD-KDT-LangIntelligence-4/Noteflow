@@ -37,8 +37,8 @@
                 <div class="id">아이디</div>
                 <div class="user-id" th:text="${user.userId != null ? user.userId : ''}">아이디 값</div>
 
-                <div class="pw">패스워드</div>
-                <div class="user-pw" th:text="${user.userPw != null ? user.userPw : ''}">패스워드 값</div>
+             	 <div class="bio">자기소개</div>
+	             <div class="user-bio" id="bio" name="bio" th:text="${user?.bio !=null ? user.bio : '없음'}">자기소개</div>
 
                 <div class="social-login">소셜 로그인 여부</div>
                 <div class="user-social-login" th:text="${user.socialLogin != null ? user.socialLogin : '없음'}">소셜 로그인 여부</div>

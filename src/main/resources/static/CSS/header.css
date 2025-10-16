@@ -91,6 +91,9 @@ body {
 .out-user-name{
 	color:white;
 	font-size:15px;
+	width: 350px;
+    display: flex;
+    justify-content: end;
 }
 .user-location-container{
 	display:flex;
@@ -207,7 +210,6 @@ body {
 .categori-container a {
     width: 80px;
     text-decoration: none;
-    border-radius:20px;
     color:white;
     display: flex;
     align-items: center;
@@ -218,7 +220,9 @@ body {
 }
 
 .categori-container a:hover {
-    background-color:#2FA1FF;
+   	color:#2FA1FF;
+    font-weight:bold;
+    font-size:17px;
 }
 
 /* 로그인 버튼 영역 */
@@ -271,18 +275,18 @@ body {
 .AI-position-container {
 	position: fixed;       /* 화면에 고정 */
     bottom: 30px;          /* 화면 아래에서 30px 위 */
-    left: 30px;           /* 화면 오른쪽에서 30px 왼쪽 */
+    right: 30px;           /* 화면 오른쪽에서 30px 왼쪽 */
     z-index: 1000;         
 }
 .top-button-position-container {
 	position: fixed;       /* 화면에 고정 */
-    bottom: 30px;          /* 화면 아래에서 30px 위 */
+    bottom: 120px;          /* 화면 아래에서 30px 위 */
     right: 30px;           /* 화면 오른쪽에서 30px 왼쪽 */
     z-index: 1000; 
 }
 .AI-container {
-	width:150px;
-	height:150px;
+	width:80px;
+	height:80px;
 	background-color:white;
 	border-radius:50%;
 	box-shadow:0 4px 12px rgba(0,0,0,0.1); 
@@ -293,7 +297,9 @@ body {
 }
 /* 현재 활성화된 메뉴 표시용 */
 .categori-container a.active {
-    text-decoration: none;
+    color:#2FA1FF;
+    font-weight:bold;
+    font-size:17px;
 }
 
 .top-button {
