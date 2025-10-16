@@ -91,6 +91,9 @@ body {
 .out-user-name{
 	color:white;
 	font-size:15px;
+	width: 350px;
+    display: flex;
+    justify-content: end;
 }
 .user-location-container{
 	display:flex;

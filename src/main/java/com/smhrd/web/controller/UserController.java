@@ -115,18 +115,24 @@ public class UserController {
     // 마이페이지
     // --------------------------
     @GetMapping("/mypage")
-    public String mypageGet(Authentication authentication, Model model) {
+    public String mypageGet(Authentication authentication, Model model,@AuthenticationPrincipal UserDetails userDetails) {
 
         Long userIdx = ((CustomUserDetails) authentication.getPrincipal()).getUserIdx(); // [수정]
         userService.getUserInfo(userIdx)                                             // [수정]
                    .ifPresent(user -> model.addAttribute("user", user));
-
+        if (userDetails != null) {
+            // userDetails에서 닉네임 가져오기 (예: CustomUserDetails 사용)
+            String nickname = ((CustomUserDetails) userDetails).getNickname();
+            model.addAttribute("nickname", nickname);
+            String email = ((CustomUserDetails) userDetails).getEmail();
+            model.addAttribute("email", email);
+        }
         return "MyPage";
     }
 
     @PostMapping("/mypage")
     public String mypagePost(Authentication authentication, Model model) {
-        return mypageGet(authentication, model);
+        return mypageGet(authentication, model, null);
     }
 
     // --------------------------
