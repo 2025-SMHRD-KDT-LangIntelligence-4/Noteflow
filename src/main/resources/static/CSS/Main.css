@@ -213,12 +213,6 @@ body {
   height: 100%;
 }
 
-.ad-banner-img {
-  width: 100%;
-  height: 300px;
-  object-fit: cover;
-}
-
 /* 슬라이드 숨김 */
 .ad-slide {
   display: none;
