@@ -28,7 +28,7 @@ body {
 	gap:40px;
 	animation: fadeIn 1s ease;
 	position:relative;
-	top:150px;
+	top:100px;
 	padding-bottom:150px;	
 }
 .slider-wrapper {

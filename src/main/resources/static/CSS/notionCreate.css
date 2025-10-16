@@ -21,7 +21,7 @@ body {
 	width:100%;
 	gap:40px;
 	animation: fadeIn 1s ease;	
-	top: 100px;
+	top: 50px;
     position: relative;	
     padding-bottom:150px;
 }
@@ -45,17 +45,17 @@ body {
 }
 
 .title{
-	width: 80%;
+	width: 95%;
     height: 40px;
     border: none;
     font-size: 25px;
     margin-top: 10px;
-    padding: 10px;
+    padding: 20px 0px;
     outline: none;
     border-bottom: 2px solid #c7c7c7;
 }
 .notion-text {
-	width:80%;
+	width:95%;
 	height:300px;
 	border:none;
 	font-size:15px;
