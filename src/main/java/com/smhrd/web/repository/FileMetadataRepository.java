@@ -25,6 +25,8 @@ public interface FileMetadataRepository extends MongoRepository<FileMetadata, St
 
     long countByFolderId(String folderId);
 
+
+
     // 루트 파일 조회
     @Query(value = "{ 'userIdx': ?0, $or: [ { 'folderId': null }, { 'folderId': { $exists: false } }, { 'folderId': '' } ] }",
            sort  = "{ 'uploadDate': -1 }")

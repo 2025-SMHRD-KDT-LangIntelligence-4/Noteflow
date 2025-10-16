@@ -12,10 +12,15 @@
             margin:0px;
  
         }
-
+		.location-container{
+			display:flex;
+			justify-content:center;
+			position:relative;
+			top:150px;
+			padding-bottom:150px;
+		}
         .mypage-container {
             width: 800px;
-            margin: 50px auto;
             background: #fff;
             border-radius: 20px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);

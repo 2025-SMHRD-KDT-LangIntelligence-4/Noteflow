@@ -8,7 +8,14 @@
 }
 body {
     font-family: 'Pretendard';
-    background: white;           
+    background: white;          
+}
+.header-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 2000;
 } 
 /* 상단 파란색 바 */
 .header-top {
@@ -16,24 +23,157 @@ body {
     width: 100%;
     height: 50px;
     display: flex;
-    justify-content: space-between;
     align-items: center;
     overflow: hidden;
     box-sizing: border-box;
+	position:relative;
+	justify-content: space-between;
+	z-index:1000;
+}
+.userProfile-btn{
+	width:40px;
+	height:40px;
+	border-radius:50%;
+	border:none;
+	display:flex;
+	justify-content:center;
+	overflow:hidden;
+}
+/* 🔹 프로필 버튼 기본 설정 */
+.userProfile-container {
+  position: relative;
+  display: inline-block;
+}
+
+.userProfile-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.user-image-container {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+.user-btn-container{
+	width:100%;
+	height:40px;
+	display:flex;
+	justify-content:center;
+	gap:2px;
+	margin-bottom: 10px;
+}
+.user-image-container:hover {
+  transform: scale(1.05);
+}
+.profile-image{
+	width:100px;
+	height:100px;
+	border-radius:50%;
+	
+}
+.profile-img-location-container{
+	width:100%;
+	display:flex;
+	justify-content:center;
+}
+.user-name{
+	font-size: 20px;
+    height: 40px;
+    align-items: center;
+    display: flex;
+    width: 100%;
+    justify-content: center;
+
+}
+.out-user-name{
+	color:white;
+	font-size:15px;
+}
+.user-location-container{
+	display:flex;
+	justify-content:center;
+	flex-wrap:wrap;
+	align-items:center;
+	width:100%;
+	height:100%;
+}
+.email-container{
+	width:100%;
+	display:flex;
+	justify-content:center;
+	align-items:center;
+	height:40px;
+	border-bottom: 1px solid #c7c7c7;
+}
+/* 🔹 드롭다운 메뉴 */
+.dropdown-menu {
+  position: fixed;
+  top: 100%; /* 버튼 바로 아래 */
+  right: 0;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  animation: dropdown-fade 0.25s ease;
+  z-index: 99999;
+  width:250px;
+  height:340px;
+}
+
+/* 메뉴 항목 */
+.dropdown-item1 {
+  padding: 10px 20px;
+  color: white;
+  text-decoration: none;
+  font-size: 14px;
+  transition: background 0.2s ease;
+  background-color:#96d0ff;
+  border-radius:10px 0 0 10px ;
+}
+.dropdown-item2 {
+  padding: 10px 20px;
+  color: white;
+  text-decoration: none;
+  font-size: 14px;
+  transition: background 0.2s ease;
+  background-color:#96d0ff;
+  border-radius:0 10px 10px 0 ;
+}
+.dropdown-item:hover {
+  background-color: #f1f1f1;
+}
+
+/* 🔹 부드럽게 드롭다운 나타나는 효과 */
+@keyframes dropdown-fade {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  } 
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* 하단 흰색 영역 */
 .header-bottom {
     width: 100%;
     background-color: #FFFFFF;
-    border-radius: 0px 0px 10px 10px;
-    height: 80px;
+    height: 60px;
     position: relative;
-    box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.25);
+	box-shadow:0 4px 12px rgba(0,0,0,0.1); 
     overflow: hidden;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    position:relative;
+    
+    z-index:999;
 }
 
 /* 대시보드 타이틀 */
@@ -48,45 +188,51 @@ body {
     align-items: flex-end;
     justify-content: end;
 }
-
+.header-top-right{
+	width:600px;
+	height:100%;
+	display:flex;
+	align-items:center;
+	gap:70px;
+}
 /* 카테고리 메뉴 */
 .categori-container {
     width: 608px;
-    height: 50px;
-    margin-top: 30px;
+    height: 40px;
     display: flex;
     justify-content: center;
-    gap: 30px;
+    gap: 10px;   
 }
 
 .categori-container a {
-    width: 100px;
+    width: 80px;
     text-decoration: none;
-    color: #000000;
+    border-radius:20px;
+    color:white;
     display: flex;
     align-items: center;
     justify-content: center;
     border: none;
-    font-size: 18px;
-    background-color: #FFFFFF;
+    font-size: 15px;
+    background-color: #96d0ff;
 }
 
 .categori-container a:hover {
-    border-bottom: 5px solid black;
+    background-color:#2FA1FF;
 }
 
 /* 로그인 버튼 영역 */
 .login-container {
     width: 200px;
-    padding-right: 20px;
+    padding-right: 60px;
     display: flex;
     align-items: center;
     gap: 10px;
+    justify-content: end;
 }
 
 .login-container a {
     text-decoration: none;
-    color: #000000;
 }
 
 .login-container a:hover {
@@ -108,7 +254,6 @@ body {
 }
 .login-button-location {
 	display:flex;
-	flex-wrap:wrap;
 	align-items:center;
 	gap:10px;
 }
@@ -149,7 +294,6 @@ body {
 /* 현재 활성화된 메뉴 표시용 */
 .categori-container a.active {
     text-decoration: none;
-    border-bottom: 5px solid black;      /* 밑줄 제거 */
 }
 
 .top-button {

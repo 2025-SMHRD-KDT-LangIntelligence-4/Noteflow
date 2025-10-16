@@ -111,10 +111,12 @@ body {
 	justify-content: center;
 	align-items: flex-start;
 	position: relative;
-	top: 50px;
 	gap: 20px;
 	animation: fadeIn 1s ease;
 	margin-bottom: 50px;
+	top: 150px;
+    position: relative;
+    padding-bottom:150px;
 }
 
 /* 왼쪽 노트 리스트 컨테이너 */

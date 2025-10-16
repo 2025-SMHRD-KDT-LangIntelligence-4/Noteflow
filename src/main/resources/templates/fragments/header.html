@@ -10,34 +10,57 @@
 </head>
 <body>
 <header th:fragment="siteHeader">
-    <div class="header-top">
-    	
-        <a th:href="@{/main}" class="logo"><img th:src="@{/images/logo2.png}" class="logo-image"/></a>
-    </div>
-    <div class="header-bottom">
-        <!-- 페이지별로 동적으로 바뀌는 타이틀 -->
-        <div class="title-container" th:text="${pageTitle}">홈 대시보드</div>
-
-        <!-- 카테고리 메뉴 -->
-        <div class="categori-container">
-            <a th:href="@{/main}" th:classappend="${activeMenu == 'main'} ? ' active' : ''">피드</a>
-            <a th:href="@{/schedule}" th:classappend="${activeMenu == 'schedule'} ? ' active' : ''">일정관리</a>
-            <a th:href="@{/notion/precreate}" th:classappend="${activeMenu == 'notionCreate'} ? ' active' : ''">노션작성</a>
-            <a th:href="@{/notion/manage}" th:classappend="${activeMenu == 'notionManage'} ? ' active' : ''">노션관리</a>
-            <a th:href="@{/quiz/create}" th:classappend="${activeMenu == 'quizCreate'} ? ' active' : ''">문제생성</a>
-        </div>
-
-        <!-- 로그인 상태에 따른 버튼 -->
-        <div class="login-container">
-            <div sec:authorize="isAnonymous()">
-                <a th:href="@{/login}" class="login-button">로그인</a>
-            </div>
-            <div sec:authorize="isAuthenticated()" class="login-button-location">
-                <a th:href="@{/mypage}" class="login-button">마이페이지</a>
-                <a th:href="@{/logout}" class="login-button">로그아웃</a>
-            </div>
-        </div>
-    </div>
+	<div class="header-wrapper">
+	    <div class="header-top">
+	    	<div class ="header-top-right">
+		        <a th:href="@{/main}" class="logo"><img th:src="@{/images/logo2.png}" class="logo-image"/></a>
+		        <!-- 카테고리 메뉴 -->
+		        <div class="categori-container">
+		            <a th:href="@{/main}" th:classappend="${activeMenu == 'main'} ? ' active' : ''">피드</a>
+		            <a th:href="@{/schedule}" th:classappend="${activeMenu == 'schedule'} ? ' active' : ''">일정관리</a>
+		            <a th:href="@{/notion/precreate}" th:classappend="${activeMenu == 'notionCreate'} ? ' active' : ''">노션작성</a>
+		            <a th:href="@{/notion/manage}" th:classappend="${activeMenu == 'notionManage'} ? ' active' : ''">노션관리</a>
+		            <a th:href="@{/quiz/create}" th:classappend="${activeMenu == 'quizCreate'} ? ' active' : ''">문제생성</a>
+		        </div>
+		
+	    	</div>
+	        <!-- 로그인 상태에 따른 버튼 -->
+	        <div class="login-container">
+	            <div sec:authorize="isAnonymous()">
+	                <a th:href="@{/login}" class="login-button">로그인</a>
+	            </div>
+	            <div sec:authorize="isAuthenticated()" class="login-button-location">
+	            	<div class="out-user-name" th:text="${nickname} + '님 환영합니다.'">OOO님 환영합니다.</div>
+	            	<div class="userProfile-container">
+						  <button class="userProfile-btn" id="profileBtn">
+						    <img th:src="@{/images/default-profile.png}" alt="프로필 이미지" class="user-image-container" />
+						  </button>
+	
+						  <!-- ▼ 클릭 시 나타날 드롭다운 -->
+						  <div class="dropdown-menu" id="dropdownMenu">
+						  		<div class="user-location-container">
+						  			<div class="email-container" th:text="${email}"> </div>
+						  			<div class="profile-img-location-container">
+								  		<img th:src="@{/images/default-profile.png}" alt="프로필 이미지" class="profile-image" />
+						  			</div>
+							  		<div class="user-name" th:text="${nickname} + '님 환영합니다.'">OOO님 환영합니다.</div>
+							  		<div class="user-btn-container">
+								    	<a th:href="@{/mypage}" class="dropdown-item1">마이페이지</a>
+								    	<a th:href="@{/logout}" class="dropdown-item2">로그아웃</a>
+							  		</div>
+						  		</div>
+						  </div>
+	  				</div>     
+	  			</div>
+	        </div>
+	    </div>
+	    <div class="header-bottom">
+	        <!-- 페이지별로 동적으로 바뀌는 타이틀 -->
+	        <div class="title-container" th:text="${pageTitle}">홈 대시보드</div>
+	
+	        
+	    </div>
+	</div>
 
     <div class="AI-position-container">
         <div class="AI-container">
@@ -122,7 +145,50 @@
     userInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') sendBtn.click();
     });
+    
+
  </script>
+ <script>
+document.addEventListener('DOMContentLoaded', function() {
+  const profileBtn = document.getElementById('profileBtn');
+  const dropdownMenu = document.getElementById('dropdownMenu');
+
+  let isOpen = false;
+
+  // ✅ 클릭 시 토글
+  profileBtn.addEventListener('click', function(event) {
+    event.stopPropagation();
+    isOpen = !isOpen;
+    dropdownMenu.style.display = isOpen ? 'flex' : 'none';
+    updateDropdownPosition();
+  });
+
+  // ✅ 스크롤할 때 위치 갱신
+  window.addEventListener('scroll', function() {
+    if (isOpen) updateDropdownPosition();
+  });
+
+  // ✅ 화면 크기 변경 시에도 갱신
+  window.addEventListener('resize', function() {
+    if (isOpen) updateDropdownPosition();
+  });
+
+  // ✅ 드롭다운 바깥 클릭 시 닫기
+  document.addEventListener('click', function() {
+    dropdownMenu.style.display = 'none';
+    isOpen = false;
+  });
+
+  // ✅ 위치 계산 함수
+  function updateDropdownPosition() {
+    const rect = profileBtn.getBoundingClientRect();
+    dropdownMenu.style.position = 'fixed';
+    dropdownMenu.style.top = `${rect.bottom + 5}px`;
+    dropdownMenu.style.left = `${rect.left + window.scrollX - (dropdownMenu.offsetWidth - rect.width)}px`;
+  }
+});
+</script>
+
 </header>
 </body>
 </html>

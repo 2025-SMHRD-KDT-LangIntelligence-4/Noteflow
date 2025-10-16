@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -131,12 +133,19 @@ public class UserController {
     // 마이페이지 수정 폼
     // --------------------------
     @GetMapping("/editMypage")
-    public String editMypage(Authentication authentication, Model model) {
+    public String editMypage(Authentication authentication, Model model,@AuthenticationPrincipal CustomUserDetails userDetails) {
 
         Long userIdx = ((CustomUserDetails) authentication.getPrincipal()).getUserIdx(); // [수정]
         User user = userService.getUserInfo(userIdx).orElse(new User());            // [수정]
 
         model.addAttribute("user", user); // 항상 null-safe 보장
+        if (userDetails != null) {
+            // userDetails에서 닉네임 가져오기 (예: CustomUserDetails 사용)
+        	String nickname = ((CustomUserDetails) userDetails).getNickname();
+            model.addAttribute("nickname", nickname);
+            String email = ((CustomUserDetails) userDetails).getEmail();
+            model.addAttribute("email", email);
+        }
         return "editMypage";
     }
 

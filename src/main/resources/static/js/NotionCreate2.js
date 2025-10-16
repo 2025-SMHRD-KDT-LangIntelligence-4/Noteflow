@@ -1,189 +1,321 @@
-document.addEventListener("DOMContentLoaded", (format, data) => {
-        // --- CSRF 토큰 설정 ---
-        const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
-        const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+document.addEventListener('DOMContentLoaded', () => {
+    const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
 
-        // --- 전역 변수 및 요소 가져오기1 ---
+    const $slider = document.getElementById('buttonContainer');
+    const $slideContainer = document.querySelector('.slide-container');
+    const $leftArrow = document.querySelector('.arrow.left');
+    const $rightArrow = document.querySelector('.arrow.right');
+    const $temsetBtn = document.getElementById('temsetBtn');
+    const $saveBtn = document.getElementById('saveBtn');
+    const overlay = document.getElementById('loadingOverlay');
 
-        const container = document.getElementById("buttonContainer");
-        let selectedPromptTitle = "심플버전"; // 기본값
+    const promptsData = window.prompts || [];
 
+    // ====== PreCreate에서 전달된 데이터 읽기 ======
+    const preData = sessionStorage.getItem('notion.precreate');
+    const pre = preData ? JSON.parse(preData) : { title: '', content: '' };
+    let originalContent = pre.content || '';
 
-     	// ✅ Toast Editor 초기화 
-     	const editor = new toastui.Editor({
-     		el: document.querySelector('#editor'), 
-     		height: '480px', 
-     		initialEditType: 'markdown', 
-     		previewStyle: 'vertical', 
-     		language: 'ko', 
-     		placeholder: 'AI가 생성한 요약본이 여기에 표시됩니다. 자유롭게 편집하세요!', 
-     		usageStatistics: false }); 
-        // 기본 프롬프트 예시 표시 
-        const defaultPrompt = prompts.find(p => p.title === "심플버전"); 
-        if (defaultPrompt && defaultPrompt.exampleOutput) { 
-        	editor.setMarkdown(defaultPrompt.exampleOutput); }
+    console.log('PreCreate 데이터:', pre); // 디버깅용
 
-        // --- 슬라이드 버튼 동적 생성 ---
-        prompts.forEach(prompt => {
-            const btn = document.createElement("div");
-            btn.className = "slide-btn";
-            btn.dataset.promptTitle = prompt.title;
-            btn.dataset.exampleOutput = prompt.exampleOutput; // 'example_ouptput' 오타 수정
-            btn.innerHTML = ` <img src="${image}" alt="${prompt.title}" class="slide-icon" />
-            	  <span class="kor">${prompt.title}</span>`;
-
-            // 기본 '심플버전' 선택
-            if (prompt.title === selectedPromptTitle) {
-                btn.classList.add('active');
-            }
-
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.slide-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                selectedPromptTitle = btn.dataset.promptTitle;
-
-                const scrollY = window.scrollY; // 현재 페이지 스크롤 저장
-                editor.setMarkdown(btn.dataset.exampleOutput);
-                setTimeout(() => {
-                    window.scrollTo(0, scrollY); // 페이지 스크롤 원래 위치로 복원
-                }, 0);
-            });
-            container.appendChild(btn);
-        });
-
-        // --- 이벤트 리스너 설정 ---
-        const generateBtn = document.getElementById('generateBtn');
-        const saveBtn = document.getElementById('saveBtn');
-
-        generateBtn.addEventListener('click', handleGenerate);
-        saveBtn.addEventListener('click', handleSave);
-
-        // --- 기능 함수 ---
-        async function handleGenerate() {
-            const title = document.getElementById('inputTitle').value.trim();
-            const content = document.getElementById('inputContent').value.trim();
-
-            if (!title || !content) {
-                alert('제목과 내용을 모두 입력해주세요.');
-                return;
-            }
-
-            generateBtn.textContent = 'AI 요약 중...';
-            generateBtn.disabled = true;
-
-            try {
-                const response = await fetch('/api/notion/generate-summary', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        [csrfHeader]: csrfToken
-                    },
-                    body: JSON.stringify({
-                        content: content,
-                        notionType: selectedPromptTitle
-                    })
-                });
-
-                if (!response.ok) throw new Error('AI 요약 생성에 실패했습니다.');
-
-                const result = await response.json();
-
-                if (result.error) {
-                    throw new Error(result.error);
-                }
-
-                document.getElementById('resultTitle').value = title;
-                editor.setData(result.summary);
-
-            } catch (error) {
-                console.error('요약 생성 오류:', error);
-                alert('요약 생성 중 오류가 발생했습니다: ' + error.message);
-            } finally {
-                generateBtn.textContent = '작성';
-                generateBtn.disabled = false;
-            }
-        }
-
-        async function handleSave() {
-            const title = document.getElementById('resultTitle').value.trim();
-            const content = editor.getData();
-
-            if (!title || !content) {
-                alert('저장할 제목과 내용이 없습니다.');
-                return;
-            }
-
-            saveBtn.textContent = '저장 중...';
-            saveBtn.disabled = true;
-
-            try {
-                const response = await fetch('/api/notes', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        [csrfHeader]: csrfToken
-                    },
-                    body: JSON.stringify({ title, content })
-                });
-
-                if (!response.ok) throw new Error('저장 실패');
-
-                const result = await response.json();
-                if (result.success) {
-                    alert('노트가 성공적으로 저장되었습니다!');
-                    window.location.href = '/notion/manage'; // 저장 후 관리 페이지로 이동
-                } else {
-                    throw new Error(result.message);
-                }
-
-            } catch (error) {
-                console.error('저장 오류:', error);
-                alert('저장 중 오류가 발생했습니다.');
-            } finally {
-                saveBtn.textContent = '저장';
-                saveBtn.disabled = false;
-            }
-        }
-
-        // --- 슬라이드 UI 로직 (기존 코드 유지) ---
-        const slider = document.querySelector(".slide-container");
-        const track = document.querySelector(".slider-wrapper");
-        const leftBtn = document.querySelector(".arrow.left");
-        const rightBtn = document.querySelector(".arrow.right");
-
-        leftBtn.addEventListener("click", () => track.scrollBy({ left: -300, behavior: "smooth" }));
-        rightBtn.addEventListener("click", () => track.scrollBy({ left: 300, behavior: "smooth" }));
-        track.addEventListener("wheel", (e) => {
-            e.preventDefault();
-            track.scrollBy({ left: e.deltaY, behavior: "smooth" });
-        });
-        // 버튼 복제하여 무한루프 구현
-	  	const originalButtons = Array.from(container.children);
-	  	for (let i = 0; i < 3; i++) {
-	  	  originalButtons.forEach(btn => container.appendChild(btn.cloneNode(true)));
-	  	}
-	  	// 자동 슬라이드 변수
-	  	let scrollSpeed = 0.8;
-	  	let isPaused = false;
-	  	const originalSetWidth = originalButtons.reduce((acc, btn) => acc + btn.offsetWidth + 20, 0);
-	  	// 자동 슬라이드 함수
-	  	function animate() {
-	  	  if (!isPaused) {
-	  	    track.scrollLeft += scrollSpeed;
-	  	    if (track.scrollLeft >= originalSetWidth) {
-	  	      track.scrollLeft = 0;
-	  	    }
-	  	  }
-	  	  requestAnimationFrame(animate);
-	  	}
-	  	animate();
-	  	// 마우스 오버 시 일시정지
-		slider.addEventListener("mouseenter", () => isPaused = true);
-		slider.addEventListener("mouseleave", () => isPaused = false);
-  	
-  	  
-  	
-  	
-
-		
+    // ====== Toast UI Editor 초기화 ======
+    const editor = new toastui.Editor({
+        el: document.querySelector('#editor'),
+        height: '500px',
+        initialEditType: 'markdown',
+        previewStyle: 'vertical'
     });
+
+    // ====== 제목 초기값 설정 ======
+    if (pre.title) {
+        document.getElementById('ResultTitle').value = pre.title;
+    }
+
+    // ====== 로딩 상태 관리 ======
+    function setLoading(isLoading, message = '작동 중...') {
+        document.querySelectorAll('button').forEach(b => b.disabled = isLoading);
+        overlay.style.display = isLoading ? 'flex' : 'none';
+        overlay.textContent = message;
+        
+        if (isLoading) {
+            pauseSlider();
+        } else {
+            resumeSlider();
+        }
+    }
+
+	// ====== 프롬프트 버튼 렌더링 ======
+	promptsData.forEach((p, idx) => {
+	  const btn = document.createElement('button');
+	  btn.className = 'slide-btn';
+	  btn.innerHTML = `<img src="/images/Group.svg"><div class="kor">${p.title}</div>`;
+	  btn.dataset.index = idx;
+	  btn.addEventListener('click', () => {
+	    selectPrompt(idx);
+	    pauseSlider();
+	    setTimeout(resumeSlider, 2000);
+	  });
+	  $slider.appendChild(btn);
+	});
+
+	// ====== 동적으로 보이는 버튼 개수 계산 ======
+	const slideWidth = 180;
+	const wrapperWidth = $slideContainer.clientWidth;
+	const cloneCount = Math.ceil(wrapperWidth / slideWidth);
+
+	// 원본 버튼 리스트
+	const originalButtons = Array.from($slider.children);
+
+	// ====== 앞쪽에 마지막 cloneCount개 복제 ======
+	for (let i = promptsData.length - cloneCount; i < promptsData.length; i++) {
+	  const clone = originalButtons[i].cloneNode(true);
+	  clone.dataset.clone = 'before';
+	  clone.dataset.index = i;
+	  clone.addEventListener('click', () => {
+	    selectPrompt(i);
+	    pauseSlider();
+	    setTimeout(resumeSlider, 2000);
+	  });
+	  $slider.insertBefore(clone, $slider.firstChild);
+	}
+
+	// ====== 뒤쪽에 처음 cloneCount개 복제 ======
+	for (let i = 0; i < cloneCount; i++) {
+	  const clone = originalButtons[i].cloneNode(true);
+	  clone.dataset.clone = 'after';
+	  clone.dataset.index = i;
+	  clone.addEventListener('click', () => {
+	    selectPrompt(i);
+	    pauseSlider();
+	    setTimeout(resumeSlider, 2000);
+	  });
+	  $slider.appendChild(clone);
+	}
+
+	const allButtons = $slider.querySelectorAll('.slide-btn');
+
+	// ====== 무한 캐러셀 구현 ======
+	let currentPosition = cloneCount * slideWidth;
+	let isPaused = false;
+	let animId, lastTime = Date.now();
+
+	// 초기 위치
+	$slider.style.transform = `translateX(-${currentPosition}px)`;
+
+	function smoothSlide() {
+	  if (!isPaused) {
+	    const now = Date.now();
+	    const delta = now - lastTime;
+	    if (delta >= 20) {
+	      currentPosition += 0.5;
+	      $slider.style.transition = 'none';
+	      $slider.style.transform = `translateX(-${currentPosition}px)`;
+	      const maxPos = (promptsData.length + cloneCount) * slideWidth;
+	      if (currentPosition >= maxPos) {
+	        currentPosition = cloneCount * slideWidth;
+	      }
+	      lastTime = now;
+	    }
+	  }
+	  animId = requestAnimationFrame(smoothSlide);
+	}
+
+	function pauseSlider() { isPaused = true; }
+	function resumeSlider() { isPaused = false; lastTime = Date.now(); }
+
+	function startAutoSlide() {
+	  cancelAnimationFrame(animId);
+	  lastTime = Date.now();
+	  smoothSlide();
+	}
+
+	// ====== 화살표 & 마우스 이벤트 ======
+	$leftArrow.addEventListener('click', () => {
+	  currentPosition -= slideWidth;
+	  $slider.style.transition = 'transform 0.5s ease';
+	  $slider.style.transform = `translateX(-${currentPosition}px)`;
+	  pauseSlider();
+	  setTimeout(() => {
+	    resumeSlider();
+	    if (currentPosition < cloneCount * slideWidth) {
+	      currentPosition = (promptsData.length + cloneCount - 1) * slideWidth;
+	      $slider.style.transition = 'none';
+	      $slider.style.transform = `translateX(-${currentPosition}px)`;
+	    }
+	  }, 500);
+	});
+	$rightArrow.addEventListener('click', () => {
+	  currentPosition += slideWidth;
+	  $slider.style.transition = 'transform 0.5s ease';
+	  $slider.style.transform = `translateX(-${currentPosition}px)`;
+	  pauseSlider();
+	  setTimeout(() => {
+	    resumeSlider();
+	    const maxPos = (promptsData.length + cloneCount) * slideWidth;
+	    if (currentPosition >= maxPos) {
+	      currentPosition = cloneCount * slideWidth;
+	      $slider.style.transition = 'none';
+	      $slider.style.transform = `translateX(-${currentPosition}px)`;
+	    }
+	  }, 500);
+	});
+	$slideContainer.addEventListener('mouseenter', pauseSlider);
+	$slideContainer.addEventListener('mouseleave', resumeSlider);
+	allButtons.forEach(btn => {
+	  btn.addEventListener('mouseenter', pauseSlider);
+	  btn.addEventListener('mouseleave', () => setTimeout(resumeSlider, 1000));
+	});
+
+	startAutoSlide();
+    // ====== 프롬프트 선택 ======
+    let selectedPrompt = null;
+    let hasProcessedOnce = false;
+
+    function selectPrompt(index) {
+        // 모든 버튼에서 active 제거
+        allButtons.forEach(btn => btn.classList.remove('active'));
+        
+        // 같은 인덱스의 모든 버튼에 active 추가 (원본 + 복제본)
+        allButtons.forEach(btn => {
+            const btnIndex = parseInt(btn.dataset.index) || parseInt(btn.dataset.originalIndex);
+            if (btnIndex === index) {
+                btn.classList.add('active');
+            }
+        });
+
+        selectedPrompt = promptsData[index];
+        
+        console.log('선택된 프롬프트:', selectedPrompt); // 디버깅용
+        
+        // 에디터에는 프롬프트 예시만 표시 (처리 전에만)
+        if (!hasProcessedOnce) {
+            const template = selectedPrompt.exampleOutput || selectedPrompt.content || '';
+            editor.setMarkdown(template);
+        }
+    }
+
+    // ====== LLM 요청 공통 함수 ======
+    function makeLLMRequest(contentToSend, promptTitle) {
+        console.log('LLM 요청 내용:', contentToSend); // 디버깅용
+        
+        return fetch('/notion/create-text', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(csrfHeader && csrfToken ? { [csrfHeader]: csrfToken } : {})
+            },
+            body: JSON.stringify({
+                content: contentToSend,
+                promptTitle: promptTitle
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) throw new Error(data.error || 'LLM 요청 실패');
+            return data.summary || '';
+        });
+    }
+
+    // ====== 확정하기 버튼 (LLM 요청) ======
+    $temsetBtn.addEventListener('click', async () => {
+        if (!selectedPrompt) {
+            alert('프롬프트를 선택하세요.');
+            return;
+        }
+
+        let contentToSend = '';
+
+        if (!hasProcessedOnce) {
+            // 최초 요청: PreCreate의 원본 내용 + 선택된 프롬프트
+            if (!originalContent.trim()) {
+                alert('처리할 원본 내용이 없습니다.');
+                return;
+            }
+            
+            const promptContent = selectedPrompt.content || '';
+            contentToSend = `${originalContent}\n\n프롬프트: ${promptContent}\n\n##keywords## 주요 키워드 5개 추출 및 대·중·소 분류`;
+        } else {
+            // 재요청: 에디터의 현재 내용 사용
+            contentToSend = editor.getMarkdown().trim();
+            if (!contentToSend) {
+                alert('요약할 내용이 없습니다.');
+                return;
+            }
+            contentToSend += '\n\n##keywords## 주요 키워드 5개 추출 및 대·중·소 분류';
+        }
+
+        try {
+            setLoading(true, '일하는 중....');
+
+            const summary = await makeLLMRequest(contentToSend, selectedPrompt.title);
+            
+            // 키워드 부분 제거하고 요약만 표시
+            const cleanSummary = summary.replace(/##keywords##.*$/gis, '').trim();
+            editor.setMarkdown(cleanSummary);
+            
+            hasProcessedOnce = true;
+            alert('요약이 완료되었습니다!');
+
+        } catch (err) {
+            console.error(err);
+            alert('요청 중 오류: ' + err.message);
+        } finally {
+            setLoading(false);
+        }
+    });
+
+    // ====== 저장 버튼 ======
+
+    $saveBtn.addEventListener('click', async () => {
+        const titleInput = document.getElementById('ResultTitle');
+        const title = titleInput.value.trim();
+        if (!title) {
+            alert('제목을 입력하세요.');
+            return;
+        }
+
+        const summary = editor.getMarkdown();
+        if (!summary.trim()) {
+            alert('저장할 내용이 없습니다.');
+            return;
+        }
+
+        try {
+            setLoading(true, '저장 중...');
+
+            const res = await fetch('/notion/save-note', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(csrfHeader && csrfToken ? { [csrfHeader]: csrfToken } : {})
+                },
+                body: JSON.stringify({
+                    title: title,
+                    summary: summary,
+                    promptId: selectedPrompt ? selectedPrompt.promptId : 0
+                })
+            });
+
+            const data = await res.json();
+            if (!data.success) throw new Error(data.error || '저장 실패');
+
+            // ✅ 세션스토리지에 데이터 저장
+            sessionStorage.setItem('noteTitle', title);
+            sessionStorage.setItem('noteContent', summary);
+            sessionStorage.setItem('keywords', (data.keywords || []).join(', '));
+            sessionStorage.setItem('categoryPath', data.categoryPath || '');
+            sessionStorage.setItem('folderId', data.folderId || '');
+
+            // ✅ 완료 페이지로 이동
+            window.location.href = '/notion/complete';
+
+        } catch (err) {
+            console.error(err);
+            alert('저장 중 오류: ' + err.message);
+        } finally {
+            setLoading(false);
+        }
+    });
+
+});

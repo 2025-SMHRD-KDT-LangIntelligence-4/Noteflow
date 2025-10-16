@@ -20,7 +20,10 @@ body {
 	padding-top: 50px;
 	width:100%;
 	gap:40px;
-	animation: fadeIn 1s ease;		
+	animation: fadeIn 1s ease;	
+	top: 100px;
+    position: relative;	
+    padding-bottom:150px;
 }
 .text-container{
 	display:flex;

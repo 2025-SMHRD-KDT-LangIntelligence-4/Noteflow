@@ -43,10 +43,10 @@ input[type="time"] {
     display: flex;
     justify-content: center;
     position: relative;
-    top: 50px;
+    top: 150px;
     gap: 40px;
     animation: fadeIn 1s ease;
-    margin-bottom: 50px;
+    margin-bottom: 300px;
 }
 
 /* 달력 컨테이너 */

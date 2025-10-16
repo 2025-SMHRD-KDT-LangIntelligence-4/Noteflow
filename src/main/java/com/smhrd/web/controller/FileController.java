@@ -36,9 +36,7 @@ public class FileController {
     public Map<String, Object> uploadFile(@RequestParam("file") MultipartFile file,
                                           @RequestParam(value = "folderId", required = false) String folderId,
                                           Authentication auth) {
-        // Authentication에서 user_idx 가져오기
         Long userIdx = ((com.smhrd.web.security.CustomUserDetails) auth.getPrincipal()).getUserIdx();
-
         Map<String, Object> result = new HashMap<>();
         try {
             if (file == null || file.isEmpty()) {
@@ -47,35 +45,15 @@ public class FileController {
                 return result;
             }
 
-            // 선택 폴더 업로드인 경우 소유자 검증
-            if (folderId != null && !folderId.isBlank()) {
-                var folder = folderRepository.findById(folderId)
-                        .orElseThrow(() -> new IllegalArgumentException("폴더를 찾을 수 없습니다."));
-                if (!userIdx.equals(folder.getUserIdx())) { // 기존: userId.equals → user_idx.equals
-                    result.put("success", false);
-                    result.put("message", "권한 없음");
-                    return result;
-                }
-                // 선택 폴더로 저장
-                String gridfsId = fileStorageService.storeFile(file, userIdx, folderId);
-                result.put("success", true);
-                result.put("gridfsId", gridfsId);
-                result.put("folderId", folderId);
-                return result;
-            }
-
-            // 선택 폴더가 없으면 루트 저장
-            String gridfsId = fileStorageService.storeFile(file, userIdx);
+            String gridfsId = fileStorageService.storeFile(file, userIdx, folderId);
             result.put("success", true);
-            result.put("gridfsId", gridfsId);
-            result.put("folderId", null);
-            return result;
-
+            result.put("gridfsId", gridfsId); // ✅ ObjectId 문자열
+            result.put("folderId", folderId);
         } catch (Exception e) {
             result.put("success", false);
             result.put("message", e.getMessage());
-            return result;
         }
+        return result;
     }
 
     // ---------------------------------------------------------------------

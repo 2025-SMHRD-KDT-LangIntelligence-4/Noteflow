@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -15,8 +16,10 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class CategoryHierarchy {
 
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "category_id")
     private Long categoryId;
 
     @Column(name = "large_category", nullable = false, length = 50)
@@ -36,4 +39,16 @@ public class CategoryHierarchy {
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    @Column(name = "confidence_score")
+    private Double confidenceScore;
+
+    public double getConfidenceScore() {
+        return confidenceScore != null ? confidenceScore : 0.0;
+    }
+
+    public void setConfidenceScore(double score) {
+        this.confidenceScore = score;
+
+    }
 }

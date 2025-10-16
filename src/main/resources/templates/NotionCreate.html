@@ -1,26 +1,19 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>노션 작성</title>
-
-
-
-<!-- ✅ CSS -->
+<title>Insert title here</title>
+<meta name="_csrf" th:content="${_csrf.token}" />
+<meta name="_csrf_header" th:content="${_csrf.headerName}" />
 <link rel="stylesheet" th:href="@{/css/header.css}" />
-<link rel="stylesheet" th:href="@{/css/notionCreate.css}" />
-
 <link rel="stylesheet" th:href="@{/css/footer.css}" />
-<!-- toast -->
-
-
+<link rel="stylesheet" th:href="@{/css/NotionCreate.css}" />
 </head>
 
 <body>
 	<div th:replace="fragments/header :: siteHeader"></div>
 
 	<div class="full-container">
-			
 		<div class="text-container">
 			<div class="input-location-container">
 				<div class="input-container">
@@ -28,23 +21,23 @@
 						placeholder="오늘 학습한 내용의 제목을 입력하세요" />
 					<textarea class="notion-text" id="inputContent"
 						placeholder="여기에 학습 내용, 코드, 로그 등을 자유롭게 붙여넣으세요."></textarea>
-					<div style="display: flex; gap: 20px; align-items:center;">
-						<button class="submit-button" id="file-upload"><img th:src="@{/images/upload.svg}" class="button-img"/>파일업로드</button>
-						<button class="submit-button" id="template"><img th:src="@{/images/write.svg}" class="button-img"/>템플릿정하기</button>
+					<div style="display: flex; gap: 20px; align-items: center;">
+						<!-- ✅ id를 JS와 일치 -->
+						<input type="file" id="fileInput"
+							accept=".pdf,.hwp,.txt,.xls,.xlsx,.doc,.docx,.md"
+							style="display: none;">
+						<button class="submit-button" id="file-upload" th:src="@{/images/upload.svg}">
+							파일업로드</button>
+						<button class="submit-button" id="template" th:src="@{/images/write.svg}" disabled>
+							템플릿정하기</button>
 					</div>
+					<div id="preMsg"
+						style="margin-top: 10px; color: #666; font-size: 14px;"></div>
 				</div>
 			</div>
-
 		</div>
-			</div>
 	</div>
-
-
-	
-
-	<script th:inline="javascript">
-   </script>
-
+	<script th:src="@{/js/NotionCreate.js}"></script>
 	<div th:replace="fragments/footer :: siteFooter"></div>
 </body>
 </html>
