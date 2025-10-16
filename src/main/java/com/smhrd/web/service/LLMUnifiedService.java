@@ -65,6 +65,31 @@ public class LLMUnifiedService {
 	private static final int NORMAL_MAX_BYTES = 50 * 1024; // 50KB
 	private static final int ECONOMY_MAX_BYTES = 500 * 1024; // 500KB
 
+	// ====== 길이차이 지정 ======
+
+	private enum Tier {
+		MICRO, SHORT, FULL
+	}
+
+	// 입력 길이로 티어 자동 결정
+	private Tier chooseTier(String original) {
+		int len = (original == null) ? 0 : original.strip().length();
+		if (len <= 40)
+			return Tier.MICRO; // 한두 문장
+		if (len <= 150)
+			return Tier.SHORT; // 짧은 단락
+		return Tier.FULL; // 충분한 본문
+	}
+
+	// 티어별 max_tokens 정책
+	private int tierMaxTokens(Tier tier, String fullPromptForBudgeting) {
+		return switch (tier) {
+		case MICRO -> 200; // 안전 기본치: 과도한 생성 방지
+		case SHORT -> 600; // 요청사항: 600 토큰 고정
+		case FULL -> computeSafeMaxTokens(fullPromptForBudgeting); // 사실상 제한 없음(컨텍스트 한도만 반영)
+		};
+	}
+
 	private String fixFences(String md) {
 		if (md == null)
 			return "";
@@ -82,49 +107,157 @@ public class LLMUnifiedService {
 	}
 
 	// =====================================================================
+	// 0. 프롬프트 공통규칙 추가
+	// =====================================================================
+
+	private String buildCommonSystem(String instruction, Tier tier) {
+		String lengthHint = switch (tier) {
+		case MICRO -> "출력은 아주 간결하게(3문장 이내).";
+		case SHORT -> "출력은 간결하게(6문장, 600토큰 내).";
+		case FULL -> "필요 시 섹션을 채우되, 입력에 근거해 작성.";
+		};
+		return """
+				너는 입력 텍스트를 가공하는 도우미다.
+
+				[공통 규칙]
+				- 오직 <CONTENT> 태그 사이의 텍스트만 사용한다.
+				- 입력에 없는 사건/코드/결론/감정/팀 활동 등은 상상·추가하지 않는다(창작 금지).
+				- 프롬프트가 요구하는 섹션이 있어도, 근거가 없으면 '없음' 또는 생략한다.
+				- 과도한 수사는 피하고, 사실/근거 기반으로만 작성한다.
+				- %s
+
+				[참고 지시문]
+				%s
+				""".formatted(lengthHint, instruction == null ? "" : instruction);
+	}
+	
+	// 전체 정책 결정
+	public SummaryResult summarizeWithGlobalPolicy(long userIdx, String promptTitle, String original) throws Exception {
+	    // 1) 티어 결정
+	    Tier tier = chooseTier(original);
+
+	    // 2) 공통 system 메시지 + 예산 산정
+	    String instruction = promptRepository.findByTitle(promptTitle)
+	            .orElseThrow(() -> new IllegalArgumentException("프롬프트 없음: " + promptTitle))
+	            .getContent();
+
+	    String systemMsg = buildCommonSystem(instruction, tier);
+	    String userMsgForBudget = "<CONTENT>\n" + (original == null ? "" : original.strip()) + "\n</CONTENT>";
+	    int budget = tierMaxTokens(tier, systemMsg + "\n" + userMsgForBudget);
+
+	    // 3) 오버로드 호출 (온도 낮춰 창작 억제)
+	    String md = runPromptMarkdown(userIdx, promptTitle, original, systemMsg, budget, 0.2);
+
+	    // 4) 사후 트림(선택)
+	    if (tier == Tier.MICRO && md.length() > 400) {
+	        md = md.substring(0, 400) + "\n\n...(truncated by micro policy)";
+	    }
+	    if (tier == Tier.SHORT && md.length() > 1200) {
+	        md = md.substring(0, 1200) + "\n\n...(truncated by short policy)";
+	    }
+
+	    SummaryResult r = SummaryResult.normal(md);
+	    r.setMode("global-" + tier.name().toLowerCase()); // global-micro|short|full
+	    return r;
+	}
+
+	// =====================================================================
 	// A. RAW 마크다운 실행
 	// =====================================================================
+
 	public String runPromptMarkdown(long userIdx, String promptTitle, String original) throws Exception {
+		// 1) 사용자 존재 확인
 		userRepository.findByUserIdx(userIdx)
 				.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자: " + userIdx));
 
-		String promptText = promptRepository.findByTitle(promptTitle)
+		// 2) 프롬프트 텍스트 로딩(지시문)
+		String instruction = promptRepository.findByTitle(promptTitle)
 				.orElseThrow(() -> new IllegalArgumentException("프롬프트 없음: " + promptTitle)).getContent();
 
-		String fullPrompt = promptText + "\n\n" + (original == null ? "" : original);
-		int safeMax = computeSafeMaxTokens(fullPrompt);
+		// 3) 요약 범위 고정 규칙(system)
+		String systemMsg = """
+				너는 아래 규칙을 엄격히 따른다.
+				- 오직 <CONTENT> 태그 사이의 텍스트만 요약 대상이다.
+				- 그 외의 텍스트(이 지시문 포함)는 요약 대상이 아니다.
+				- 출력은 Markdown으로 하되, 원문에 없는 정보/추정은 금지한다.
+				--------
+				지시문:
+				%s
+				""".formatted(instruction);
 
-		Map<String, Object> chatReq = new HashMap<>();
-		chatReq.put("model", modelName);
-		chatReq.put("max_tokens", safeMax);
-		chatReq.put("temperature", temperature);
-		chatReq.put("messages", List.of(Map.of("role", "user", "content", fullPrompt)));
+		// 4) 사용자 원문을 콘텐츠 태그로 감싸서 user 메시지로
+		String userMsg = "<CONTENT>\n" + (original == null ? "" : original) + "\n</CONTENT>";
 
-		try {
-			String resp = vllmWebClient.post().uri("/v1/chat/completions").bodyValue(chatReq).retrieve()
-					.bodyToMono(String.class).block();
-			if (resp != null && resp.trim().startsWith("#")) {
-				log.warn("🔖 vLLM 로그 응답 감지, 원본 그대로 반환");
-				return resp;
-			}
+		// 5) vLLM 요청
+		Map<String, Object> req = new HashMap<>();
+		req.put("model", modelName);
+		req.put("max_tokens", computeSafeMaxTokens(userMsg)); // 사용자 원문 기준으로 안전 토큰
+		req.put("temperature", temperature);
+		req.put("stream", false);
+		req.put("messages",
+				List.of(Map.of("role", "system", "content", systemMsg), Map.of("role", "user", "content", userMsg)));
 
-			String md = extractAnyContent(resp);
-			return fixFences(md);
-		} catch (Exception chatFail) {
-			log.warn("chat.completions 실패, text로 폴백: {}", chatFail.getMessage());
+		String resp = vllmWebClient.post().uri("/v1/chat/completions").bodyValue(req).retrieve()
+				.bodyToMono(String.class).block();
 
-			Map<String, Object> textReq = new HashMap<>();
-			textReq.put("model", modelName);
-			textReq.put("max_tokens", safeMax);
-			textReq.put("temperature", temperature);
-			textReq.put("prompt", fullPrompt);
+		String md = extractAnyContent(resp); // choices[0].message.content || text || output_text
+		return fixFences(md);
+	}
 
-			String resp = vllmWebClient.post().uri("/v1/completions").bodyValue(textReq).retrieve()
-					.bodyToMono(String.class).block();
+	// =====================================================================
+	// A-1. 마크다운 오버라이드 실행
+	// =====================================================================
 
-			String md = extractAnyContent(resp);
-			return fixFences(md);
-		}
+	public String runPromptMarkdown(long userIdx, String promptTitle, String original, String systemMsgOverride, // null이면
+																													// 기존
+																													// system
+																													// 로직
+																													// 사용
+			Integer maxTokensOverride, // null이면 기존 computeSafeMaxTokens(userMsg)
+			Double temperatureOverride // null이면 기존 temperature 필드
+	) throws Exception {
+
+		// 1) 사용자 검사
+		userRepository.findByUserIdx(userIdx)
+				.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자: " + userIdx));
+
+		// 2) 프롬프트 로딩
+		String instruction = promptRepository.findByTitle(promptTitle)
+				.orElseThrow(() -> new IllegalArgumentException("프롬프트 없음: " + promptTitle)).getContent();
+
+		// 3) system 메시지: override가 있으면 사용, 없으면 기존 규칙 사용
+		String defaultSystem = """
+				너는 아래 규칙을 엄격히 따른다.
+				- 오직 <CONTENT> 태그 사이의 텍스트만 요약 대상이다.
+				- 그 외의 텍스트(이 지시문 포함)는 요약 대상이 아니다.
+				- 출력은 Markdown으로 하되, 원문에 없는 정보/추정은 금지한다.
+				--------
+				지시문:
+				%s
+				""".formatted(instruction);
+		String systemMsg = (systemMsgOverride != null && !systemMsgOverride.isBlank()) ? systemMsgOverride
+				: defaultSystem;
+
+		// 4) user 메시지(요약 대상 고정)
+		String userMsg = "<CONTENT>\n" + (original == null ? "" : original) + "\n</CONTENT>";
+
+		// 5) 토큰/온도: override 우선
+		int maxTok = (maxTokensOverride != null) ? maxTokensOverride : computeSafeMaxTokens(userMsg);
+		double temp = (temperatureOverride != null) ? temperatureOverride : this.temperature;
+
+		Map<String, Object> req = new HashMap<>();
+		req.put("model", modelName);
+		req.put("max_tokens", maxTok);
+		req.put("temperature", temp);
+		req.put("stream", false);
+		req.put("messages",
+				List.of(Map.of("role", "system", "content", systemMsg), Map.of("role", "user", "content", userMsg)));
+
+		String resp = vllmWebClient.post().uri("/v1/chat/completions").bodyValue(req).retrieve()
+				.bodyToMono(String.class).block();
+
+		String md = extractAnyContent(resp);
+		return fixFences(md);
 	}
 
 	// =====================================================================
@@ -165,7 +298,7 @@ public class LLMUnifiedService {
 			req.put("temperature", 1.0);
 			req.put("stream", false);
 
-			String system = "You are a helpful assistant. Answer in Korean";
+			String system = "You are a helpful assistant. 무조건 한국어로 대답하세요. 변수나 이름 제외하고 무조건 한국어.";
 			List<Map<String, String>> messages = List.of(Map.of("role", "system", "content", system),
 					Map.of("role", "user", "content", contextualPrompt));
 			req.put("messages", messages);
@@ -389,37 +522,66 @@ public class LLMUnifiedService {
 		return dp[a.length()][b.length()];
 	}
 
+	private int byteLen(String s) {
+		return (s == null) ? 0 : s.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
+	}
+
 	// 정책 지정형 summarize (모드 힌트 normal/economy)
-	public SummaryResult summarizeWithPolicy(long userIdx, String promptTitle, String original, String modeHint)
-			throws Exception {
-		String compact = compactText(original);
-		int bytes = compact.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
+
+	public SummaryResult summarizeWithPolicy(long userIdx, String promptTitle, String original,
+			boolean forcePromptSummary) throws Exception {
+
+		String target; // 실제 요약 대상 텍스트
+		String modeNote; // "user-priority" | "prompt-priority"
+
+		if (!forcePromptSummary) {
+			target = original == null ? "" : original;
+			modeNote = "user-priority";
+		} else {
+			// 프롬프트 텍스트 자체를 ‘콘텐츠’로 요약하고 싶은 특별 케이스
+			String instruction = promptRepository.findByTitle(promptTitle)
+					.orElseThrow(() -> new IllegalArgumentException("프롬프트 없음: " + promptTitle)).getContent();
+			target = instruction;
+			modeNote = "prompt-priority";
+		}
+
+		String compact = compactText(target);
+		int bytes = byteLen(compact);
 
 		if (bytes > ECONOMY_MAX_BYTES) {
 			return SummaryResult.blocked("[안내] 텍스트가 너무 길어 요약을 진행하지 않습니다. 파일을 나누거나 텍스트를 줄여 주세요.");
 		}
-		if ("normal".equalsIgnoreCase(modeHint) || bytes <= NORMAL_MAX_BYTES) {
+
+		if (bytes <= NORMAL_MAX_BYTES) {
 			String md = runPromptMarkdown(userIdx, promptTitle, compact);
-			return SummaryResult.normal(md);
+			SummaryResult r = SummaryResult.normal(md);
+			r.setMode(modeNote);
+			return r;
 		}
-		// economy: 앞/중간/뒤 샘플 + 키워드 (기존 economy 로직 재사용)
+
+		// economy: 키워드 + 앞/중간/뒤 샘플
 		List<String> keywords = extractTopKeywords(compact, 80);
 		String head = sliceChars(compact, 0, 8000);
 		String mid = sliceChars(compact, Math.max(0, compact.length() / 2 - 4000), 8000);
 		String tail = sliceChars(compact, Math.max(0, compact.length() - 8000), 8000);
+
 		String economyPrompt = """
-				아래 키워드와 샘플 텍스트(앞/중간/뒤 일부)에 기반해 문서의 핵심을 체계적으로 요약하세요.
+				아래 키워드와 샘플 텍스트(앞/중간/뒤 일부)만 바탕으로, [요약 대상]의 핵심을 정리하세요.
 				- 키워드: %s
 				- 샘플(앞): %s
 				- 샘플(중간): %s
 				- 샘플(뒤): %s
+
 				출력 규칙:
 				1) 제목 1줄
 				2) 핵심 요약(불릿) 8~12개
 				3) 추가 참고 또는 누락 위험 요소 3~5개
 				""".formatted(String.join(", ", keywords), head, mid, tail);
+
 		String md = runPromptMarkdown(userIdx, promptTitle, economyPrompt);
-		return SummaryResult.economy(md, keywords);
+		SummaryResult r = SummaryResult.economy(md, keywords);
+		r.setMode(modeNote);
+		return r;
 	}
 
 	// =====================================================================
@@ -489,6 +651,22 @@ public class LLMUnifiedService {
 		return (int) Math.ceil(chars / 3.5);
 	}
 
+	private String shrinkRuns(String input) {
+		if (input == null || input.isEmpty())
+			return input;
+		// ([=\\-_*#])를 1개 캡처하고, 같은 문자가 8회 이상 추가 반복되는 구간을 8개로 축약
+		java.util.regex.Pattern p = java.util.regex.Pattern.compile("([=\\-_*#])\\1{8,}");
+		java.util.regex.Matcher m = p.matcher(input);
+
+		StringBuffer sb = new StringBuffer();
+		while (m.find()) {
+			String ch = m.group(1);
+			m.appendReplacement(sb, ch.repeat(8)); // 정확히 8개로 바꿈
+		}
+		m.appendTail(sb);
+		return sb.toString();
+	}
+
 	// ───── 유틸: 텍스트 압축(공백/중복/긴 줄 축약) ─────
 	public String compactText(String s) {
 		if (s == null)
@@ -506,7 +684,7 @@ public class LLMUnifiedService {
 		}
 		String compact = String.join("\n", seen);
 		// 너무 긴 기호/코드 줄 축약
-		compact = compact.replaceAll("([=\\-_*#]{8,})", "$1".substring(0, 8));
+		compact = shrinkRuns(compact);
 		// 과도한 빈 줄 축약
 		compact = compact.replaceAll("\\n{3,}", "\n\n").trim();
 		return compact;
