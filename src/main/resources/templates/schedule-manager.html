@@ -25,119 +25,92 @@
 <body>
 <div th:replace="fragments/header :: siteHeader"></div>
 
+<!-- location-container: 달력 중심으로 재배치 -->
 <div class="location-container">
 
-    <!-- 좌측 일정 관리 패널 -->
-    <div class="schedule-manager-container">
-        <div class="date">날짜를 선택하세요</div>
-        <input type="text" class="schedule-search" placeholder="검색어 입력 후 Enter" />
-        <div class="schedule">작성된 스케줄이 여기에 표시됩니다</div>
-
-        <!-- 색상 필터 -->
-        <div class="schedule-color-filter">
-            <span>카테고리 필터:</span>
-            <div class="filter-options">
-                <div class="filter-option" data-color="all" style="background-color:#000;color:#fff;">전체</div>
-                <div class="filter-option" data-color="#3788d8" style="background-color:#3788d8;"></div>
-                <div class="filter-option" data-color="#FF5722" style="background-color:#FF5722;"></div>
-                <div class="filter-option" data-color="#4CAF50" style="background-color:#4CAF50;"></div>
-                <div class="filter-option" data-color="#FFC107" style="background-color:#FFC107;"></div>
-                <div class="filter-option" data-color="#9C27B0" style="background-color:#9C27B0;"></div>
-            </div>
+    <!-- 우측(메인) 달력 — 전체 화면 중심 -->
+    <div class="calendar-wrapper">
+        <div class="calendar-header">
+            <div class="calendar-title">스케줄 달력</div>
+            <!-- 검색 아이콘(우측 상단) -->
+            <button id="calendarSearchBtn" class="icon-btn" title="검색">
+                🔍
+            </button>
         </div>
 
-        <!-- 색상 선택 -->
-        <div class="schedule-color-picker">
-            <span>카테고리 색상:</span>
-            <div class="color-options">
-                <div class="color-option" data-color="#3788d8" style="background-color:#3788d8;"></div>
-                <div class="color-option" data-color="#FF5722" style="background-color:#FF5722;"></div>
-                <div class="color-option" data-color="#4CAF50" style="background-color:#4CAF50;"></div>
-                <div class="color-option" data-color="#FFC107" style="background-color:#FFC107;"></div>
-                <div class="color-option" data-color="#9C27B0" style="background-color:#9C27B0;"></div>
-            </div>
-        </div>
-
-        <!-- 단일 일정 입력 -->
-        <input type="text" class="schedule-create" placeholder="스케줄을 입력하세요" />
-
-        <!-- ========================== -->
-        <!-- 시간 선택 섹션 -->
-        <!-- ========================== -->
-        <div class="time-picker-container" style="margin-top:15px;">
-            <label class="time-picker-label">⏰ 시간 선택</label>
-
-            <!-- 단기 일정 -->
-            <div id="singleDayTime" style="margin-top:8px;">
-                <div class="time-row">
-                    <span>시작 시간:</span>
-                    <input type="time" id="startTime" name="startTime" step="600" />
-                </div>
-                <div class="time-row">
-                    <span>종료 시간:</span>
-                    <input type="time" id="endTime" name="endTime" step="600" />
-                </div>
-                <div class="auto-time-tip">
-                    <small>※ 미입력 시 기본값: 01:00 ~ 23:00 </small>
-                </div>
-            </div>
-
-            <!-- 장기 일정 -->
-            <div id="multiDayOption" style="margin-top:10px; min-height: 120px;">
-                <label>
-                    <input type="checkbox" id="applyToAllDays" checked />
-                    <span>📅 전체 기간에 동일한 시간 적용</span>
-                </label>
-
-                <div id="multiTimeInputs" style="margin-top:8px;">
-                    <div class="time-row">
-                        <span>시작 시간:</span>
-                        <input type="time" id="multiStartTime" name="multiStartTime" step="600" />
-                    </div>
-                    <div class="time-row">
-                        <span>종료 시간:</span>
-                        <input type="time" id="multiEndTime" name="multiEndTime" step="600" />
-                    </div>
-                </div>
-
-                <div id="rangeTimeInputs" style="display:none; margin-top:8px;">
-                    <div class="time-row">
-                        <span>시작 시간:</span>
-                        <input type="time" id="rangeStartTime" name="rangeStartTime" step="600" />
-                    </div>
-                    <div class="time-row">
-                        <span>종료 시간:</span>
-                        <input type="time" id="rangeEndTime" name="rangeEndTime" step="600" />
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ========================== -->
-        <!-- 기간 선택 모드 -->
-        <!-- ========================== -->
-        <div class="range-picker-container">
-            <label class="toggle-container">
-                <input type="checkbox" id="rangeModeToggle" />
-                <span>🗓️ 기간 선택 모드</span>
-            </label>
-            <div id="rangeInputs" style="display:none; margin-top:5px;">
-                <input type="text" id="rangePicker" placeholder="기간 선택" />
-            </div>
+        <div class="calendar-container">
+            <div id="calendar"></div>
         </div>
     </div>
 
-    <!-- 우측 달력 -->
-    <div class="calendar-container">
-        <div id="calendar"></div>
+</div>
+
+<!-- ==========================
+     간단한 일정 추가 드롭다운(모달 - 달력 셀 내 + 클릭 시 위치 조정)
+     ========================== -->
+<div id="quickAddModal" class="quick-add-modal hidden" role="dialog" aria-hidden="true">
+    <div class="quick-add-card">
+        <div class="quick-add-row title-row">
+            <input id="qaTitle" type="text" placeholder="일정 제목 입력 (달력에 보일 타이틀)" />
+        </div>
+
+        <div class="quick-add-row">
+            <select id="qaColor" title="색상">
+                <option value="#3788d8" style="background:#3788d8;">파랑</option>
+                <option value="#FF5722" style="background:#FF5722;">주황</option>
+                <option value="#4CAF50" style="background:#4CAF50;">초록</option>
+                <option value="#FFC107" style="background:#FFC107;">노랑</option>
+                <option value="#9C27B0" style="background:#9C27B0;">보라</option>
+            </select>
+
+            <button id="qaEmojiBtn" class="icon-btn" title="이모지 선택">😊</button>
+        </div>
+
+        <div class="quick-add-row">
+            <textarea id="qaDesc" placeholder="설명/내용 (선택)"></textarea>
+        </div>
+
+        <div class="quick-add-row small-row">
+            <label><input id="qaAllDay" type="checkbox" /> 하루종일</label>
+        </div>
+
+        <div class="quick-add-row time-rows">
+            <div class="time-col">
+                <label>시작 날짜</label>
+                <input id="qaStartDate" type="date" />
+                <input id="qaStartTime" type="time" step="600" />
+            </div>
+            <div class="time-col">
+                <label>종료 날짜</label>
+                <input id="qaEndDate" type="date" />
+                <input id="qaEndTime" type="time" step="600" />
+            </div>
+        </div>
+
+        <div class="quick-add-row notify-row">
+            <label>알림</label>
+            <select id="qaNotify">
+                <option value="0">일정 시작</option>
+                <option value="10">10분 전</option>
+                <option value="60">1시간 전</option>
+                <option value="1440">1일 전</option>
+                <option value="custom">직접 설정...</option>
+            </select>
+        </div>
+
+        <div class="quick-add-actions">
+            <button id="qaCancel" class="btn secondary">취소</button>
+            <button id="qaSave" class="btn primary">저장</button>
+        </div>
     </div>
 </div>
 
 <!-- ========================== -->
-<!-- JS 스크립트 -->
+<!-- 기존 schedule-manager.js 유지 (핵심 로직) -->
 <!-- ========================== -->
-<script th:src="@{/js/schedule-manager.js}"></script>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/locales/ko.global.min.js"></script>
+<script type="module" src="/js/schedule-manager.js"></script>
+<script src="/js/schedule-quick-add.js"></script>
 
 <div th:replace="fragments/footer :: siteFooter"></div>
 </body>

@@ -2,372 +2,187 @@
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
 /* 출력 애니메이션 */
- @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 body {
-    font-family: 'Pretendard';
-    background: white; 
-    margin:0px;        
-}
-/* FullCalendar 기본 스타일 조정 */
-#calendar { max-width: 900px; margin: 0 auto; }
-.selected-date { background-color: #d3eaff !important; }
-.fc-event-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
-.range-picker-container {
-    margin-top: 10px;
-    min-height: 50px; /* 체크박스 위치 유지 */
-}
-.time-row { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
-.time-row span { min-width: 80px; font-size: 14px; }
-input[type="time"] {
-    padding: 4px 6px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    width: 110px;
-}
-.auto-time-tip small { color: #666; font-size: 12px; }
-.auto-time-tip {
-    min-height: 18px; /* 안내 문구 공간 확보 */
+    font-family: 'Pretendard', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background: #f7f9fb;
+    margin: 0;
+    color: #222;
 }
 
-.auto-time-tip {
-    color: #777;
-    font-size: 0.85em;
-}
-/* 레이아웃 */
-
+/* 전체 위치 컨테이너 - 중앙 정렬 */
 .location-container {
     display: flex;
     justify-content: center;
-    position: relative;
-    top: 150px;
-    gap: 40px;
-    animation: fadeIn 1s ease;
-    margin-bottom: 300px;
+    align-items: flex-start;
+    padding: 80px 20px 140px;
+    animation: fadeIn 0.4s ease;
 }
 
-/* 달력 컨테이너 */
-.calendar-container {
-    width: 800px;
-    background-color: #ffffff;
-    display: flex;
-    justify-content: center;
+/* 달력 래퍼: 제목 + 검색 아이콘 포함 */
+.calendar-wrapper {
+    width: 100%;
+    max-width: 1100px;
+}
+
+.calendar-header {
+    display:flex;
+    justify-content: space-between;
     align-items: center;
-    border-radius: 20px;
-    padding: 20px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    margin-bottom: 12px;
 }
 
-/* FullCalendar 자체 */
+.calendar-title {
+    font-size: 20px;
+    font-weight: 700;
+    padding-left: 8px;
+}
+
+/* 작고 심플한 아이콘 버튼 */
+.icon-btn {
+    background: transparent;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 8px;
+}
+.icon-btn:hover { background: rgba(0,0,0,0.04); }
+
+/* 달력 컨테이너 확장 스타일 */
+.calendar-container {
+    width: 100%;
+    background-color: #ffffff;
+    border-radius: 14px;
+    padding: 18px;
+    box-shadow: 0 8px 30px rgba(11, 22, 44, 0.06);
+}
+
+/* FullCalendar 자체 조정 */
 #calendar {
     width: 100%;
-    max-height: 700px;
-    background-color: #ffffff;
-    border-radius: 15px;
-}
-
-/* 일정 관리 컨테이너 */
-.schedule-manager-container {
-    width: 300px;
-    height: 700px;
-    background-color: #ffffff;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    align-items: center;
-    border-radius: 20px;
-    padding: 20px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-
-/* 날짜 표시 */
-.date {
-    border-bottom: 1px solid #c7c7c7;
-    width: 100%;
-    height: 46px;
-    display: flex;
-    align-items: center;
-    padding-left: 10px;
-    font-weight: 600;
-    font-size: 18px;
-}
-
-/* 일정 검색창 */
-.schedule-search {
+    min-height: 680px;
     border-radius: 10px;
-    border: 1px solid #c7c7c7;
-    width: 100%;
-    height: 31px;
-    padding-left: 8px;
-    font-size: 14px;
 }
 
-/* 일정 목록 */
-.schedule {
-    color: #000000;
-    text-align: center;
-    font-size: 16px;
-    font-weight: 400;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    width: 100%;
-    max-height: 300px;
-    overflow-y: auto;
-    padding: 0 10px;
-}
-
-/* 일정 생성 입력창 */
-.schedule-create {
-    border-radius: 10px;
-    border: 1px solid #c7c7c7;
-    width: 100%;
-    height: 31px;
-    padding-left: 8px;
-    font-size: 14px;
-}
-
-/* 선택된 날짜 강조 */
-.selected-date {
-    background-color: #D3EBFF !important;
-}
-
-/* FullCalendar - 주말 색상 */
-a[aria-label="일요일"] { color: red; }
-a[aria-label="토요일"] { color: blue; }
-
-.fc-day-sun, .fc-day-sat {
-    background-color: #F5F5F5;
-}
-
-/* 오늘 날짜 강조 */
-.fc-day-today {
-    background-color: #D3EBFF !important;
-}
-
-/* FullCalendar 이벤트 */
-.fc-event {
-    border-radius: 8px;
-    font-size: 12px;
-    padding: 2px 4px;
-    color: #fff;
+/* 날짜 셀 내부 + 버튼 (우상단) */
+.day-plus-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 28px;
+    height: 28px;
+    background: linear-gradient(180deg, #ffffff, #f4f6fb);
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 6px;
+    font-weight: 700;
     cursor: pointer;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* 버튼 스타일 */
-.schedule button {
-    margin-left: 5px;
-    padding: 2px 6px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 12px;
-}
-
-.schedule button:hover {
-    opacity: 0.8;
-}
-
-.schedule button:nth-child(2) { /* 수정 버튼 */
-    background-color: #FFC107;
-    color: #000;
-}
-
-.schedule button:nth-child(3) { /* 삭제 버튼 */
-    background-color: #F44336;
-}
-
-/* 스크롤바 커스터마이징 */
-.schedule::-webkit-scrollbar {
-    width: 6px;
-}
-.schedule::-webkit-scrollbar-thumb {
-    background-color: rgba(0,0,0,0.2);
-    border-radius: 3px;
-}
-.schedule::-webkit-scrollbar-track {
-    background-color: transparent;
-}
-
-/* 색상 기반 일정 태그 */
-.schedule-color-picker {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 5px;
-    width: 100%;
-}
-
-.color-options {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.color-option {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    cursor: pointer;
-    border: 2px solid transparent;
-}
-
-.color-option.selected {
-    border: 2px solid #000;
-}
-
-.schedule-color-filter {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 5px;
-    width: 100%;
-    margin-bottom: 10px;
-}
-
-/* 색상 기반 태그 필터링 */
-.filter-options {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.filter-option {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    cursor: pointer;
-    border: 2px solid transparent;
     display: flex;
     align-items: center;
     justify-content: center;
+    box-shadow: 0 2px 6px rgba(12, 34, 68, 0.06);
+}
+.day-plus-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(12,34,68,0.08);
+}
+
+/* FullCalendar 이벤트 스타일 보완 (타이틀 가독성 개선) */
+.fc-event {
+    border-radius: 6px;
     font-size: 12px;
+    padding: 4px 6px;
+    color: #fff;
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.filter-option.selected {
-    border: 2px solid #000;
+/* 오늘/선택된 날짜 강조 */
+.fc-day-today { background-color: #f0f8ff; }
+.selected-date { background-color: #e6f4ff !important; }
+
+/* Quick-add 모달 (작은 드롭다운 카드) */
+.quick-add-modal {
+    position: fixed;
+    left: 50%;
+    top: 18%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 420px;
 }
 
-/* 모바일/태블릿 반응형 */
-@media screen and (max-width: 1024px) {
-    .location-container {
-        flex-direction: column;
-        align-items: center;
-        gap: 20px;
-        top: 20px;
-    }
+.quick-add-modal.hidden { display: none; }
 
-    .calendar-container {
-        width: 90%;
-        max-width: 600px;
-    }
+.quick-add-card {
+    width: 100%;
+    background: #fff;
+    border-radius: 12px;
+    padding: 14px;
+    box-shadow: 0 12px 40px rgba(12, 24, 48, 0.12);
+    border: 1px solid rgba(8, 20, 40, 0.04);
+}
 
-    #calendar {
-        width: 100%;
-        max-width: 100%;
-    }
+/* quick-add 내부 요소 */
+.quick-add-row { margin-bottom: 10px; }
+.title-row input[type="text"] {
+    width: 100%;
+    padding: 8px 10px;
+    font-size: 14px;
+    border-radius: 8px;
+    border: 1px solid #e4e7ef;
+}
+.quick-add-row textarea {
+    width: 100%;
+    min-height: 56px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #e4e7ef;
+    resize: vertical;
+}
 
-    .schedule-manager-container {
-        width: 90%;
-        max-width: 350px;
-        height: auto;
-        gap: 20px;
-        padding: 15px 0;
-    }
+.small-row { font-size: 13px; color: #444; }
+.time-rows { display:flex; gap:10px; }
+.time-col { flex:1; display:flex; flex-direction:column; gap:6px; }
+.time-col input[type="date"], .time-col input[type="time"], .quick-add-row select {
+    padding: 6px 8px;
+    border-radius:8px;
+    border: 1px solid #eaeef6;
+}
 
-    .date {
-        width: 100%;
-        text-align: center;
-    }
+/* actions */
+.quick-add-actions {
+    display:flex;
+    justify-content:flex-end;
+    gap:8px;
+    margin-top:6px;
+}
+.btn {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+}
+.btn.primary { background: #2b6ef6; color: #fff; }
+.btn.secondary { background: #f3f6fb; color:#223; border: 1px solid #e6eefc; }
 
-    .schedule-create {
-        width: 100%;
-    }
-
-    .schedule-color-picker, .schedule-color-filter {
-        width: 100%;
-        justify-content: flex-start;
-        flex-wrap: wrap;
-    }
-
-    .color-options, .filter-options {
-        flex-wrap: wrap;
-        gap: 6px;
-    }
-
-    .schedule {
-        font-size: 18px;
-        word-break: break-word;
-    }
+/* 반응형 */
+@media screen and (max-width: 900px) {
+    .quick-add-modal { width: 92%; top: 8%; }
+    .calendar-wrapper { max-width: 940px; }
 }
 
 @media screen and (max-width: 480px) {
-    .calendar-container {
-        width: 100%;
-    }
-
-    .schedule-manager-container {
-        width: 95%;
-    }
-
-    .schedule {
-        font-size: 16px;
-    }
-
-    .color-option, .filter-option {
-        width: 20px;
-        height: 20px;
-    }
+    .calendar-wrapper { padding: 0 8px; }
+    .day-plus-btn { width:24px; height:24px; top:4px; right:4px; font-size:13px; }
 }
-/* 시간 선택 영역 스타일 */
-.time-picker-container {
-    border-top: 1px solid #ddd;
-    padding-top: 10px;
-}
-
-.time-picker-label {
-    font-weight: bold;
-    color: #333;
-    display: block;
-}
-
-.time-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 6px;
-}
-
-.time-input {
-    flex: 1;
-    padding: 6px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    text-align: center;
-}
-
-
-
-#multiTimeInputs, #rangeTimeInputs {
-    transition: opacity 0.2s ease;
-}
-
-.hidden {
-    visibility: hidden;
-    opacity: 0;
-    height: 0;
-    overflow: hidden;
-}
-
-.visible {
-    visibility: visible;
-    opacity: 1;
-    height: auto;
-}
-
