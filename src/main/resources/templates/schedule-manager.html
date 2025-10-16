@@ -20,22 +20,6 @@
 <link rel="stylesheet" th:href="@{/css/header.css}" />
 <link rel="stylesheet" th:href="@{/css/footer.css}" />
 
-<style>
-/* FullCalendar 기본 스타일 조정 */
-#calendar { max-width: 900px; margin: 0 auto; }
-.selected-date { background-color: #d3eaff !important; }
-.fc-event-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
-.range-picker-container { margin-top: 10px; }
-.time-row { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
-.time-row span { min-width: 80px; font-size: 14px; }
-input[type="time"] {
-    padding: 4px 6px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    width: 110px;
-}
-.auto-time-tip small { color: #666; font-size: 12px; }
-</style>
 </head>
 
 <body>
@@ -99,7 +83,7 @@ input[type="time"] {
             </div>
 
             <!-- 장기 일정 -->
-            <div id="multiDayOption" style="display:none; margin-top:10px;">
+            <div id="multiDayOption" style="margin-top:10px; min-height: 120px;">
                 <label>
                     <input type="checkbox" id="applyToAllDays" checked />
                     <span>📅 전체 기간에 동일한 시간 적용</span>

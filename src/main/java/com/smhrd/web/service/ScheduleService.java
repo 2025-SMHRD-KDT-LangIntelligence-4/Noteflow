@@ -22,13 +22,21 @@ public class ScheduleService {
 
     // ✅ 1. 일정 생성
     public Schedule createSchedule(long userIdx, Schedule schedule) {
+    		System.out.println("=== [DEBUG] createSchedule 실행 ===");
+    		System.out.println("입력받은 userIdx: " + userIdx);
+        System.out.println("입력된 title: " + schedule.getTitle());
+        System.out.println("입력된 startTime: " + schedule.getStartTime());
+        System.out.println("입력된 endTime: " + schedule.getEndTime());
+        System.out.println("입력된 colorTag: " + schedule.getColorTag());
         User user = userRepository.findByUserIdx(userIdx)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
         schedule.setUser(user);
         schedule.setCreatedAt(LocalDateTime.now());
-
-        return scheduleRepository.save(schedule);
+        Schedule saved = scheduleRepository.save(schedule);
+        System.out.println("=== [DEBUG] 저장 완료 === ID: " + saved.getScheduleId());
+        
+        return saved;
     }
 
  // ✅ 2. 일정 전체 조회 (유저별)

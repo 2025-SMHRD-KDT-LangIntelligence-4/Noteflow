@@ -31,6 +31,13 @@ public class ScheduleController {
     public ResponseEntity<Schedule> createSchedule(@RequestBody Schedule schedule,
                                                    Authentication authentication) {
         Long userIdx = ((com.smhrd.web.security.CustomUserDetails) authentication.getPrincipal()).getUserIdx();
+        System.out.println("=== [DEBUG] 일정 생성 요청 ===");
+        System.out.println("userIdx: " + userIdx);
+        System.out.println("title: " + schedule.getTitle());
+        System.out.println("startTime: " + schedule.getStartTime());
+        System.out.println("endTime: " + schedule.getEndTime());
+        System.out.println("colorTag: " + schedule.getColorTag());
+
         Schedule saved = scheduleService.createSchedule(userIdx, schedule);
         return ResponseEntity.ok(saved);
     }

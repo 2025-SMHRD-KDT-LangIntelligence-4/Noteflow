@@ -12,8 +12,33 @@ body {
     background: white; 
     margin:0px;        
 }
+/* FullCalendar 기본 스타일 조정 */
+#calendar { max-width: 900px; margin: 0 auto; }
+.selected-date { background-color: #d3eaff !important; }
+.fc-event-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
+.range-picker-container {
+    margin-top: 10px;
+    min-height: 50px; /* 체크박스 위치 유지 */
+}
+.time-row { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+.time-row span { min-width: 80px; font-size: 14px; }
+input[type="time"] {
+    padding: 4px 6px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    width: 110px;
+}
+.auto-time-tip small { color: #666; font-size: 12px; }
+.auto-time-tip {
+    min-height: 18px; /* 안내 문구 공간 확보 */
+}
 
+.auto-time-tip {
+    color: #777;
+    font-size: 0.85em;
+}
 /* 레이아웃 */
+
 .location-container {
     display: flex;
     justify-content: center;
@@ -327,7 +352,22 @@ a[aria-label="토요일"] { color: blue; }
     text-align: center;
 }
 
-.auto-time-tip {
-    color: #777;
-    font-size: 0.85em;
+
+
+#multiTimeInputs, #rangeTimeInputs {
+    transition: opacity 0.2s ease;
 }
+
+.hidden {
+    visibility: hidden;
+    opacity: 0;
+    height: 0;
+    overflow: hidden;
+}
+
+.visible {
+    visibility: visible;
+    opacity: 1;
+    height: auto;
+}
+
