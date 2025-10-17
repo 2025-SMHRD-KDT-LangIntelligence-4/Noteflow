@@ -19,95 +19,26 @@
 <link rel="stylesheet" th:href="@{/css/schedule-manager.css}" />
 <link rel="stylesheet" th:href="@{/css/header.css}" />
 <link rel="stylesheet" th:href="@{/css/footer.css}" />
-
 </head>
 
 <body>
 <div th:replace="fragments/header :: siteHeader"></div>
 
-<!-- location-container: 달력 중심으로 재배치 -->
 <div class="location-container">
-
-    <!-- 우측(메인) 달력 — 전체 화면 중심 -->
     <div class="calendar-wrapper">
         <div class="calendar-header">
             <div class="calendar-title">스케줄 달력</div>
-            <!-- 검색 아이콘(우측 상단) -->
-            <button id="calendarSearchBtn" class="icon-btn" title="검색">
-                🔍
-            </button>
+            <button id="calendarSearchBtn" class="icon-btn" title="검색">🔍</button>
         </div>
-
         <div class="calendar-container">
             <div id="calendar"></div>
         </div>
     </div>
-
 </div>
 
-<!-- ==========================
-     간단한 일정 추가 드롭다운(모달 - 달력 셀 내 + 클릭 시 위치 조정)
-     ========================== -->
-<div id="quickAddModal" class="quick-add-modal hidden" role="dialog" aria-hidden="true">
-    <div class="quick-add-card">
-        <div class="quick-add-row title-row">
-            <input id="qaTitle" type="text" placeholder="일정 제목 입력 (달력에 보일 타이틀)" />
-        </div>
+<!-- 일정 추가 모달 -->
+<div th:replace="fragments/schedule-dropdown-ui :: quickAddModal"></div>
 
-        <div class="quick-add-row">
-            <select id="qaColor" title="색상">
-                <option value="#3788d8" style="background:#3788d8;">파랑</option>
-                <option value="#FF5722" style="background:#FF5722;">주황</option>
-                <option value="#4CAF50" style="background:#4CAF50;">초록</option>
-                <option value="#FFC107" style="background:#FFC107;">노랑</option>
-                <option value="#9C27B0" style="background:#9C27B0;">보라</option>
-            </select>
-
-            <button id="qaEmojiBtn" class="icon-btn" title="이모지 선택">😊</button>
-        </div>
-
-        <div class="quick-add-row">
-            <textarea id="qaDesc" placeholder="설명/내용 (선택)"></textarea>
-        </div>
-
-        <div class="quick-add-row small-row">
-            <label><input id="qaAllDay" type="checkbox" /> 하루종일</label>
-        </div>
-
-        <div class="quick-add-row time-rows">
-            <div class="time-col">
-                <label>시작 날짜</label>
-                <input id="qaStartDate" type="date" />
-                <input id="qaStartTime" type="time" step="600" />
-            </div>
-            <div class="time-col">
-                <label>종료 날짜</label>
-                <input id="qaEndDate" type="date" />
-                <input id="qaEndTime" type="time" step="600" />
-            </div>
-        </div>
-
-        <div class="quick-add-row notify-row">
-            <label>알림</label>
-            <select id="qaNotify">
-                <option value="0">일정 시작</option>
-                <option value="10">10분 전</option>
-                <option value="60">1시간 전</option>
-                <option value="1440">1일 전</option>
-                <option value="custom">직접 설정...</option>
-            </select>
-        </div>
-
-        <div class="quick-add-actions">
-            <button id="qaCancel" class="btn secondary">취소</button>
-            <button id="qaSave" class="btn primary">저장</button>
-        </div>
-    </div>
-</div>
-
-<!-- ========================== -->
-<!-- 기존 schedule-manager.js 유지 (핵심 로직) -->
-<!-- ========================== -->
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/locales/ko.global.min.js"></script>
 <script type="module" src="/js/schedule-manager.js"></script>
 <script src="/js/schedule-quick-add.js"></script>
