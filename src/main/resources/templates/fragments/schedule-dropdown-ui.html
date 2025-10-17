@@ -1,8 +1,12 @@
+<!-- schedule-dropdown-ui.html (최종) -->
 <div th:fragment="quickAddModal" id="quickAddModal" class="quick-add-modal hidden" role="dialog" aria-hidden="true">
     <div class="quick-add-card">
+        <!-- 제목 -->
         <div class="quick-add-row title-row">
             <input id="qaTitle" type="text" placeholder="일정 제목 입력 (달력에 보일 타이틀)" />
         </div>
+
+        <!-- 색상 + 이모지 -->
         <div class="quick-add-row">
             <select id="qaColor" title="색상">
                 <option value="#3788d8" style="background:#3788d8;">파랑</option>
@@ -11,14 +15,23 @@
                 <option value="#FFC107" style="background:#FFC107;">노랑</option>
                 <option value="#9C27B0" style="background:#9C27B0;">보라</option>
             </select>
-            <button id="qaEmojiBtn" class="icon-btn" title="이모지 선택">😊</button>
+            <input id="qaEmoji" type="text" placeholder="이모지 입력" />
         </div>
+
+        <!-- 설명 -->
         <div class="quick-add-row">
             <textarea id="qaDesc" placeholder="설명/내용 (선택)"></textarea>
         </div>
+
+        <!-- 종일 체크 + 시계 아이콘 -->
         <div class="quick-add-row small-row">
-            <label><input id="qaAllDay" type="checkbox" /> 하루종일</label>
+            <label>
+                <span class="icon-clock">🕒</span>
+                <input id="qaAllDay" type="checkbox" /> 하루종일
+            </label>
         </div>
+
+        <!-- 시작/종료 날짜와 시간 -->
         <div class="quick-add-row time-rows">
             <div class="time-col">
                 <label>시작 날짜</label>
@@ -31,6 +44,8 @@
                 <input id="qaEndTime" type="time" step="600" />
             </div>
         </div>
+
+        <!-- 알림 -->
         <div class="quick-add-row notify-row">
             <label>알림</label>
             <select id="qaNotify">
@@ -41,6 +56,31 @@
                 <option value="custom">직접 설정...</option>
             </select>
         </div>
+
+        <!-- 추가 DB 컬럼 -->
+        <div class="quick-add-row">
+            <input id="qaAlertType" type="text" placeholder="알림 타입(alert_type)" />
+            <input id="qaCustomAlertValue" type="number" placeholder="알림 값(custom_alert_value)" />
+        </div>
+
+        <!-- 장소 + 아이콘 + 지도 버튼 -->
+        <div class="quick-add-row">
+            <span class="icon-location">📍</span>
+            <input id="qaLocation" type="text" placeholder="장소 입력" />
+            <button id="qaMapBtn" class="btn secondary small">지도</button>
+        </div>
+
+        <!-- 카테고리/하이라이트/첨부 -->
+        <div class="quick-add-row">
+            <input id="qaHighlightType" type="text" placeholder="하이라이트 타입(highlight_type)" />
+            <input id="qaCategory" type="text" placeholder="카테고리(category)" />
+        </div>
+        <div class="quick-add-row">
+            <input id="qaAttachmentPath" type="text" placeholder="첨부 파일 경로(attachment_path)" />
+            <input id="qaAttachmentList" type="text" placeholder="첨부 파일 목록(attachment_list)" />
+        </div>
+
+        <!-- 모달 액션 버튼 -->
         <div class="quick-add-actions">
             <button id="qaCancel" class="btn secondary">취소</button>
             <button id="qaSave" class="btn primary">저장</button>
