@@ -12,31 +12,56 @@
     <div th:replace="fragments/header :: siteHeader"></div>
 	<div class="full-location-container">
 		<div class="ad-banner-wrapper">
-			<div class="ad-banner"></div>
+		  <div class="ad-banner">
+		    <div class="ad-slide fade">
+		      <img class="ad-banner-img" th:src="@{/images/background.png}" alt="광고1">
+		    </div>
+		    <div class="ad-slide fade">
+		      <img class="ad-banner-img" th:src="@{/images/logo3.png}" alt="광고2">
+		    </div>
+		    <div class="ad-slide fade">
+		      <img class="ad-banner-img" th:src="@{/images/logo2.png}" alt="광고3">
+		    </div>
+		
+		    <!-- 좌우 버튼 -->
+		    <a class="prev" onclick="plusSlides(-1)">&#10094;</a>
+		    <a class="next" onclick="plusSlides(1)">&#10095;</a>
+		  </div>
+		
+		  <!-- 점 네비게이션 -->
+		  <div class="dots">
+		    <span class="dot" onclick="currentSlide(1)"></span>
+		    <span class="dot" onclick="currentSlide(2)"></span>
+		    <span class="dot" onclick="currentSlide(3)"></span>
+		  </div>
 		</div>
+
+
 		<div class="ad-banner2-wrapper">
 			<div class="ad-banner2">
 				<div class="AI-comment-box">
 					<div class="comment-box">
 						<div class="schedule-alarm">OO님 오늘 스케줄이 있어요!</div>
-						<div class="schedule-alarm2">지금 바로 확인해주세요!</div>
+						<a th:href="@{/schedule}" class="goSchedule-btn">스케줄 확인하러가기</a>
 					</div>
 				</div>
 				<div class="calander-box">
-					<img th:src="@{/images/logo3.png}" class="calander-img"/>
-					<a th:href="@{/schedule}" class="goSchedule-btn">스케줄 확인하러가기</a>
+					<img th:src="@{/images/calendar.gif}" class="calander-img"/>
+					
 				</div>
 			</div>
 		</div>
 		<div class="ad-banner3-wrapper">
 			<div class="ad-banner3">
 				<div class="market-img-box">
-					<img th:src="@{/images/logo3.png}" class="calander-img"/>
-
+					<img th:src="@{/images/market.gif}" class="calander-img"/>
+					
 				</div>
 				<div class="ad-temMarket">
-					<div class="ad-temMarket-comment">다양한 템플릿을 제공해 드립니다!</div>
-					<div class="ad-temMarket-comment2">취향대로 골라서 사용해보세요!</div>
+					<div class="ad-temMarket-comment-box">
+						<div class="ad-temMarket-comment">다양한 템플릿을 제공해 드립니다!</div>
+						<a th:href="@{/schedule}" class="goSchedule-btn">템플릿 마켓가기</a>
+					</div>
 				</div>
 				<div class="slide-wrapper">
 					<div class="slide-container">
@@ -47,5 +72,51 @@
 		</div>
 	</div>
 	<div th:replace="fragments/footer :: siteFooter"></div>
+	<script>
+		let slideIndex = 0;
+		showSlides();
+		
+		function showSlides() {
+		  const slides = document.querySelectorAll(".ad-slide");
+		  const dots = document.querySelectorAll(".dot");
+		
+		  slides.forEach(s => s.style.display = "none");
+		  dots.forEach(d => d.classList.remove("active"));
+		
+		  slideIndex++;
+		  if (slideIndex > slides.length) { slideIndex = 1; }
+		
+		  slides[slideIndex - 1].style.display = "block";
+		  dots[slideIndex - 1].classList.add("active");
+		
+		  setTimeout(showSlides, 4000); // 4초마다 자동 전환
+		}
+		
+		// 수동 제어
+		function plusSlides(n) {
+		  showManualSlide(slideIndex += n);
+		}
+		
+		function currentSlide(n) {
+		  showManualSlide(slideIndex = n);
+		}
+		
+		function showManualSlide(n) {
+		  const slides = document.querySelectorAll(".ad-slide");
+		  const dots = document.querySelectorAll(".dot");
+		
+		  if (n > slides.length) { slideIndex = 1; }
+		  if (n < 1) { slideIndex = slides.length; }
+		
+		  slides.forEach(s => s.style.display = "none");
+		  dots.forEach(d => d.classList.remove("active"));
+		
+		  slides[slideIndex - 1].style.display = "block";
+		  dots[slideIndex - 1].classList.add("active");
+		}
+	</script>
+
+
 </body>
+
 </html>

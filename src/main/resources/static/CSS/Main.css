@@ -10,25 +10,98 @@ body {
 	display:flex;
 	flex-wrap:wrap;
 }
-.ad-banner-wrapper{
-	width:100%;
-	height:500px;
+.ad-banner-wrapper {
+  position: relative;
+  width: 100%;
+  height: 500px;
+  overflow: hidden;
+  margin: 0 auto;
+  top:50px;
 }
-.ad-banner{
-	width:100%;
-	height:100%;
-	background-color:#96d0ff;
+
+.ad-banner {
+  position: relative;
+  height: 100%;
+  width:100%;
 }
+
+.ad-banner-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 슬라이드 숨김 */
+.ad-slide {
+  display: none;
+  width: 100%;
+  height: 100%;
+}
+
+/* 페이드 애니메이션 */
+.fade {
+  animation: fadeEffect 1s;
+}
+@keyframes fadeEffect {
+  from {opacity: 0.4;}
+  to {opacity: 1;}
+}
+
+/* 버튼 */
+.prev, .next {
+  cursor: pointer;
+  position: absolute;
+  top: 50%;
+  padding: 16px;
+  color: white;
+  font-weight: bold;
+  font-size: 24px;
+  user-select: none;
+  transition: 0.3s;
+  transform: translateY(-50%);
+}
+.prev { left: 0; }
+.next { right: 0; }
+
+.prev:hover, .next:hover {
+  background-color: rgba(0,0,0,0.4);
+  border-radius: 50%;
+}
+
+/* 점 네비게이션 */
+.dots {
+  text-align: center;
+  position: absolute;
+  width: 100%;
+  bottom: 15px;
+}
+.dot {
+  cursor: pointer;
+  height: 10px;
+  width: 10px;
+  margin: 0 4px;
+  background-color: #bbb;
+  border-radius: 50%;
+  display: inline-block;
+  transition: 0.3s;
+}
+.dot.active, .dot:hover {
+  background-color: #717171;
+}
+
 .ad-banner2-wrapper{
 	width:100%;
 	height:500px;
 	display:flex;
 	justify-content:center;
+	position: relative;
+    top: 130px;
+    
 }
 .ad-banner2{
 	width:1000px;;
 	height:100%;
-
+	gap:40px;
 	display:flex;
 	justify-content:center;
 	flex-wrap:wrap;
@@ -57,12 +130,12 @@ body {
 	
 }
 .calander-img{
-	width:500px;
-	height:400px;
+	width:400px;
+	height:300px;
+	border-radius:50%;
+	
 }
 .goSchedule-btn{
-	position: relative;
-    bottom: 80px;
 	width:200px;
 	font-size:20px;
 	padding:10px;
@@ -88,9 +161,112 @@ body {
 .ad-banner3-wrapper{
 	width:100%;
 	height:500px;
+	position: relative;
+    top: 120px;
+    margin-bottom:100px;
 }
 .ad-banner3{
 	width:100%;
 	height:100%;
-	background-color:yellow;
+	background-color:white;
+	display:flex;
+	justify-content:center;
+	flex-wrap:wrap;
+	align-items:center;
+	gap:40px;
+}
+.market-img-box{
+	display:flex;
+	flex-wrap: wrap;
+    width: 500px;
+    height: auto;
+	justify-content:center;
+}
+.ad-temMarket{
+	padding:10px;
+}
+.ad-temMarket-comment-box{
+	width:400px;
+	height:auto;
+	font-size:30px;
+	display:flex;
+	flex-wrap:wrap;
+	gap:20px;
+}
+.ad-temMarket-comment{
+	width:100%;
+	font-size:50px;
+}
+.ad-temMarket-comment2{
+	width:100%;
+}
+.ad-banner-wrapper {
+  position: relative;
+  max-width: 100%;
+  height: 400px;
+  overflow: hidden;
+  margin: 0 auto;
+}
+
+.ad-banner {
+  position: relative;
+  height: 100%;
+}
+
+/* 슬라이드 숨김 */
+.ad-slide {
+  display: none;
+  width: 100%;
+  height: 100%;
+}
+
+/* 페이드 애니메이션 */
+.fade {
+  animation: fadeEffect 1s;
+}
+@keyframes fadeEffect {
+  from {opacity: 0.4;}
+  to {opacity: 1;}
+}
+
+/* 버튼 */
+.prev, .next {
+  cursor: pointer;
+  position: absolute;
+  top: 50%;
+  padding: 16px;
+  color: white;
+  font-weight: bold;
+  font-size: 24px;
+  user-select: none;
+  transition: 0.3s;
+  transform: translateY(-50%);
+}
+.prev { left: 0; }
+.next { right: 0; }
+
+.prev:hover, .next:hover {
+  background-color: rgba(0,0,0,0.4);
+  border-radius: 50%;
+}
+
+/* 점 네비게이션 */
+.dots {
+  text-align: center;
+  position: absolute;
+  width: 100%;
+  bottom: 15px;
+}
+.dot {
+  cursor: pointer;
+  height: 10px;
+  width: 10px;
+  margin: 0 4px;
+  background-color: #bbb;
+  border-radius: 50%;
+  display: inline-block;
+  transition: 0.3s;
+}
+.dot.active, .dot:hover {
+  background-color: #717171;
 }

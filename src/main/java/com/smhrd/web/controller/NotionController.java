@@ -9,6 +9,8 @@ import com.smhrd.web.security.CustomUserDetails;
 import com.smhrd.web.service.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -40,6 +42,8 @@ public class NotionController {
     private final AutoFolderService autoFolderService;
     private final NoteRepository noteRepository;
     private final FileStorageService fileStorageService;
+    private final FileParseService fileParseService;
+    
 
     // -----------------------------
     // LLM 요약 데이터 입력 페이지
@@ -87,61 +91,124 @@ public class NotionController {
     }
 
     // -----------------------------
+    // 파일 id 기반 차단
+    // -----------------------------
+    
+
+
+
+@PostMapping("/create-by-id")
+@ResponseBody
+public ResponseEntity<Map<String, Object>> createFromFileId(
+        @RequestBody Map<String, String> req,
+        @AuthenticationPrincipal(expression = "userIdx") Long userIdx,
+        @Value("${notion.summary.economy-max-bytes:512000}") int economyMaxBytes // 500KB
+) {
+    String gridfsId = req.get("fileId");
+    String promptTitle = req.getOrDefault("promptTitle", "심플버전");
+
+    Map<String, Object> out = new HashMap<>();
+    try {
+        // 1) 메타 조회 및 권한/존재 확인
+        FileStorageService.FileInfo meta = fileStorageService.previewFile(gridfsId);
+        if (meta == null) {
+            return ResponseEntity.ok(Map.of("success", false, "error", "파일을 찾을 수 없습니다."));
+        }
+        if (userIdx == null || !String.valueOf(userIdx).equals(meta.getUploaderIdx())) {
+            return ResponseEntity.status(403).body(Map.of("success", false, "error", "권한이 없습니다."));
+        }
+
+        // 2) 파일 크기 기반 선차단: 500KB 초과는 요약 차단(저장만)
+        long size = meta.getSize();
+        if (size > economyMaxBytes) {
+            out.put("success", false);
+            out.put("mode", "blocked");
+            out.put("message", "[안내] 파일이 너무 커서 요약을 진행하지 않습니다. 텍스트를 줄이거나 파일을 나눠 업로드해 주세요.");
+            return ResponseEntity.ok(out);
+        }
+
+        // 3) 파일 다운로드 → 텍스트 추출 (HWP/PDF/… 포맷별 파서가 내부에서 처리)
+        byte[] bytes = fileStorageService.downloadFile(gridfsId);
+        String filename = (meta.getOriginalName() == null) ? "file" : meta.getOriginalName();
+        String fullText = fileParseService.extractText(bytes, filename);
+
+        // 4) 사용자 입력 우선 요약 정책 실행
+        //    - 프롬프트는 system 지시문으로만 사용 (요약 대상 X)
+        //    - 내부에서 50KB/500KB 기준으로 normal/economy/blocked 자동 분기
+        LLMUnifiedService.SummaryResult unified =
+                llmService.summarizeWithPolicy(userIdx, promptTitle, fullText, /*forcePromptSummary*/ false);
+
+        out.put("success", unified.isSuccess());
+        out.put("mode", unified.getMode());                 // "user-priority" | "economy" | "blocked"
+        out.put("summary", unified.getSummaryMarkdown());   // Markdown 요약
+        out.put("keywords", unified.getKeywords());         // 경제모드 시 키워드 포함 가능
+        out.put("message", unified.getMessage());           // 안내 메시지
+        return ResponseEntity.ok(out);
+
+    } catch (Exception e) {
+        return ResponseEntity.status(500).body(Map.of("success", false, "error", e.getMessage()));
+    }
+}
+
+
+
+    
+    // -----------------------------
     // 텍스트 기반 요약 생성
     // -----------------------------
     @PostMapping("/create-text")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> createFromText(@RequestBody Map<String, String> req,
-                                                              Authentication auth) {
-        Long userIdx = ((com.smhrd.web.security.CustomUserDetails) auth.getPrincipal()).getUserIdx();
-        String content = req.get("content");
-        String promptTitle = req.get("promptTitle");
 
-        log.info("[TEXT] LLM 요약 요청 - prompt: {}", promptTitle);
+public ResponseEntity<Map<String, Object>> createFromText(
+        @RequestBody Map<String, String> req, Authentication auth
+) {
+    Long userIdx = ((com.smhrd.web.security.CustomUserDetails) auth.getPrincipal()).getUserIdx();
+    String content = req.getOrDefault("content", "");
+    String promptTitle = req.getOrDefault("promptTitle", "심플버전");
 
-        Map<String, Object> result = new HashMap<>();
-        try {
-            TestSummary summary = llmService.processText(userIdx, content, promptTitle);
-            result.put("success", true);
-            result.put("summary", summary.getAiSummary());
-            result.put("status", summary.getStatus());
-            result.put("processingTimeMs", summary.getProcessingTimeMs());
-            return ResponseEntity.ok(result);
-        } catch (Exception e) {
-            result.put("success", false);
-            result.put("error", e.getMessage());
-            return ResponseEntity.status(500).body(result);
-        }
+    Map<String, Object> result = new HashMap<>();
+    try {
+        // 사용자 입력 우선 (forcePromptSummary=false)
+        var summary = llmService.summarizeWithPolicy(userIdx, promptTitle, content, false);
+        result.put("success", summary.isSuccess());
+        result.put("summary", summary.getSummaryMarkdown());
+        result.put("mode", summary.getMode()); // "user-priority" | "economy" | "blocked"
+        return ResponseEntity.ok(result);
+    } catch (Exception e) {
+        return ResponseEntity.status(500).body(Map.of("success", false, "error", e.getMessage()));
     }
+}
+
 
     // -----------------------------
     // 파일 기반 요약 생성
     // -----------------------------
-    @PostMapping("/create-file")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> createFromFile(@RequestParam("file") MultipartFile file,
-                                                              @RequestParam("promptTitle") String promptTitle,
-                                                              Authentication auth) throws IOException {
-        Long userIdx = ((com.smhrd.web.security.CustomUserDetails) auth.getPrincipal()).getUserIdx();
-        log.info("[FILE] LLM 요약 요청 - file: {}", file.getOriginalFilename());
 
-        Map<String, Object> result = new HashMap<>();
-        try {
-            TestSummary summary = llmService.processFile(userIdx, file, promptTitle);
-            result.put("success", true);
-            result.put("summary", summary.getAiSummary());
-            result.put("status", summary.getStatus());
-            result.put("fileName", summary.getFileName());
-            result.put("fileSize", summary.getFileSize());
-            result.put("processingTimeMs", summary.getProcessingTimeMs());
-            return ResponseEntity.ok(result);
-        } catch (Exception e) {
-            result.put("success", false);
-            result.put("error", e.getMessage());
-            return ResponseEntity.status(500).body(result);
-        }
-        
+@PostMapping("/create-file")
+@ResponseBody
+
+public ResponseEntity<Map<String, Object>> createFromFile(
+        @RequestParam("file") MultipartFile file,
+        @RequestParam("promptTitle") String promptTitle,
+        Authentication auth
+) throws IOException {
+    Long userIdx = ((com.smhrd.web.security.CustomUserDetails) auth.getPrincipal()).getUserIdx();
+    Map<String, Object> result = new HashMap<>();
+    try {
+        String text = fileParseService.extractText(file);
+        var summary = llmService.summarizeWithPolicy(userIdx, promptTitle, text, false); // 항상 사용자 콘텐츠 우선
+        result.put("success", summary.isSuccess());
+        result.put("summary", summary.getSummaryMarkdown());
+        result.put("mode", summary.getMode());
+        result.put("fileName", file.getOriginalFilename());
+        result.put("fileSize", file.getSize());
+        return ResponseEntity.ok(result);
+    } catch (Exception e) {
+        return ResponseEntity.status(500).body(Map.of("success", false, "error", e.getMessage()));
     }
+}
+
+
 
     @PostMapping(value = "/api/notion/save-text", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody

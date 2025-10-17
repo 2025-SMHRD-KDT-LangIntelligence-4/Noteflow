@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ====== 로딩 상태 관리 ======
-    function setLoading(isLoading, message = '작동 중...') {
+    function setLoading(isLoading, message = '요약 중...') {
         document.querySelectorAll('button').forEach(b => b.disabled = isLoading);
         overlay.style.display = isLoading ? 'flex' : 'none';
         overlay.textContent = message;
@@ -129,7 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	  lastTime = Date.now();
 	  smoothSlide();
 	}
-
+	
 	// ====== 화살표 & 마우스 이벤트 ======
 	$leftArrow.addEventListener('click', () => {
 	  currentPosition -= slideWidth;
@@ -168,6 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	});
 
 	startAutoSlide();
+	
     // ====== 프롬프트 선택 ======
     let selectedPrompt = null;
     let hasProcessedOnce = false;
@@ -193,6 +194,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const template = selectedPrompt.exampleOutput || selectedPrompt.content || '';
             editor.setMarkdown(template);
         }
+		// ✅ 선택 시 슬라이드 정지
+		   pauseSlider();
     }
 
     // ====== LLM 요청 공통 함수 ======
@@ -234,7 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             const promptContent = selectedPrompt.content || '';
-            contentToSend = `${originalContent}\n\n프롬프트: ${promptContent}\n\n##keywords## 주요 키워드 5개 추출 및 대·중·소 분류`;
+            contentToSend = `${originalContent}\n\n프롬프트: ${promptContent}\n\n`;
         } else {
             // 재요청: 에디터의 현재 내용 사용
             contentToSend = editor.getMarkdown().trim();
@@ -242,16 +245,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('요약할 내용이 없습니다.');
                 return;
             }
-            contentToSend += '\n\n##keywords## 주요 키워드 5개 추출 및 대·중·소 분류';
+            ;
         }
 
         try {
-            setLoading(true, '일하는 중....');
+            setLoading(true, '요약하는 중....');
 
             const summary = await makeLLMRequest(contentToSend, selectedPrompt.title);
             
             // 키워드 부분 제거하고 요약만 표시
-            const cleanSummary = summary.replace(/##keywords##.*$/gis, '').trim();
+            const cleanSummary = summary
             editor.setMarkdown(cleanSummary);
             
             hasProcessedOnce = true;
