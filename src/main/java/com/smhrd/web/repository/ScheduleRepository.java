@@ -10,15 +10,16 @@ import java.util.List;
 @Repository
 public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
 
-    // ✅ 특정 유저의 모든 일정 조회 (user_idx 기준)
-    List<Schedule> findByUser_UserIdx(Long userIdx);
+    // 특정 유저의 모든 일정 조회 (삭제되지 않은 일정만)
+    List<Schedule> findByUser_UserIdxAndIsDeletedFalse(Long userIdx);
 
-    // ✅ 특정 유저의 날짜 범위 내 일정 조회 (달력 표시용)
-    List<Schedule> findByUser_UserIdxAndStartTimeBetween(Long userIdx, LocalDateTime start, LocalDateTime end);
+    // 특정 유저의 날짜 범위 내 일정 조회 (달력 표시용, 삭제되지 않은 일정)
+    List<Schedule> findByUser_UserIdxAndStartTimeLessThanEqualAndEndTimeGreaterThanEqualAndIsDeletedFalse(
+            Long userIdx, LocalDateTime end, LocalDateTime start);
 
-    // ✅ 제목에 특정 키워드가 포함된 일정 검색
-    List<Schedule> findByUser_UserIdxAndTitleContainingIgnoreCase(Long userIdx, String title);
+    // 제목에 특정 키워드가 포함된 일정 검색 (삭제되지 않은 일정)
+    List<Schedule> findByUser_UserIdxAndTitleContainingIgnoreCaseAndIsDeletedFalse(Long userIdx, String title);
 
-    // ✅ 일정 겹침 조회 (예: 시간 중복 체크)
+    // 일정 겹침 조회 (예: 시간 중복 체크)
     List<Schedule> findByUser_UserIdxAndStartTimeLessThanEqualAndEndTimeGreaterThanEqual(Long userIdx, LocalDateTime end, LocalDateTime start);
 }

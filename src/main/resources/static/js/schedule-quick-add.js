@@ -95,8 +95,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (!res.ok) throw new Error('생성 실패');
 
-      // calendar 인스턴스가 있으면 리프레시
-      if (window.calendar && typeof window.calendar.refetchEvents === 'function') {
+      // 수정: 전역 refreshEvents 함수 우선 호출, 없으면 calendar.refetchEvents, 없으면 경고
+      // 기존: if (window.calendar && typeof window.calendar.refetchEvents === 'function') { ... }
+      // → 수정: 우선 window.refreshEvents 호출 // [수정]
+      if (window.refreshEvents && typeof window.refreshEvents === 'function') {
+        await window.refreshEvents();
+      } else if (window.calendar && typeof window.calendar.refetchEvents === 'function') {
         await window.calendar.refetchEvents();
       } else {
         console.warn('global calendar instance not found. manual refresh required.');

@@ -2,8 +2,11 @@ package com.smhrd.web.controller;
 
 import com.smhrd.web.entity.Prompt;
 import com.smhrd.web.entity.TestSummary;
+import com.smhrd.web.repository.TestSummaryRepository;
 import com.smhrd.web.service.LLMTestService;
 import com.smhrd.web.service.NotionContentService;
+import com.smhrd.web.service.VllmApiService;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -29,7 +33,8 @@ public class LLMTestController {
     private final LLMTestService llmTestService;
     private final Environment env;  // 환경 변수 주입
     private final NotionContentService notionContentService;
-
+    private final VllmApiService vllmApiService;
+    private final TestSummaryRepository testSummaryRepository;
 
     //  LLM 테스트 페이지 조회
 
@@ -63,43 +68,81 @@ public class LLMTestController {
 
     // 텍스트 기반 테스트
 
-    @PostMapping("/llm/text")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> testText(@RequestBody TextTestRequest request) {
-        log.info("텍스트 테스트 요청 - 프롬프트: {}, 입력 길이: {}",
-                request.getPromptTitle(), request.getContent().length());
 
-        Map<String, Object> response = new HashMap<>();
+@PostMapping("/llm/text")
+@ResponseBody
+public ResponseEntity<Map<String, Object>> testText(@RequestBody TextTestRequest request) {
+    log.info("텍스트 테스트 요청 - 모드: {}, 프롬프트: {}, 커스텀 길이: {}",
+        request.getPromptMode(), request.getPromptTitle(),
+        request.getCustomPrompt() == null ? 0 : request.getCustomPrompt().length());
 
-        try {
-            TestSummary result = llmTestService.processTextTest(
-                    request.getContent(),
-                    request.getPromptTitle()
+    Map<String, Object> response = new HashMap<>();
+    try {
+        TestSummary result;
+        if ("custom".equalsIgnoreCase(request.getPromptMode())) {
+            // 커스텀 프롬프트 경로
+            result = llmTestService.processTextTestCustom(
+                request.getContent(),
+                request.getCustomPrompt(),
+                request.getMaxTokens(),
+                request.getTemperature()
             );
-
-            response.put("success", true);
-            response.put("testId", result.getTestId());
-            response.put("status", result.getStatus());
-            response.put("processingTime", result.getProcessingTimeMs());
-            response.put("summary", result.getAiSummary());
-            response.put("error", result.getErrorMessage());
-
-        } catch (Exception e) {
-            log.error("텍스트 테스트 실패", e);
-            response.put("success", false);
-            response.put("message", "테스트 처리에 실패했습니다: " + e.getMessage());
+        } else {
+            // 기존 DB 프롬프트 경로
+            result = llmTestService.processTextTest(
+                request.getContent(),
+                request.getPromptTitle()
+            );
         }
-
-        return ResponseEntity.ok(response);
+        response.put("success", true);
+        response.put("testId", result.getTestId());
+        response.put("status", result.getStatus());
+        response.put("processingTime", result.getProcessingTimeMs());
+        response.put("summary", result.getAiSummary());
+        response.put("error", result.getErrorMessage());
+    } catch (Exception e) {
+        log.error("텍스트 테스트 실패", e);
+        response.put("success", false);
+        response.put("message", "테스트 처리에 실패했습니다: " + e.getMessage());
     }
+    return ResponseEntity.ok(response);
+}
 
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class TextTestRequest {
-        private String content;
-        private String promptTitle;
+// 커스텀 전용
+
+@Transactional
+public TestSummary processTextTestCustom(String content, String customPrompt,
+                                        Integer maxTokens, Double temperature) {
+    long t0 = System.currentTimeMillis();
+    TestSummary ts = TestSummary.builder()
+        .testType("TEXT")
+        .promptTitle("커스텀")             // 표기용
+        .originalContent(content)
+        .originalPrompt(customPrompt)      // 커스텀 프롬프트 저장
+        .createdAt(java.time.LocalDateTime.now())
+        .build();
+
+    try {
+        // vLLM 호출 (새 메서드 사용)
+        String ai = vllmApiService.generateWithCustomSystem(
+            customPrompt,              // system 프롬프트: 지시문
+            content,                   // user 콘텐츠: 요약 대상
+            maxTokens,                 // null이면 기본값
+            temperature                // null이면 기본값
+        );
+        ts.setAiSummary(ai);
+        ts.setStatus("SUCCESS");
+    } catch (Exception e) {
+        ts.setStatus("FAILED");
+        ts.setErrorMessage(e.getMessage());
+        log.error("CUSTOM TEXT 테스트 실패", e);
     }
+    ts.setProcessingTimeMs(System.currentTimeMillis() - t0);
+    return testSummaryRepository.save(ts);
+}
+
+
+
 
     // 파일 기반 테스트 실행
 
@@ -180,4 +223,18 @@ public class LLMTestController {
         }
         return ResponseEntity.ok(res);
     }
+    
+
+	@Data
+	@AllArgsConstructor
+	@NoArgsConstructor
+	public static class TextTestRequest {
+	    private String content;         // 원문 텍스트
+	    private String promptTitle;     // DB 프롬프트 제목
+	    private String promptMode;      // "db" | "custom"
+	    private String customPrompt;    // 커스텀 프롬프트(선택)
+	    private Integer maxTokens;      // 선택: 토큰 상한
+	    private Double temperature;     // 선택: 온도
+	}
+
 }
