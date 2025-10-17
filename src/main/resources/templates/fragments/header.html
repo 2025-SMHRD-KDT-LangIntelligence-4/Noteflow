@@ -17,10 +17,10 @@
 		        <!-- 카테고리 메뉴 -->
 		        <div class="categori-container">
 		            <a th:href="@{/main}" th:classappend="${activeMenu == 'main'} ? ' active' : ''">메인화면</a>
-		            <a th:href="@{/schedule}" th:classappend="${activeMenu == 'schedule'} ? ' active' : ''">일정관리</a>
 		            <a th:href="@{/notion/precreate}" th:classappend="${activeMenu == 'notionCreate'} ? ' active' : ''">노션작성</a>
 		            <a th:href="@{/notion/manage}" th:classappend="${activeMenu == 'notionManage'} ? ' active' : ''">노션관리</a>
 		            <a th:href="@{/quiz/create}" th:classappend="${activeMenu == 'quizCreate'} ? ' active' : ''">문제생성</a>
+		            <a th:href="@{/schedule}" th:classappend="${activeMenu == 'schedule'} ? ' active' : ''">일정관리</a>
 		        </div>
 		
 	    	</div>
