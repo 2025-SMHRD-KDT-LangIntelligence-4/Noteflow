@@ -292,7 +292,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 👉 전환: 프롬프트 단계 숨김, 입력 단계 표시
     $promptStage.style.display = 'none';
-    $inputStage.style.display  = 'block';
+    $inputStage.style.display  = 'flex';
 
     // 미리보기 체크 해제 + 슬라이드 재개
     document.querySelectorAll('.nc-peek-check').forEach(c => c.checked = false);
@@ -397,7 +397,14 @@ document.addEventListener('DOMContentLoaded', () => {
         response = await requestFileSummaryById(state.fileId, prompt.title);
         if (response.success) {
           const warn = response.message ? `<div class="nc-warn">${response.message}</div>` : '';
-          $resultBox.innerHTML = `${warn}<div class="nc-md">${escapeHtml(response.summary || '')}</div>`;
+		  state.editor = new toastui.Editor({
+		      el: document.getElementById('nc-editor2'),
+		      height: '500px',
+		      initialEditType: 'markdown',
+		      previewStyle: 'vertical',
+		      usageStatistics: false
+		    });
+          $resultBox.innerHTML = `${warn}<div class="nc-editor2">${escapeHtml(response.summary || '')}</div>`;
           state.editor.setMarkdown(response.summary || '');
         } else {
           const msg = response.error || response.message || '요약 불가';
