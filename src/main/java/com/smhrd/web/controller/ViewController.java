@@ -41,6 +41,19 @@ public class ViewController {
         model.addAttribute("activeMenu", "login");
         return "login";
     }
+    @GetMapping("/market")
+    public String marketPage(Model model,@AuthenticationPrincipal UserDetails userDetails) {
+        model.addAttribute("pageTitle", "마켓"); 
+        model.addAttribute("activeMenu", "market");
+        if (userDetails != null) {
+            // userDetails에서 닉네임 가져오기 (예: CustomUserDetails 사용)
+        	String nickname = ((CustomUserDetails) userDetails).getNickname();
+            model.addAttribute("nickname", nickname);
+            String email = ((CustomUserDetails) userDetails).getEmail();
+            model.addAttribute("email", email);
+        }
+        return "market";
+    }
 
     @GetMapping("/mypage/edit")
     public String editMyPage(Model model,@AuthenticationPrincipal UserDetails userDetails) {

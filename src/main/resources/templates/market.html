@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+<link rel="stylesheet" th:href="@{/css/header.css}" />
+<link rel="stylesheet" th:href="@{/css/footer.css}" />
+<link rel="stylesheet" th:href="@{/css/market.css}"/>
+</head>
+<body>
+<div th:replace="fragments/header :: siteHeader"></div>
+	<div class="full-container">
+		<div class = "full-location-container">
+			<div class="market-title-wrapper">
+				<div class="market-title">템플릿 마켓</div>
+			</div>
+			<div class="path-wrapper">
+					<img th:href="@{/images/logo3.png}"class="path-img"/>
+					<div class="path-title">새김패스</div>
+					<a class="buy-path-btn">구매하기</a>
+			</div>
+			<div class="temp-market-wrapper">
+				<div class="temp-market-list">
+					<div class="temp-btn">
+						<div class="temp-img">템플릿 이미지</div>
+						<div class="temp-name">템플릿1</div>
+						<a class="buy-temp-btn">구매하기</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+<div th:replace="fragments/footer :: siteFooter"></div>
+</body>
+</html>
