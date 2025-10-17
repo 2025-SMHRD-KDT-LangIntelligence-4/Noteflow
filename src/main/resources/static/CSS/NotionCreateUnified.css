@@ -1,0 +1,70 @@
+/* ================= NotionCreateUnified (nc-) ================= */
+.nc-container { max-width: 1240px; margin: 0 auto; padding: 20px; }
+.nc-stage-header { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+.nc-stage-header .nc-desc { color:#6b7280; }
+
+/* 슬라이드 */
+.nc-slider-wrapper { position: relative; width: 100%; overflow: hidden; background-color:white; }
+.nc-slide-container { height: 220px; background:white; border-radius:20px; display:flex; align-items:center; width:100%; overflow:hidden; border:1px solid #e5e7eb; }
+#nc-buttonContainer { display:flex; gap:8px; will-change: transform; transition: none; }
+
+.nc-slide-item {
+  display:flex; flex-direction:column; justify-content:space-between; align-items:stretch;
+  width:240px; height:200px; flex:0 0 auto; padding:10px; border:1px solid #ccc; border-radius:8px;
+  background:#f9f9f9; transition: background-color .2s, border-color .2s, transform .2s;
+}
+.nc-slide-item:hover { background-color:#eff6ff; border-color:#96D0FF; transform: translateY(-2px); }
+.nc-slide-item.nc-selected { background-color:#96D0FF; color:#fff; border:2px solid #5daaff; transform: scale(1.03); }
+
+.nc-item-title { font-weight:700; font-size:16px; margin-bottom:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.nc-item-actions { display:flex; flex-direction:column; gap:8px; align-items:center; margin-top:auto; }
+.nc-peek-label { font-size:12px; color:#374151; display:flex; align-items:center; gap:6px; user-select:none; }
+.nc-peek-label input[type="checkbox"] { accent-color:#5daaff; transform: translateY(1px); }
+
+.nc-arrow { position:absolute; top:50%; transform:translateY(-50%); background:white; border:none; font-size:1.6rem; cursor:pointer; z-index:10;
+            width:36px; height:36px; display:flex; align-items:center; justify-content:center; border-radius:50%; transition:.3s; box-shadow:0 2px 6px rgba(0,0,0,.08); }
+.nc-left { left:8px; } .nc-right { right:8px; }
+.nc-arrow:hover { background-color:#96D0FF; color:#fff; }
+
+/* Viewer */
+.nc-prompt-example-viewer { margin-top: 16px; }
+.nc-viewer-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.nc-viewer-title { font-weight:600; }
+.nc-badge { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; font-size:12px; line-height:1; border:1px solid #e5e7eb; background:#f3f4f6; color:#374151; }
+.nc-badge-readonly::before { content: "🔒"; margin-right:4px; }
+.nc-viewer-surface { border:1px dashed #cbd5e1; border-radius:8px; background:#fafafa; padding:8px; }
+.nc-desc { margin-top:6px; color:#64748b; font-size:13px; }
+
+/* 입력 패널 */
+#nc-inputStage { margin-top:16px; }
+.nc-selected-name { font-weight:600; }
+#nc-editor { width:100%; height:600px !important; }
+.toastui-editor-defaultUI { border-radius:20px !important; box-shadow:0 4px 12px rgba(0,0,0,.1); }
+.toastui-editor-defaultUI-toolbar { border-radius:20px 20px 0 0 !important; }
+.toastui-editor-mode-switch { border-radius:0 0 20px 20px !important; }
+
+.nc-text-input textarea { width:100%; border:1px solid #e5e7eb; border-radius:8px; padding:10px; font-size:14px; background:#fff; }
+.nc-counters { display:flex; gap:16px; margin-top:8px; color:#6b7280; }
+.nc-hint { color:#c0392b; }
+.nc-preview { margin-top:6px; color:#6b7280; font-size:13px; }
+
+/* 버튼 */
+.nc-btn { border:1px solid #e5e7eb; background:#fff; color:#111; padding:8px 12px; border-radius:8px; cursor:pointer; }
+.nc-primary { background:#96D0FF; color:#fff; border-color:#96D0FF; }
+.nc-secondary { background:#10b981; color:#fff; border-color:#10b981; }
+.nc-btn:hover { background-color:#2FA1FF; color:#fff; }
+.nc-btn:disabled { opacity:.5; cursor:not-allowed; }
+.nc-actions { display:flex; gap:8px; margin-top:8px; }
+
+/* 결과 박스 */
+.nc-result-box { margin-top:16px; border:1px solid #e5e7eb; background:#fff; border-radius:12px; padding:12px; min-height:64px; }
+.nc-result-box .nc-warn { background:#fff3cd; color:#856404; padding:8px; border-radius:6px; margin-bottom:12px; }
+.nc-result-box .nc-error { background:#fdecea; color:#b00020; padding:8px; border-radius:6px; }
+.nc-result-box .nc-md { white-space: pre-wrap; font-size:14px; line-height:1.6; }
+
+/* 로딩 오버레이 */
+#nc-loadingOverlay { display:none; position:fixed; inset:0; background:rgba(255,255,255,.75); z-index:999; font-size:18px; align-items:center; justify-content:center; }
+
+/* 반응형 */
+@media (max-width: 1024px) { .nc-slide-item { width: 200px; } }
+@media (max-width: 768px)  { .nc-slide-item { width: 180px; } }
