@@ -1,13 +1,18 @@
 package com.smhrd.web.controller;
 
 import com.smhrd.web.dto.CategoryResult;
+import com.smhrd.web.entity.Note;
 import com.smhrd.web.entity.Prompt;
 import com.smhrd.web.repository.NoteRepository;
 import com.smhrd.web.repository.PromptRepository;
 import com.smhrd.web.security.CustomUserDetails;
 import com.smhrd.web.service.*;
+
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.apache.tika.metadata.HttpHeaders;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.http.MediaType;
@@ -22,6 +27,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Slf4j
@@ -254,4 +262,94 @@ public class NotionController {
         }
         return "NotionComplete";
     }
+    @PutMapping("/api/notion/{noteIdx}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> updateNote(
+        @PathVariable Long noteIdx,
+        @RequestBody Map<String, String> req,
+        Authentication auth
+    ) {
+        Long userIdx = ((CustomUserDetails) auth.getPrincipal()).getUserIdx();
+        String title = req.getOrDefault("title", "제목없음");
+        String content = req.getOrDefault("content", "");
+        
+        Map<String, Object> res = new HashMap<>();
+        try {
+            Note note = noteRepository.findById(noteIdx)
+                .orElseThrow(() -> new IllegalArgumentException("노트를 찾을 수 없습니다."));
+            
+            if (!note.getUser().getUserIdx().equals(userIdx)) {
+                res.put("success", false);
+                res.put("message", "권한이 없습니다.");
+                return ResponseEntity.status(403).body(res);
+            }
+            
+            note.setTitle(title);
+            note.setContent(content);
+            note.setUpdatedAt(LocalDateTime.now());
+            noteRepository.save(note);
+            
+            res.put("success", true);
+            res.put("message", "저장되었습니다.");
+            return ResponseEntity.ok(res);
+        } catch (Exception e) {
+            res.put("success", false);
+            res.put("message", e.getMessage());
+            return ResponseEntity.status(500).body(res);
+        }
+    }
+
+    @DeleteMapping("/api/notion/{noteIdx}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> deleteNote(
+        @PathVariable Long noteIdx,
+        Authentication auth
+    ) {
+        Long userIdx = ((CustomUserDetails) auth.getPrincipal()).getUserIdx();
+        Map<String, Object> res = new HashMap<>();
+        try {
+            Note note = noteRepository.findById(noteIdx)
+                .orElseThrow(() -> new IllegalArgumentException("노트를 찾을 수 없습니다."));
+            
+            if (!note.getUser().getUserIdx().equals(userIdx)) {
+                res.put("success", false);
+                res.put("message", "권한이 없습니다.");
+                return ResponseEntity.status(403).body(res);
+            }
+            
+            note.setStatus("DELETED");
+            noteRepository.save(note);
+            
+            res.put("success", true);
+            res.put("message", "삭제되었습니다.");
+            return ResponseEntity.ok(res);
+        } catch (Exception e) {
+            res.put("success", false);
+            res.put("message", e.getMessage());
+            return ResponseEntity.status(500).body(res);
+        }
+    }
+
+    @GetMapping("/api/notion/download/{noteIdx}")
+    public void downloadNote(
+        @PathVariable Long noteIdx,
+        Authentication auth,
+        HttpServletResponse response
+    ) throws IOException {
+        Long userIdx = ((CustomUserDetails) auth.getPrincipal()).getUserIdx();
+        Note note = noteRepository.findById(noteIdx)
+            .orElseThrow(() -> new IllegalArgumentException("노트를 찾을 수 없습니다."));
+        
+        if (!note.getUser().getUserIdx().equals(userIdx)) {
+            throw new IllegalArgumentException("권한이 없습니다.");
+        }
+        
+        String filename = URLEncoder.encode(note.getTitle() + ".md", StandardCharsets.UTF_8)
+            .replaceAll("\\+", "%20");
+        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''" + filename);
+        response.setContentType("text/markdown;charset=UTF-8");
+        response.getWriter().write(note.getContent());
+        response.getWriter().flush();
+    }
+    
 }
