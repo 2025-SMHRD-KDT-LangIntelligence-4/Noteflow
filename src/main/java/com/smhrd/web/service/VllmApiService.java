@@ -134,4 +134,43 @@ public class VllmApiService {
             throw new RuntimeException("vLLM API 호출 실패: " + e.getMessage(), e);
         }
     }
+    
+
+public String generateWithCustomSystem(String systemPrompt,
+                                           String userContent,
+                                           Integer maxTokens,
+                                           Double temperature) {
+        int maxTok = (maxTokens == null || maxTokens <= 0) ? maxTokens : maxTokens;
+        double temp = (temperature == null) ? temperature : temperature;
+
+        java.util.Map<String, Object> req = new java.util.HashMap<>();
+        req.put("model", modelName);
+        req.put("max_tokens", maxTok);
+        req.put("temperature", temp);
+        req.put("stream", false);
+        req.put("messages", java.util.List.of(
+            java.util.Map.of("role", "system", "content", systemPrompt == null ? "" : systemPrompt),
+            java.util.Map.of("role", "user",   "content", userContent == null ? "" : userContent)
+        ));
+
+        String resp = vllmWebClient.post()
+            .uri("/v1/chat/completions")
+            .bodyValue(req)
+            .retrieve()
+            .bodyToMono(String.class)
+            .block();
+
+        // 공통 추출기와 동일 로직을 사용해 content를 꺼냄
+        try {
+            com.fasterxml.jackson.databind.JsonNode root = new com.fasterxml.jackson.databind.ObjectMapper().readTree(resp);
+            com.fasterxml.jackson.databind.JsonNode choices = root.path("choices");
+            if (choices.isArray() && choices.size() > 0) {
+                String c = choices.get(0).path("message").path("content").asText(null);
+                if (c != null && !c.isBlank()) return c.trim();
+            }
+        } catch (Exception ignore) {}
+        return resp;
+    }
 }
+
+

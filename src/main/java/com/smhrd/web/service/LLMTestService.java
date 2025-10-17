@@ -89,4 +89,66 @@ public class LLMTestService {
     public List<com.smhrd.web.entity.Prompt> getAvailablePrompts() {
         return promptRepository.findAll();
     }
+
+@Transactional
+public TestSummary processFileTestCustom(MultipartFile file, String customPrompt,
+                                         Integer maxTokens, Double temperature) {
+    long t0 = System.currentTimeMillis();
+    TestSummary ts = TestSummary.builder()
+        .testType("FILE")
+        .promptTitle("커스텀")
+        .fileName(file.getOriginalFilename())
+        .fileSize(file.getSize())
+        .originalPrompt(customPrompt)
+        .createdAt(java.time.LocalDateTime.now())
+        .build();
+    try {
+        String content = fileParseService.extractText(file); // 이미 존재하는 파서 사용 [1](https://o365scnu-my.sharepoint.com/personal/20142215_s_scnu_ac_kr/Documents/Microsoft%20Copilot%20Chat%20%ED%8C%8C%EC%9D%BC/%EC%A0%84%EC%B2%B4%EC%BD%94%EB%93%9C1017-1.txt)
+        ts.setOriginalContent(content);
+        String ai = vllmApiService.generateWithCustomSystem(customPrompt, content, maxTokens, temperature);
+        ts.setAiSummary(ai);
+        ts.setStatus("SUCCESS");
+    } catch (Exception e) {
+        ts.setStatus("FAILED");
+        ts.setErrorMessage(e.getMessage());
+        log.error("CUSTOM FILE 테스트 실패", e);
+    }
+    ts.setProcessingTimeMs(System.currentTimeMillis() - t0);
+    return testSummaryRepository.save(ts);
 }
+
+@Transactional
+public TestSummary processTextTestCustom(String content,
+                                         String customPrompt,
+                                         Integer maxTokens,
+                                         Double temperature) {
+    long t0 = System.currentTimeMillis();
+    TestSummary ts = TestSummary.builder()
+            .testType("TEXT")
+            .promptTitle("커스텀")              // 표기용
+            .originalContent(content)
+            .originalPrompt(customPrompt)      // 커스텀 프롬프트 저장
+            .createdAt(LocalDateTime.now())
+            .build();
+    try {
+        String ai = vllmApiService.generateWithCustomSystem(
+                customPrompt,
+                content,
+                maxTokens,
+                temperature
+        );
+        ts.setAiSummary(ai);
+        ts.setStatus("SUCCESS");
+    } catch (Exception e) {
+        log.error("CUSTOM TEXT 테스트 실패", e);
+        ts.setStatus("FAILED");
+        ts.setErrorMessage(e.getMessage());
+    }
+    ts.setProcessingTimeMs(System.currentTimeMillis() - t0);
+    return testSummaryRepository.save(ts);
+}
+
+}
+
+
+

@@ -1,30 +1,43 @@
-<!-- src/main/resources/templates/llm-test.html -->
-
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="ko">
 <head>
   <meta charset="UTF-8">
-
   <meta name="_csrf" th:content="${_csrf.token}" />
   <meta name="_csrf_header" th:content="${_csrf.headerName}" />
-  <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
+
+  <!-- ✅ Toast UI Editor CDN: 오타/깨짐 제거 -->
+ <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
   <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
+
+
   <style>
-    .container { display: flex; }
-
-
-    textarea { height: 600px; resize: both; }
-
-
-    #editorContainer { height: 500px; border: 1px solid #ddd; margin-bottom: 10px; }
+    .container { display: flex; gap: 20px; }
+    .test-panel, .result-panel { flex: 1; }
+    textarea { width: 100%; resize: vertical; }
+    #editorContainer { height: 500px; border: 1px solid #ddd; margin-top: 10px; }
+    .form-group { margin-bottom: 12px; }
+    .btn { padding: 8px 12px; margin-top: 8px; cursor: pointer; }
   </style>
 </head>
 <body>
-
 <div class="container">
+  <!-- 테스트 입력 영역 -->
   <div class="test-panel">
+    <h3>LLM 테스트</h3>
+
+    <!-- 프롬프트 모드 -->
     <div class="form-group">
-      <select id="promptSelect">
+      <label>프롬프트 소스</label>
+      <select id="promptMode" class="form-select">
+        <option value="custom">커스텀</option>
+        <option value="db" selected>DB 프롬프트</option>
+      </select>
+    </div>
+
+    <!-- DB 프롬프트 선택 -->
+    <div id="dbPromptWrap" class="form-group">
+      <label>DB 프롬프트 선택</label>
+      <select id="promptSelect" class="form-select">
         <option value="" disabled selected>선택</option>
         <option th:each="prompt : ${prompts}"
                 th:value="${prompt.title}"
@@ -32,32 +45,55 @@
                 th:data-content="${prompt.exampleOutput}"></option>
       </select>
     </div>
-    텍스트
-    <div class="form-group">
-      <textarea id="textContent" placeholder="내용입력"></textarea>
+
+    <!-- 커스텀 프롬프트 -->
+    <div id="customPromptWrap" class="form-group" style="display:none;">
+      <label>커스텀 프롬프트</label>
+      <textarea id="customPrompt" rows="6" placeholder="LLM에게 줄 지시문을 작성하세요."></textarea>
     </div>
-    <button id="testTextBtn">으아아아아</button><br>
+
+    <!-- 원문 텍스트 -->
     <div class="form-group">
-      <label for="fileInput">파일 선택</label><br>
-      <input type="file" id="fileInput" accept=".txt,.pdf" />
+      <label>원문 텍스트</label>
+      <textarea id="textContent" rows="8" placeholder="요약할 텍스트를 입력하세요."></textarea>
     </div>
-    <button id="testFileBtn">파일 테스트 </button>
+
+    <!-- 옵션 -->
+    <div class="form-group">
+      <label>옵션_ 최대토큰갯수 / 온도설정</label>
+      <div style="display:flex; gap:10px;">
+      
+        <input id="maxTokens" type="number" class="form-control" th:value="${vllmApiMaxTokens}" placeholder="max_tokens">
+
+        <input id="temperature" type="number" step="0.1" class="form-control" th:value="${vllmApiTemperature}" placeholder="temperature">
+      </div>
+    </div>
+
+    <!-- 실행 버튼 -->
+    <button id="testTextBtn" class="btn btn-primary">텍스트 테스트</button>
+
+    <!-- 파일 업로드 -->
+    <div class="form-group" style="margin-top:16px;">
+      <label for="fileInput">파일 선택</label>
+      <input type="file" id="fileInput" accept=".txt,.pdf,.doc,.docx,.hwp,.hwpx">
+    </div>
+    <button id="testFileBtn" class="btn btn-secondary">파일 테스트</button>
   </div>
 
+  <!-- 결과 영역 -->
   <div class="result-panel">
-
-    제목<input id="resultTitle" >
+    <h3>결과</h3>
+    <input id="resultTitle" placeholder="노트 제목" style="width:100%; margin-bottom:10px;">
     <div id="editorContainer"></div>
-    <button id="saveBtn" >저장</button>
+    <button id="saveBtn" class="btn btn-success" style="margin-top:10px;" disabled>저장</button>
   </div>
 </div>
 
 <script th:inline="javascript">
-  const csrfToken         = /*[[${_csrf.token}]]*/ '';
-  const csrfHeader        = /*[[${_csrf.headerName}]]*/ '';
-  const vllmApiMaxTokens  = /*[[${vllmApiMaxTokens}]]*/ 30000;
+  const csrfToken          = /*[[${_csrf.token}]]*/ '';
+  const csrfHeader         = /*[[${_csrf.headerName}]]*/ '';
+  const vllmApiMaxTokens   = /*[[${vllmApiMaxTokens}]]*/ 20000;
   const vllmApiTemperature = /*[[${vllmApiTemperature}]]*/ 0.5;
-
 
   const editor = new toastui.Editor({
     el: document.querySelector('#editorContainer'),
@@ -67,47 +103,58 @@
     language: 'ko',
     usageStatistics: false
   });
+
+  // 모드 토글
+  const modeSel = document.getElementById('promptMode');
+  const dbWrap = document.getElementById('dbPromptWrap');
+  const customWrap = document.getElementById('customPromptWrap');
+  modeSel.addEventListener('change', () => {
+    const m = modeSel.value;
+    dbWrap.style.display = (m === 'db') ? '' : 'none';
+    customWrap.style.display = (m === 'custom') ? '' : 'none';
+  });
+
+  // DB 프롬프트 선택 시 예시 출력
   document.getElementById('promptSelect').addEventListener('change', (e) => {
     const selected = e.target.selectedOptions[0];
     const example  = selected.dataset.content || '';
     editor.setMarkdown(example);
   });
 
-  // 저장 버튼 클릭
+  // 저장
   document.getElementById('saveBtn').addEventListener('click', async () => {
-    const promptTitle = document.getElementById('promptSelect').value;
-    const markdown    = editor.getMarkdown();
     const payload = {
       title: document.getElementById('resultTitle').value.trim() || '자동생성 노트',
-      summary: markdown,
-      promptId: '3'
+      summary: editor.getMarkdown(),
+      promptId: '0'
     };
     const res = await fetch('/notion/save-note', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        [csrfHeader]: csrfToken
-      },
+      headers: { 'Content-Type': 'application/json', [csrfHeader]: csrfToken },
       body: JSON.stringify(payload)
     });
     const result = await res.json();
     alert(result.success ? `저장 완료: ID ${result.noteId}` : `저장 실패: ${result.error}`);
   });
 
-  // 텍스트
+  // 텍스트 테스트
   document.getElementById('testTextBtn').addEventListener('click', async () => {
+    const mode        = document.getElementById('promptMode').value;
     const promptTitle = document.getElementById('promptSelect').value;
+    const customPrompt= document.getElementById('customPrompt').value.trim();
     const content     = document.getElementById('textContent').value.trim();
-    if (!promptTitle) { alert('프롬프트를 선택해주세요'); return; }
-    if (!content)     { alert('텍스트를 입력해주세요'); return; }
+    const maxTokens   = Number(document.getElementById('maxTokens').value || vllmApiMaxTokens);
+    const temperature = Number(document.getElementById('temperature').value || vllmApiTemperature);
 
+    if (!content) { alert('텍스트를 입력해주세요'); return; }
+    if (mode === 'db' && !promptTitle) { alert('DB 프롬프트를 선택해주세요'); return; }
+    if (mode === 'custom' && !customPrompt) { alert('커스텀 프롬프트를 입력해주세요'); return; }
+
+    const body = { promptMode: mode, promptTitle, customPrompt, content, maxTokens, temperature };
     const res  = await fetch('/test/llm/text', {
       method: 'POST',
-      headers: {
-        'Content-Type':'application/json;charset=UTF-8',
-        [csrfHeader]: csrfToken
-      },
-      body: JSON.stringify({ promptTitle, content, max_tokens: vllmApiMaxTokens, temperature: vllmApiTemperature })
+      headers: { 'Content-Type':'application/json;charset=UTF-8', [csrfHeader]: csrfToken },
+      body: JSON.stringify(body)
     });
     const json = await res.json();
     if (json.success) {
@@ -118,17 +165,26 @@
     }
   });
 
-  // 파일
+  // 파일 테스트
   document.getElementById('testFileBtn').addEventListener('click', async () => {
+    const mode        = document.getElementById('promptMode').value;
     const promptTitle = document.getElementById('promptSelect').value;
-    const fileInput   = document.getElementById('fileInput');
-    const file        = fileInput.files[0];
-    if (!promptTitle) { alert('프롬프트를 선택해주세요'); return; }
-    if (!file)        { alert('파일을 선택해주세요'); return; }
+    const customPrompt= document.getElementById('customPrompt').value.trim();
+    const file        = document.getElementById('fileInput').files[0];
+    const maxTokens   = Number(document.getElementById('maxTokens').value || vllmApiMaxTokens);
+    const temperature = Number(document.getElementById('temperature').value || vllmApiTemperature);
+
+    if (!file) { alert('파일을 선택해주세요'); return; }
+    if (mode === 'db' && !promptTitle) { alert('DB 프롬프트를 선택해주세요'); return; }
+    if (mode === 'custom' && !customPrompt) { alert('커스텀 프롬프트를 입력해주세요'); return; }
 
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('promptMode', mode);
     formData.append('promptTitle', promptTitle);
+    formData.append('customPrompt', customPrompt);
+    formData.append('maxTokens', maxTokens);
+    formData.append('temperature', temperature);
 
     const res  = await fetch('/test/llm/file', {
       method: 'POST',
