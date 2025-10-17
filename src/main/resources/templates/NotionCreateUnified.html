@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title th:text="${pageTitle} ?: '노션 작성'">노션 작성</title>
+<link rel="stylesheet" th:href="@{/css/header.css}" />
+<link rel="stylesheet" th:href="@{/css/NotionCreateUnified.css}" />
+<link rel="stylesheet" th:href="@{/css/footer.css}" />
+
+  <!-- CSRF -->
+  <meta name="_csrf" th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+
+  <!-- Toast UI Editor / Viewer -->
+
+<link rel="stylesheet"
+	href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
+
+<script
+	src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
+
+</head>
+<body>
+  <!-- ✅ 헤더 프래그먼트 포함 (실제 fragment 이름에 맞게 조정) -->
+  <div th:replace="fragments/header :: siteHeader"></div>
+
+  <main class="nc-container">
+    <!-- 상단 안내 -->
+    <header class="nc-stage-header">
+      <h2>프롬프트 선택 · 예시 확인 · 입력/업로드</h2>
+      <p class="nc-desc">
+        슬라이드는 계속 이동합니다. 각 카드의 <b>체크박스</b>를 켜면 슬라이드가 <b>멈추고</b> 아래 <b>Viewer</b>에 해당 프롬프트의 예시만 표시됩니다.
+        <br/>실제로 사용할 프롬프트는 카드의 <b>“프롬프트 선택”</b> 버튼으로 확정하세요.
+      </p>
+    </header>
+
+    <!-- 🔄 [선택 단계] 프롬프트 슬라이드 + 예시 Viewer -->
+    <section id="nc-promptStage">
+      <div class="nc-slider-wrapper" style="margin-bottom:12px;">
+        <div class="nc-slide-container">
+          <div id="nc-buttonContainer"></div>
+          <button class="nc-arrow nc-left" aria-label="이전">‹</button>
+          <button class="nc-arrow nc-right" aria-label="다음">›</button>
+        </div>
+      </div>
+
+      <div class="nc-prompt-example-viewer">
+        <div class="nc-viewer-header">
+          <label class="nc-viewer-title">프롬프트 예시</label>
+          <span class="nc-badge nc-badge-readonly">이 예시는 편집 불가</span>
+        </div>
+        <div id="nc-promptExampleViewer" class="nc-viewer-surface" aria-label="프롬프트 예시 읽기 전용"></div>
+        <p class="nc-desc">
+          <b>현재:</b> 프롬프트가 여기에 표시됩니다. 카드의 체크박스를 켜면 선택 프롬프트의 예시만 표시되고 슬라이드가 멈춥니다.
+        </p>
+      </div>
+    </section>
+
+    <!-- ✍️ [입력 단계] 프롬프트 확정 후 — 슬라이드/Viewer 숨김, 상단에 ‘돌아가기’ -->
+    <section id="nc-inputStage" style="display:none;">
+      <div class="nc-stage-header" style="margin-bottom:12px;">
+        <button id="nc-btnBack" class="nc-btn nc-btn-back">← 프롬프트 선택으로 돌아가기</button>
+        <div id="nc-selectedPromptName" class="nc-selected-name">선택한 프롬프트: (없음)</div>
+      </div>
+
+      <!-- 제목 -->
+      <div style="margin-bottom:8px;">
+        <label for="nc-ResultTitle">제목</label>
+        <input id="nc-ResultTitle" type="text" class="nc-btn" style="width:100%; text-align:left;" placeholder="제목을 입력하세요"/>
+      </div>
+
+      <!-- 작성용 Toast Editor -->
+      <div class="nc-text-input">
+        <label>입력/편집 (Toast UI Editor)</label>
+        <div id="nc-editor"></div>
+        <div class="nc-counters">
+          <span>글자수: <b id="nc-charCount">0</b></span>
+          <span>토큰(추정): <b id="nc-tokenCount">0</b></span>
+          <span id="nc-lengthHint" class="nc-hint"></span>
+        </div>
+      </div>
+
+      <!-- 파일 업로드 -->
+      <div class="nc-file-input" style="margin-top:12px;">
+        <label for="nc-fileInput">또는 파일 업로드</label>
+        <input type="file" id="nc-fileInput"/>
+        <div id="nc-filePreview" class="nc-preview"></div>
+        <div id="nc-preMsg" class="nc-preview" style="margin-top:4px;"></div>
+        <button id="nc-file-upload" class="nc-btn">업로드</button>
+      </div>
+
+      <!-- 액션 -->
+      <div class="nc-actions">
+        <button id="nc-temsetBtn" class="nc-btn nc-primary" disabled>요약하기</button>
+        <label>요약 안하고 저장할 경우 입력내용이 바로 저장됩니다.</label>
+        <button id="nc-saveBtn" class="nc-btn nc-secondary" disabled>저장하기</button>
+      </div>
+
+      <!-- 결과 -->
+      <div id="nc-resultBox" class="nc-result-box"></div>
+    </section>
+
+    <!-- 로딩 오버레이 -->
+    <div id="nc-loadingOverlay">요약 중...</div>
+  </main>
+
+  <!-- ✅ 푸터 프래그먼트 포함 (실제 fragment 이름에 맞게 조정) -->
+  <div th:replace="fragments/footer :: siteFooter"></div>
+
+  <!-- 서버 프롬프트 목록 -->
+	<script th:inline="javascript">
+		window.prompts = /*[[${prompts}]]*/[];
+	</script>
+	<script th:src="@{/js/NotionCreateUnified.js}"></script>
+</body>
+</html>

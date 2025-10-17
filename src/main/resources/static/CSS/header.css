@@ -91,7 +91,7 @@ body {
 .out-user-name{
 	color:white;
 	font-size:15px;
-	width: 350px;
+	width: 200px;
     display: flex;
     justify-content: end;
 }
