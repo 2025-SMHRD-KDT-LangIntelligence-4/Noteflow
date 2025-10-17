@@ -107,33 +107,46 @@ public class FileStorageService {
 		String uuid = UUID.randomUUID().toString();
 		return uuid + ext;
 	}
-
 	public String storeTextAsFile(String filename, String content, Long userIdx, Long folderId) throws IOException {
-		if (filename == null || filename.isBlank())
-			filename = "note.txt";
-		if (!filename.contains("."))
-			filename += ".md"; // 기본 md
-		byte[] bytes = content == null ? new byte[0] : content.getBytes(StandardCharsets.UTF_8);
+	    return storeTextAsFile(filename, content, userIdx, folderId == null ? null : String.valueOf(folderId));
+	}
 
-		Document metadata = new Document().append("originalFilename", filename).append("mimeType", "text/markdown")
-				.append("size", bytes.length)
-				.append("uploadedAt", Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()))
-				.append("uploaderIdx", userIdx);
+	public String storeTextAsFile(String filename, String content, Long userIdx, String folderId) throws IOException {
+	    if (filename == null || filename.isBlank())
+	        filename = "note.txt";
+	    if (!filename.contains("."))
+	        filename += ".md"; // 기본 md
+	    byte[] bytes = content == null ? new byte[0] : content.getBytes(StandardCharsets.UTF_8);
 
-		GridFSUploadOptions options = new GridFSUploadOptions().metadata(metadata);
-		ObjectId objectId;
-		try (GridFSUploadStream uploadStream = gridFSBucket.openUploadStream(filename, options)) {
-			uploadStream.write(bytes);
-			objectId = uploadStream.getObjectId();
-		}
+	    Document metadata = new Document()
+	        .append("originalFilename", filename)
+	        .append("mimeType", "text/markdown")
+	        .append("size", bytes.length)
+	        .append("uploadedAt", Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()))
+	        .append("uploaderIdx", userIdx);
 
-		FileMetadata meta = FileMetadata.builder().originalName(filename).storedName(filename)
-				.fileSize((long) bytes.length).mimeType("text/markdown").userIdx(userIdx)
-				.folderId(folderId == null ? null : String.valueOf(folderId)).uploadDate(LocalDateTime.now())
-				.gridfsId(objectId.toHexString()).build();
-		fileMetadataRepository.save(meta);
+	    GridFSUploadOptions options = new GridFSUploadOptions().metadata(metadata);
+	    ObjectId objectId;
+	    try (GridFSUploadStream uploadStream = gridFSBucket.openUploadStream(filename, options)) {
+	        uploadStream.write(bytes);
+	        objectId = uploadStream.getObjectId();
+	    }
 
-		return objectId.toHexString();
+	    // folderId는 이미 String 타입이므로 그대로 사용
+	    FileMetadata meta = FileMetadata.builder()
+	        .originalName(filename)
+	        .storedName(filename)
+	        .fileSize((long) bytes.length)
+	        .mimeType("text/markdown")
+	        .userIdx(userIdx)
+	        .folderId(folderId) // String 타입 그대로
+	        .uploadDate(LocalDateTime.now())
+	        .gridfsId(objectId.toHexString())
+	        .build();
+	    
+	    fileMetadataRepository.save(meta);
+
+	    return objectId.toHexString();
 	}
 
 	// ─────────────────────────────────────────────────────────────────

@@ -1,7 +1,10 @@
 package com.smhrd.web.controller;
 
+import com.smhrd.web.entity.FileMetadata;
 import com.smhrd.web.entity.User;
+import com.smhrd.web.repository.FileMetadataRepository;
 import com.smhrd.web.repository.FolderRepository;
+import com.smhrd.web.security.CustomUserDetails;
 import com.smhrd.web.service.FileStorageService;
 import com.smhrd.web.service.FileStorageService.FileInfo;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +32,7 @@ public class FileController {
 
 	private final FileStorageService fileStorageService;
 	private final FolderRepository folderRepository;
+	private final FileMetadataRepository fileMetadataRepository;
 
 // 파일 메타정보로 크기제한
 	@GetMapping("/api/files/preview-meta/{id}")
@@ -139,6 +143,65 @@ public class FileController {
 		String text = fileStorageService.getFilePreview(id, userIdx);
 		return ResponseEntity.ok().contentType(MediaType.TEXT_PLAIN)
 				.body((text == null || text.isBlank()) ? "[안내] 본문 텍스트를 찾지 못했습니다." : text);
+	}
+	
+	// ─────────────────────────────────────────────────────────────────────
+	// 파일 수정
+	// ─────────────────────────────────────────────────────────────────────
+	@PutMapping("/api/files/update/{gridfsId}")
+	public Map<String, Object> updateFileContent(
+	    @PathVariable String gridfsId,
+	    @RequestBody Map<String, String> payload,
+	    Authentication auth
+	) {
+	    Map<String, Object> result = new HashMap<>();
+	    try {
+	        Long userIdx = ((CustomUserDetails) auth.getPrincipal()).getUserIdx();
+	        
+	        // 1. 기존 파일 메타데이터 확인
+	        Optional<FileMetadata> metaOpt = fileMetadataRepository.findByGridfsId(gridfsId);
+	        if (metaOpt.isEmpty()) {
+	            result.put("success", false);
+	            result.put("message", "파일을 찾을 수 없습니다.");
+	            return result;
+	        }
+	        
+	        FileMetadata meta = metaOpt.get();
+	        
+	        // 2. 권한 확인
+	        if (!meta.getUserIdx().equals(userIdx)) {
+	            result.put("success", false);
+	            result.put("message", "권한이 없습니다.");
+	            return result;
+	        }
+	        
+	        // 3. 새 내용으로 파일 재생성
+	        String newContent = payload.get("content");
+	        String filename = meta.getOriginalName();
+	        String folderId = meta.getFolderId();
+	        
+	        // 4. 기존 파일 삭제 (GridFS + Metadata)
+	        fileStorageService.deleteFile(gridfsId);
+	        
+	        // 5. 새 파일 업로드 (storeTextAsFile의 folderId는 String이어야 함)
+	        String newGridfsId = fileStorageService.storeTextAsFile(
+	            filename, 
+	            newContent, 
+	            userIdx, 
+	            folderId // String 타입
+	        );
+	        
+	        result.put("success", true);
+	        result.put("newGridfsId", newGridfsId);
+	        result.put("message", "파일이 수정되었습니다.");
+	        
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        result.put("success", false);
+	        result.put("message", "파일 수정 중 오류 발생: " + e.getMessage());
+	    }
+	    
+	    return result;
 	}
 
 	// ─────────────────────────────────────────────────────────────────────
