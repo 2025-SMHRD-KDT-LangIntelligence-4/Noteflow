@@ -107,15 +107,9 @@ public class FileStorageService {
 		String uuid = UUID.randomUUID().toString();
 		return uuid + ext;
 	}
-	public String storeTextAsFile(String filename, String content, Long userIdx, Long folderId) throws IOException {
-	    return storeTextAsFile(filename, content, userIdx, folderId == null ? null : String.valueOf(folderId));
-	}
-
 	public String storeTextAsFile(String filename, String content, Long userIdx, String folderId) throws IOException {
-	    if (filename == null || filename.isBlank())
-	        filename = "note.txt";
-	    if (!filename.contains("."))
-	        filename += ".md"; // 기본 md
+	    if (filename == null || filename.isBlank()) filename = "note.txt";
+	    if (!filename.contains(".")) filename += ".md";
 	    byte[] bytes = content == null ? new byte[0] : content.getBytes(StandardCharsets.UTF_8);
 
 	    Document metadata = new Document()
@@ -132,7 +126,6 @@ public class FileStorageService {
 	        objectId = uploadStream.getObjectId();
 	    }
 
-	    // folderId는 이미 String 타입이므로 그대로 사용
 	    FileMetadata meta = FileMetadata.builder()
 	        .originalName(filename)
 	        .storedName(filename)
@@ -145,8 +138,12 @@ public class FileStorageService {
 	        .build();
 	    
 	    fileMetadataRepository.save(meta);
-
 	    return objectId.toHexString();
+	}
+
+	// Long folderId 버전 (기존 호환성 유지)
+	public String storeTextAsFile(String filename, String content, Long userIdx, Long folderId) throws IOException {
+	    return storeTextAsFile(filename, content, userIdx, folderId == null ? null : String.valueOf(folderId));
 	}
 
 	// ─────────────────────────────────────────────────────────────────

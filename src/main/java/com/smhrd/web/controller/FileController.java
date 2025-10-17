@@ -149,6 +149,7 @@ public class FileController {
 	// 파일 수정
 	// ─────────────────────────────────────────────────────────────────────
 	@PutMapping("/api/files/update/{gridfsId}")
+	@ResponseBody
 	public Map<String, Object> updateFileContent(
 	    @PathVariable String gridfsId,
 	    @RequestBody Map<String, String> payload,
@@ -158,7 +159,6 @@ public class FileController {
 	    try {
 	        Long userIdx = ((CustomUserDetails) auth.getPrincipal()).getUserIdx();
 	        
-	        // 1. 기존 파일 메타데이터 확인
 	        Optional<FileMetadata> metaOpt = fileMetadataRepository.findByGridfsId(gridfsId);
 	        if (metaOpt.isEmpty()) {
 	            result.put("success", false);
@@ -167,40 +167,29 @@ public class FileController {
 	        }
 	        
 	        FileMetadata meta = metaOpt.get();
-	        
-	        // 2. 권한 확인
 	        if (!meta.getUserIdx().equals(userIdx)) {
 	            result.put("success", false);
 	            result.put("message", "권한이 없습니다.");
 	            return result;
 	        }
 	        
-	        // 3. 새 내용으로 파일 재생성
 	        String newContent = payload.get("content");
 	        String filename = meta.getOriginalName();
 	        String folderId = meta.getFolderId();
 	        
-	        // 4. 기존 파일 삭제 (GridFS + Metadata)
+	        // 기존 파일 삭제
 	        fileStorageService.deleteFile(gridfsId);
 	        
-	        // 5. 새 파일 업로드 (storeTextAsFile의 folderId는 String이어야 함)
-	        String newGridfsId = fileStorageService.storeTextAsFile(
-	            filename, 
-	            newContent, 
-	            userIdx, 
-	            folderId // String 타입
-	        );
+	        // 새 파일 업로드
+	        String newGridfsId = fileStorageService.storeTextAsFile(filename, newContent, userIdx, folderId);
 	        
 	        result.put("success", true);
 	        result.put("newGridfsId", newGridfsId);
 	        result.put("message", "파일이 수정되었습니다.");
-	        
 	    } catch (Exception e) {
-	        e.printStackTrace();
 	        result.put("success", false);
-	        result.put("message", "파일 수정 중 오류 발생: " + e.getMessage());
+	        result.put("message", e.getMessage());
 	    }
-	    
 	    return result;
 	}
 

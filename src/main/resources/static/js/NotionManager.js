@@ -693,36 +693,31 @@ function cancelEdit() {
 // ========== 22. 저장 함수 ==========
 async function saveNote() {
     if (!selectedItem || selectedItemType !== 'note') return;
-
+    
     const title = document.getElementById('itemTitle')?.textContent.trim();
-    const summary = document.getElementById('itemContent')?.value;
-    const promptId = selectedItem.promptId || 0; // 필요시
-
+    const content = document.getElementById('itemContent')?.value;
+    
     if (!title) {
         showMessage('제목을 입력해주세요.');
         return;
     }
-
+    
     try {
-        const res = await secureFetch('/notion/save-note', {
-            method: 'POST',
+        const res = await secureFetch(`/notion/${selectedItem.noteIdx}`, { method: 'PUT',
             headers: new Headers({
                 'Content-Type': 'application/json',
                 [csrfHeader]: csrfToken
             }),
-            body: JSON.stringify({
-                title,
-                summary,
-                promptId: String(promptId)
-            })
+            body: JSON.stringify({ title, content })
         });
+        
         const json = await res.json();
         if (json.success) {
-            showMessage('저장 성공: 노트 ID ' + json.noteId);
+            showMessage('저장되었습니다.');
             cancelEdit();
             fetchTreeData();
         } else {
-            showMessage('저장 실패: ' + (json.error || '알 수 없는 오류'));
+            showMessage(json.message || '저장 실패');
         }
     } catch (e) {
         console.error('저장 오류:', e);
@@ -733,7 +728,7 @@ async function saveNote() {
 async function saveFile() {
     if (!selectedItem || selectedItemType !== 'file') return;
     
-    const content = document.getElementById('itemContent').value;
+    const content = document.getElementById('itemContent')?.value;
     
     try {
         const res = await secureFetch(`/api/files/update/${selectedItem.gridfsId}`, {
@@ -745,22 +740,19 @@ async function saveFile() {
             body: JSON.stringify({ content })
         });
         
-        const result = await res.json();
-        if (result.success) {
+        const json = await res.json();
+        if (json.success) {
             showMessage('파일이 저장되었습니다.');
-            
-            // GridFS ID가 바뀌었으므로 업데이트
-            if (result.newGridfsId) {
-                selectedItem.gridfsId = result.newGridfsId;
+            if (json.newGridfsId) {
+                selectedItem.gridfsId = json.newGridfsId;
             }
-            
             cancelEdit();
             fetchTreeData();
         } else {
-            showMessage(result.message || '저장 실패');
+            showMessage(json.message || '저장 실패');
         }
     } catch (e) {
-        console.error('파일 저장 오류:', e);
+        console.error('저장 오류:', e);
         showMessage('저장 중 오류 발생');
     }
 }
@@ -803,7 +795,7 @@ async function saveSpreadsheet() {
 // ========== 23. 다운로드 함수 ==========
 function downloadNote() {
     if (!selectedItem || selectedItemType !== 'note') return;
-    window.open(`/api/notion/download/${selectedItem.noteIdx}`, '_blank');
+    window.open(`/notion/download/${selectedItem.noteIdx}`, '_blank');
 }
 
 function downloadFile() {
