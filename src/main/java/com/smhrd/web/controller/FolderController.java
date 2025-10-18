@@ -1,6 +1,9 @@
 package com.smhrd.web.controller;
 
+import com.smhrd.web.entity.Folder;
+import com.smhrd.web.repository.FolderRepository;
 import com.smhrd.web.repository.UserRepository;
+import com.smhrd.web.security.CustomUserDetails;
 import com.smhrd.web.service.FolderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -9,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/folders")
@@ -17,6 +21,7 @@ public class FolderController {
 
     private final FolderService folderService;
     private final UserRepository userRepository;
+    private final FolderRepository folderRepository;
 
     // --------------------------
     // 폴더 트리 조회
@@ -153,5 +158,93 @@ public class FolderController {
             response.put("message", e.getMessage());
             return ResponseEntity.ok(response);
         }
+    }
+
+    @PutMapping("/api/folders/{folderId}/move")
+    @ResponseBody
+    public Map<String, Object> moveFolder(
+            @PathVariable String folderId,
+            @RequestBody Map<String, String> payload,
+            Authentication auth
+    ) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            Long userIdx = ((CustomUserDetails) auth.getPrincipal()).getUserIdx();
+            String targetFolderId = payload.get("targetFolderId");
+
+            // 폴더 존재 확인
+            Optional<Folder> folderOpt = folderRepository.findById(folderId);
+            if (folderOpt.isEmpty()) {
+                result.put("success", false);
+                result.put("message", "폴더를 찾을 수 없습니다.");
+                return result;
+            }
+
+            Folder folder = folderOpt.get();
+
+            // 권한 확인
+            if (!folder.getUserIdx().equals(userIdx)) {
+                result.put("success", false);
+                result.put("message", "권한이 없습니다.");
+                return result;
+            }
+
+            // 자기 자신으로 이동 불가
+            if (folder.getId().equals(targetFolderId)) {
+                result.put("success", false);
+                result.put("message", "같은 폴더입니다.");
+                return result;
+            }
+
+            // 타겟 폴더가 자신의 하위 폴더인지 확인
+            if (targetFolderId != null && isDescendantFolder(folderId, targetFolderId)) {
+                result.put("success", false);
+                result.put("message", "하위 폴더로 이동할 수 없습니다.");
+                return result;
+            }
+
+            // 타겟 폴더 존재 확인
+            if (targetFolderId != null && !targetFolderId.isEmpty()) {
+                Optional<Folder> targetOpt = folderRepository.findById(targetFolderId);
+                if (targetOpt.isEmpty()) {
+                    result.put("success", false);
+                    result.put("message", "대상 폴더를 찾을 수 없습니다.");
+                    return result;
+                }
+
+                Folder targetFolder = targetOpt.get();
+                if (!targetFolder.getUserIdx().equals(userIdx)) {
+                    result.put("success", false);
+                    result.put("message", "대상 폴더에 권한이 없습니다.");
+                    return result;
+                }
+            }
+
+            // 폴더 이동
+            folder.setParentFolderId(targetFolderId);
+            folderRepository.save(folder);
+
+            result.put("success", true);
+            result.put("message", "폴더가 이동되었습니다.");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            result.put("success", false);
+            result.put("message", "폴더 이동 중 오류 발생: " + e.getMessage());
+        }
+
+        return result;
+    }
+
+    // 순환 참조 방지용
+    private boolean isDescendantFolder(String ancestorId, String descendantId) {
+        if (descendantId == null || descendantId.isEmpty()) return false;
+        if (ancestorId.equals(descendantId)) return true;
+
+        Optional<Folder> folderOpt = folderRepository.findById(descendantId);
+        if (folderOpt.isEmpty()) return false;
+
+        Folder folder = folderOpt.get();
+        return isDescendantFolder(ancestorId, folder.getParentFolderId());
     }
 }

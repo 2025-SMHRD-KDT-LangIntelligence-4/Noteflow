@@ -31,4 +31,6 @@ public interface FileMetadataRepository extends MongoRepository<FileMetadata, St
     @Query(value = "{ 'userIdx': ?0, $or: [ { 'folderId': null }, { 'folderId': { $exists: false } }, { 'folderId': '' } ] }",
            sort  = "{ 'uploadDate': -1 }")
     List<FileMetadata> findRootFilesByUserIdx(Long userIdx);
+
+    List<FileMetadata> findByFolderId(String folderId);
 }
