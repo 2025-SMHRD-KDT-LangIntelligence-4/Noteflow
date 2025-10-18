@@ -2,6 +2,9 @@ package com.smhrd.web.controller;
 
 import com.smhrd.web.entity.Folder;
 import com.smhrd.web.entity.FileMetadata;
+import com.smhrd.web.entity.NoteFolder;
+import com.smhrd.web.repository.NoteFolderRepository;
+import com.smhrd.web.security.CustomUserDetails;
 import com.smhrd.web.service.UnifiedFolderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -12,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/unified")
@@ -19,6 +23,7 @@ import java.util.Map;
 public class UnifiedFolderController {
 
     private final UnifiedFolderService unifiedFolderService;
+    private final NoteFolderRepository noteFolderRepository;
 
     // ─────────────────────────────────────────────────────────────────────
     // 내부 유틸: 인증 체크 + 401 응답 생성
@@ -149,7 +154,93 @@ public class UnifiedFolderController {
             return ResponseEntity.ok(response);
         }
     }
+    @PutMapping("/note-folders/{folderId}/move")
+    @ResponseBody
+    public Map<String, Object> moveNoteFolder(
+            @PathVariable Long folderId,
+            @RequestBody Map<String, Long> payload,
+            Authentication auth
+    ) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            Long userIdx = ((CustomUserDetails) auth.getPrincipal()).getUserIdx();
+            Long targetFolderId = payload.get("targetFolderId");
 
+            // 폴더 존재 확인
+            Optional<NoteFolder> folderOpt = noteFolderRepository.findById(folderId);
+            if (folderOpt.isEmpty()) {
+                result.put("success", false);
+                result.put("message", "폴더를 찾을 수 없습니다.");
+                return result;
+            }
+
+            NoteFolder folder = folderOpt.get();
+
+            // 권한 확인
+            if (!folder.getUserIdx().equals(userIdx)) {
+                result.put("success", false);
+                result.put("message", "권한이 없습니다.");
+                return result;
+            }
+
+            // 자기 자신으로 이동 불가
+            if (folder.getFolderId().equals(targetFolderId)) {
+                result.put("success", false);
+                result.put("message", "같은 폴더입니다.");
+                return result;
+            }
+
+            // 타겟 폴더가 자신의 하위 폴더인지 확인 (순환 참조 방지)
+            if (targetFolderId != null && isDescendant(folderId, targetFolderId)) {
+                result.put("success", false);
+                result.put("message", "하위 폴더로 이동할 수 없습니다.");
+                return result;
+            }
+
+            // 타겟 폴더 존재 확인
+            if (targetFolderId != null) {
+                Optional<NoteFolder> targetOpt = noteFolderRepository.findById(targetFolderId);
+                if (targetOpt.isEmpty()) {
+                    result.put("success", false);
+                    result.put("message", "대상 폴더를 찾을 수 없습니다.");
+                    return result;
+                }
+
+                NoteFolder targetFolder = targetOpt.get();
+                if (!targetFolder.getUserIdx().equals(userIdx)) {
+                    result.put("success", false);
+                    result.put("message", "대상 폴더에 권한이 없습니다.");
+                    return result;
+                }
+            }
+
+            // 폴더 이동
+            folder.setParentFolderId(targetFolderId);
+            noteFolderRepository.save(folder);
+
+            result.put("success", true);
+            result.put("message", "폴더가 이동되었습니다.");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            result.put("success", false);
+            result.put("message", "폴더 이동 중 오류 발생: " + e.getMessage());
+        }
+
+        return result;
+    }
+
+    // 순환 참조 방지용 헬퍼 메소드
+    private boolean isDescendant(Long ancestorId, Long descendantId) {
+        if (descendantId == null) return false;
+        if (ancestorId.equals(descendantId)) return true;
+
+        Optional<NoteFolder> folderOpt = noteFolderRepository.findById(descendantId);
+        if (folderOpt.isEmpty()) return false;
+
+        NoteFolder folder = folderOpt.get();
+        return isDescendant(ancestorId, folder.getParentFolderId());
+    }
     @PutMapping("/notes/folder/{folderId}/rename")
     public ResponseEntity<Map<String, Object>> renameNoteFolder(
             @PathVariable("folderId") Long folderId,

@@ -9,14 +9,13 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
-
 @Table(
         name = "note_folders",
         uniqueConstraints = @UniqueConstraint(
                 name = "uq_note_folder_user_parent_name",
                 columnNames = {"user_idx", "parent_folder_id", "folder_name"}
-        ))
-
+        )
+)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -32,16 +31,18 @@ public class NoteFolder {
     private Long userIdx;
 
     @Column(name = "parent_folder_id")
-    private Long parentFolderId; // NULL = 루트
+    private Long parentFolderId;
 
     @Column(name = "folder_name", nullable = false, length = 255)
     private String folderName;
 
     @Column(name = "sort_order")
-    private Integer sortOrder;
+    @Builder.Default  // ✅ 추가
+    private Integer sortOrder = 0;
 
     @Column(name = "status", length = 20)
-    private String status;
+    @Builder.Default  // ✅ 추가
+    private String status = "ACTIVE";
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -53,6 +54,8 @@ public class NoteFolder {
     protected void onCreate() {
         if (createdAt == null) createdAt = LocalDateTime.now();
         if (updatedAt == null) updatedAt = LocalDateTime.now();
+        if (sortOrder == null) sortOrder = 0;  // ✅ 안전장치
+        if (status == null) status = "ACTIVE";  // ✅ 안전장치
     }
 
     @PreUpdate
@@ -60,7 +63,6 @@ public class NoteFolder {
         updatedAt = LocalDateTime.now();
     }
 
-    // 트리 응답 임시 필드 
     @Transient
     private List<NoteFolder> subfolders = new ArrayList<>();
     @Transient

@@ -1,7 +1,9 @@
 @charset "UTF-8";
+
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
 /* ========== 기본 레이아웃 (header/footer 고려) ========== */
+
 body {
     font-family: 'Pretendard', sans-serif;
     background: #f7f7f7;
@@ -29,6 +31,7 @@ body {
 }
 
 /* ========== 왼쪽: 노트/파일 리스트 ========== */
+
 .notion-list-container {
     background-color: white;
     width: 360px;
@@ -71,22 +74,57 @@ body {
     background-color: #f5f5f5;
 }
 
-/* 검색바 */
-.search-bar {
-    width: 100%;
-    height: 40px;
-    border-radius: 10px;
-    border: 2px solid #c7c7c7;
-    padding: 0 15px;
+/* 검색창 스타일 */
+.search-container {
+    position: relative;
     margin-bottom: 15px;
+}
+
+#searchInput {
+    width: 100%;
+    padding: 10px 40px 10px 15px;
+    border: 2px solid #c7c7c7;
+    border-radius: 10px;
     font-size: 14px;
     outline: none;
-    transition: border-color 0.3s ease;
+    transition: all 0.3s;
     box-sizing: border-box;
 }
 
-.search-bar:focus {
+#searchInput:focus {
     border-color: #2196F3;
+    box-shadow: 0 0 8px rgba(33, 150, 243, 0.2);
+}
+
+.clear-search-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #999;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    transition: background 0.2s;
+    display: none;
+}
+
+.clear-search-btn:hover {
+    background: #666;
+}
+
+/* 검색 결과 없음 메시지 */
+.empty-message {
+    text-align: center;
+    color: #999;
+    padding: 40px 20px;
+    font-size: 16px;
+    line-height: 1.6;
 }
 
 /* 관리 버튼 */
@@ -121,6 +159,7 @@ body {
 }
 
 /* ========== 트리 구조 스타일 ========== */
+
 .tree-container {
     position: relative;
 }
@@ -197,7 +236,8 @@ body {
 /* 폴더/파일 이름 */
 .folder-name,
 .file-name,
-.note-name {
+.note-name,
+.note-title {
     flex: 1;
     font-size: 13px;
     color: #495057;
@@ -285,9 +325,27 @@ body {
 .note-item.dragging {
     opacity: 0.5;
     transform: rotate(2deg);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* 체크박스 스타일 */
+.item-checkbox {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-right: 8px;
+    accent-color: #2196F3;
+}
+
+.multi-selected {
+    background-color: #e3f2fd !important;
+    border-left: 3px solid #2196F3 !important;
+    font-weight: 600;
 }
 
 /* ========== 오른쪽: 컨텐츠 영역 ========== */
+
 .notion-content-container {
     background-color: white;
     width: 830px;
@@ -429,7 +487,31 @@ body {
     flex-direction: column;
     min-height: 400px;
 }
+/*  Textarea 스타일 */
+#itemContent {
+    width: 100%;
+    height: 70vh;
+    padding: 20px;
+    border: 2px solid #c7c7c7;
+    border-radius: 20px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    resize: none;
+    box-sizing: border-box;
 
+    /* ✅ 긴 텍스트 처리 */
+    white-space: pre-wrap !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+}
+
+#itemContent.readonly {
+    background-color: #f8f9fa;
+    cursor: default;
+}
 /* 텍스트 에디터 */
 .notion-content {
     width: 100%;
@@ -457,25 +539,214 @@ body {
     cursor: default;
 }
 
-/* 스프레드시트 컨테이너 */
-#spreadsheetContainer {
+/* Toast UI Editor 영역  */
+#editorArea {
+    display: none;
     width: 100%;
-    height: 100%;
-    border: 2px solid #c7c7c7;
-    border-radius: 20px;
+    height: 70vh;
+    margin-top: 20px;
     overflow: hidden;
 }
 
+.toastui-editor-defaultUI {
+    min-height: 70vh !important;
+    border: 2px solid #c7c7c7;
+    border-radius: 20px;
+}
+
+/* 에디터 기본 스타일 */
+.toastui-editor-contents {
+    font-size: 16px !important;
+    line-height: 1.8;
+    padding: 20px;
+    background-color: white;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    white-space: pre-wrap !important;
+}
+/*  코드 블록 내부 텍스트 줄바꿈 */
+.toastui-editor-contents pre {
+    white-space: pre-wrap !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    max-width: 100%;
+    overflow-x: auto;
+}
+.toastui-editor-contents code {
+    white-space: pre-wrap !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+}
+.toastui-editor .ProseMirror {
+    background-color: white !important;
+    cursor: text !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    white-space: pre-wrap !important;
+}
+
+/* 읽기 전용 모드 스타일 */
+.readonly-editor .toastui-editor-toolbar {
+    pointer-events: none;
+    opacity: 0.5;
+}
+
+.readonly-editor .toastui-editor-contents {
+    background-color: #f8f9fa !important;
+}
+
+.readonly-editor .toastui-editor .ProseMirror {
+    background-color: #f8f9fa !important;
+    cursor: default !important;
+}
 /* 미리보기 영역 */
-.preview-area {
+#previewArea {
+    display: none;
     width: 100%;
-    height: 100%;
+    height: 70vh;
     border: 2px solid #c7c7c7;
     border-radius: 20px;
     overflow: hidden;
     background: white;
 }
 
+#pdfPreview,
+#imagePreview {
+    width: 100%;
+    height: 100%;
+    border: none;
+    object-fit: contain;
+}
+
+/* 스프레드시트 영역 */
+#spreadsheetContainer,
+#spreadsheetArea {
+    display: none;
+    width: 100%;
+    height: 100%;
+    border: 2px solid #c7c7c7;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+/* Excel 컨테이너 */
+.excel-container {
+    width: 100%;
+    height: 70vh;
+    border: 2px solid #c7c7c7;
+    border-radius: 20px;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* 시트 탭 컨테이너 */
+.sheet-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 10px;
+    background: #f0f0f0;
+    border-bottom: 2px solid #ddd;
+    overflow-x: auto;
+    flex-shrink: 0;
+}
+
+/* 시트 탭 버튼 */
+.sheet-tab {
+    padding: 8px 16px;
+    background: #e0e0e0;
+    border: 1px solid #ccc;
+    border-radius: 4px 4px 0 0;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    border-bottom: none;
+}
+
+.sheet-tab:hover {
+    background: #d0d0d0;
+}
+
+.sheet-tab.active {
+    background: #fff;
+    border-bottom: 2px solid #fff;
+    color: #2196F3;
+    font-weight: 600;
+    margin-bottom: -2px;
+}
+
+/* 시트 내용 영역 */
+.sheet-content {
+    flex: 1;
+    padding: 10px 20px;
+    background: #fff;
+    overflow: auto;
+}
+
+/* Excel 테이블 스타일 */
+.sheet-content table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 12px;
+}
+
+.sheet-content table td,
+.sheet-content table th {
+    border: 1px solid #ddd;
+    padding: 6px 8px;
+    text-align: left;
+}
+
+.sheet-content table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.sheet-content table tr:hover {
+    background-color: #f0f7ff;
+}
+
+.sheet-content table th {
+    background-color: #4CAF50;
+    color: white;
+    font-weight: bold;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+/* ========== CSV 테이블 스타일 ========== */
+.csv-table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 10px 0;
+}
+
+.csv-table th,
+.csv-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+    font-size: 13px;
+}
+
+.csv-table tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+.csv-table th {
+    background-color: #4CAF50;
+    color: white;
+    font-weight: bold;
+    position: sticky;
+    top: 0;
+}
+
+.csv-table tr:hover {
+    background-color: #e3f2fd;
+}
 /* Welcome 메시지 */
 .welcome-message {
     text-align: center;
@@ -494,121 +765,48 @@ body {
     line-height: 1.6;
 }
 
-/* ========== 검색 모달 ========== */
-.search-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 9999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+/* ========== 애니메이션 ========== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
-.search-modal-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
+.notion-list > * {
+    animation: fadeIn 0.3s ease-out;
 }
 
-.search-modal-content {
-    position: relative;
-    background: white;
-    border-radius: 12px;
-    width: 90%;
-    max-width: 600px;
-    max-height: 80vh;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+/* ========== 스크롤바 스타일 ========== */
+.notion-list::-webkit-scrollbar,
+.sheet-content::-webkit-scrollbar,
+.notion-content::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
 }
 
-.search-modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px;
-    border-bottom: 1px solid #e0e0e0;
+.notion-list::-webkit-scrollbar-track,
+.sheet-content::-webkit-scrollbar-track,
+.notion-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
 }
 
-.search-modal-header h3 {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 600;
+.notion-list::-webkit-scrollbar-thumb,
+.sheet-content::-webkit-scrollbar-thumb,
+.notion-content::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
 }
 
-.close-btn {
-    background: none;
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-    color: #666;
-    padding: 0;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: all 0.2s;
-}
-
-.close-btn:hover {
-    background: #f0f0f0;
-    color: #333;
-}
-
-.search-modal-body {
-    padding: 20px;
-    overflow-y: auto;
-    flex: 1;
-}
-
-.search-result-item {
-    padding: 12px;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    margin-bottom: 10px;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.search-result-item:hover {
-    background: #f5f5f5;
-    border-color: #2196F3;
-    transform: translateX(4px);
-}
-
-.search-result-icon {
-    font-size: 24px;
-}
-
-.search-result-info {
-    flex: 1;
-}
-
-.search-result-name {
-    font-weight: 600;
-    margin-bottom: 4px;
-}
-
-.search-result-path {
-    font-size: 12px;
-    color: #666;
-}
-
-.search-no-results {
-    text-align: center;
-    padding: 40px 20px;
-    color: #999;
+.notion-list::-webkit-scrollbar-thumb:hover,
+.sheet-content::-webkit-scrollbar-thumb:hover,
+.notion-content::-webkit-scrollbar-thumb:hover {
+    background: #555;
 }
 
 /* ========== 반응형 ========== */
@@ -624,3 +822,51 @@ body {
         max-width: 800px;
     }
 }
+
+@media (max-width: 768px) {
+    .search-container {
+        margin-bottom: 10px;
+    }
+
+    #searchInput {
+        font-size: 13px;
+        padding: 8px 35px 8px 12px;
+    }
+
+    .clear-search-btn {
+        width: 20px;
+        height: 20px;
+        font-size: 12px;
+    }
+
+    .excel-container,
+    #editorArea,
+    #previewArea {
+        height: 60vh;
+    }
+}
+/* 루트 드롭존 */
+
+.root-drop-zone {
+    border: 2px dashed #bbb; border-radius: 8px;
+    padding: 10px 12px; margin: 8px 12px; color: #666;
+}
+.root-drop-zone.drop-target {
+    border-color: #3b82f6; background: #eff6ff; color: #1d4ed8;
+}
+
+.root-drop-zone.active {
+    display: block;  /* 드래그 중에만 표시 */
+}
+
+.root-drop-zone.drop-target {
+    border-color: #4a90e2;
+    background: #e3f2fd;
+}
+
+.root-drop-hint {
+    color: #999;
+    font-size: 14px;
+}
+
+

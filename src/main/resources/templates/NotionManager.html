@@ -1,102 +1,90 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="_csrf" th:content="${_csrf.token}" />
-    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
-    <title>노션 | 파일 관리</title>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title>정리본 및 파일 관리</title>
     <link rel="stylesheet" th:href="@{/css/header.css}" />
-    <link rel="stylesheet" th:href="@{/css/notionmanager.css}" />
     <link rel="stylesheet" th:href="@{/css/footer.css}" />
-    
-    <!-- HandsOnTable for Excel/CSV editing -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.js"></script>
+    <link rel="stylesheet" th:href="@{/css/notionmanager.css}">
+
+    <!-- ✅ Toast UI Editor CDN 추가 -->
+    <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
+    <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
+
+    <!-- ✅ SheetJS CDN 추가 (Excel 파일용) -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
-<div th:replace="~{fragments/header :: siteHeader}"></div>
+<div th:replace="~{fragments/header :: header}"></div>
 
 <div class="page-wrapper">
     <div class="location-container">
-        <!-- 왼쪽: 노트/파일 리스트 -->
+        <!-- 왼쪽: 리스트 -->
         <div class="notion-list-container">
-            <!-- 탭 -->
             <div class="tab-container">
                 <button class="tab-button active" data-tab="notes">📝 정리본</button>
                 <button class="tab-button" data-tab="files">📁 원본파일</button>
             </div>
 
-            <!-- 검색바 -->
-            <input type="text" class="search-bar" id="searchInput" placeholder="파일이나 노트를 검색하세요...">
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="🔍 검색어 입력..." />
+                <button id="clearSearchBtn" class="clear-search-btn" style="display: none;">✕</button>
+            </div>
 
-            <!-- 관리 버튼들 -->
             <div class="management-buttons">
-                <button id="createFolderBtn" title="새 폴더">📁 폴더</button>
-                <button id="uploadBtn" title="파일 업로드">📤 업로드</button>
+                <button id="createFolderBtn">📁 폴더</button>
+                <button id="uploadBtn">📤 업로드</button>
             </div>
 
-            <!-- 노트/파일 리스트 (트리 구조) -->
-            <div class="notion-list" id="itemList">
-                <div class="welcome-message">
-                    <p>로딩 중...</p>
-                </div>
+            <div id="rootDropZone" class="root-drop-zone">
+                여기에 드롭하면 <strong>루트</strong>로 이동
             </div>
+
+            <div id="itemList" class="notion-list">로딩 중...</div>
         </div>
 
-        <!-- 오른쪽: 컨텐츠 미리보기 -->
+        <!-- 오른쪽: 컨텐츠 -->
         <div class="notion-content-container">
-            <!-- 제목 -->
-            <div class="notion-title readonly" id="itemTitle" contenteditable="false">
+            <div id="itemTitle" class="notion-title">
                 파일이나 노트를 선택해주세요
             </div>
 
-            <!-- 버튼 컨테이너 -->
-            <div class="button-container" id="buttonContainer">
-                <!-- 버튼들이 동적으로 여기 추가됨 -->
-            </div>
+            <div id="buttonContainer" class="button-container"></div>
 
-            <!-- 컨텐츠 영역 -->
             <div class="content-area">
-                <!-- 텍스트 에디터 -->
-                <textarea class="notion-content readonly" id="itemContent" readonly 
-                          placeholder="선택된 항목의 내용이 여기에 표시됩니다"></textarea>
-                
-                <!-- 스프레드시트 편집기 -->
-                <div id="spreadsheetContainer" style="display: none;"></div>
-                
-                <!-- PDF/이미지 미리보기 -->
-                <div class="preview-area" id="previewArea" style="display: none;">
-                    <iframe id="pdfPreview" style="width:100%; height:100%; border:none;"></iframe>
-                    <img id="imagePreview" style="max-width:100%; height:auto; display:none;" alt="이미지 미리보기" />
+                <div id="welcomeMessage" class="welcome-message">
+                    <h2>환영합니다!</h2>
+                    <p>왼쪽에서 파일이나 정리본을 선택하시면<br>내용을 확인하고 편집할 수 있습니다</p>
                 </div>
-            </div>
 
-            <div class="welcome-message" id="welcomeMessage">
-                <p>왼쪽에서 파일이나 정리본을 선택하시면<br>내용을 확인하고 편집할 수 있습니다</p>
+                <!-- ✅ 텍스트 편집기 (기본) -->
+                <textarea id="itemContent" class="notion-content" style="display: none;"></textarea>
+
+                <!-- ✅ Toast UI Editor 영역 -->
+                <div id="editorArea" style="display: none;"></div>
+
+                <!-- ✅ 미리보기 영역 (PDF, 이미지) -->
+                <div id="previewArea" style="display: none;">
+                    <iframe id="pdfPreview" style="display: none; width: 100%; height: 100%; border: none;"></iframe>
+                    <img id="imagePreview" style="display: none; width: 100%; height: 100%; object-fit: contain;" alt="미리보기">
+                </div>
+
+                <!-- ✅ 스프레드시트 영역 (Excel, CSV) -->
+                <div id="spreadsheetArea" style="display: none;"></div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- 검색 결과 모달 -->
-<div class="search-modal" id="searchModal" style="display: none;">
-    <div class="search-modal-overlay" onclick="closeSearchModal()"></div>
-    <div class="search-modal-content">
-        <div class="search-modal-header">
-            <h3>검색 결과</h3>
-            <button class="close-btn" onclick="closeSearchModal()">✕</button>
-        </div>
-        <div class="search-modal-body" id="searchResultsContainer">
-            <!-- 검색 결과가 여기 표시됨 -->
-        </div>
-    </div>
-</div>
 
-<!-- 파일 입력 (숨김) -->
-<input type="file" id="fileInput" style="display: none;" accept="*/*" multiple>
+<input type="file" id="fileInput" style="display: none;">
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+
 
 <script th:src="@{/js/NotionManager.js}"></script>
-
-<div th:replace="~{fragments/footer :: siteFooter}"></div>
 </body>
 </html>

@@ -142,7 +142,11 @@
 	        <artifactId>poi-scratchpad</artifactId>
 	        <version>5.4.0</version>
 	    </dependency>
-	
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi</artifactId>
+			<version>5.2.5</version>
+		</dependency>
 	    <!-- Apache PDFBox  -->
 	    <dependency>
 	        <groupId>org.apache.pdfbox</groupId>

@@ -120,11 +120,18 @@ public class UnifiedFolderService {
         if (noteFolderRepository.existsByUserIdxAndFolderNameAndParentFolderId(userIdx, folderName, parentFolderId)) {
             throw new IllegalArgumentException("같은 이름의 폴더가 이미 존재합니다.");
         }
+
+        // ✅ sortOrder 기본값 추가
         NoteFolder folder = NoteFolder.builder()
                 .userIdx(userIdx)
                 .folderName(folderName)
                 .parentFolderId(parentFolderId)
+                .sortOrder(0)  // ✅ 필수 추가!
+                .status("ACTIVE")  // ✅ 추가하면 더 좋음
+                .createdAt(java.time.LocalDateTime.now())  // ✅ 추가
+                .updatedAt(java.time.LocalDateTime.now())  // ✅ 추가
                 .build();
+
         return noteFolderRepository.save(folder).getFolderId();
     }
 

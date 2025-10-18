@@ -236,16 +236,53 @@ public class FileStorageService {
 	// ZIP 다운로드 지원
 	// ─────────────────────────────────────────────────────────────────
 	public void writeFilesAsZip(List<String> fileIds, ZipOutputStream zos) throws IOException {
-		for (String fileId : fileIds) {
-			FileInfo fileInfo = previewFile(fileId);
-			if (fileInfo == null)
-				continue;
-			byte[] data = downloadFile(fileId);
-			ZipEntry entry = new ZipEntry(fileInfo.getOriginalName());
-			zos.putNextEntry(entry);
-			zos.write(data);
-			zos.closeEntry();
+		System.out.println("=== writeFilesAsZip 시작 ===");
+		System.out.println("받은 fileIds: " + fileIds);
+
+		if (fileIds == null || fileIds.isEmpty()) {
+			System.out.println("⚠️ fileIds가 비어있습니다!");
+			return;
 		}
+
+		for (String fileId : fileIds) {
+			System.out.println("처리 중인 fileId: " + fileId);
+
+			try {
+				// FileMetadata 조회
+				Optional<FileMetadata> metaOpt = fileMetadataRepository.findById(fileId);
+
+				if (metaOpt.isEmpty()) {
+					System.out.println("  ❌ FileMetadata를 찾을 수 없음: " + fileId);
+					continue;
+				}
+
+				FileMetadata meta = metaOpt.get();
+				System.out.println("  ✅ FileMetadata 찾음: " + meta.getOriginalName());
+				System.out.println("     GridfsId: " + meta.getGridfsId());
+
+				if (meta.getGridfsId() == null) {
+					System.out.println("  ❌ GridfsId가 null입니다!");
+					continue;
+				}
+
+				// GridFS에서 파일 다운로드
+				byte[] fileData = downloadFile(meta.getGridfsId());
+				System.out.println("  ✅ 파일 다운로드 완료, 크기: " + fileData.length + " bytes");
+
+				// ZIP에 추가
+				ZipEntry entry = new ZipEntry(meta.getOriginalName());
+				zos.putNextEntry(entry);
+				zos.write(fileData);
+				zos.closeEntry();
+				System.out.println("  ✅ ZIP에 추가 완료");
+
+			} catch (Exception e) {
+				System.out.println("  ❌ 오류 발생: " + e.getMessage());
+				e.printStackTrace();
+			}
+		}
+
+		System.out.println("=== writeFilesAsZip 완료 ===");
 	}
 
 	// ─────────────────────────────────────────────────────────────────
