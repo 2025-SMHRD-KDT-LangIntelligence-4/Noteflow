@@ -29,4 +29,6 @@ public interface NoteFolderRepository extends JpaRepository<NoteFolder, Long> {
     void deleteByFolderIdAndUserIdx(Long folderId, Long userIdx);
 
     Optional<NoteFolder> findRootByUserIdxAndFolderName(Long userIdx, String folderName);
+
+    <T> Optional<T> findByUserIdxAndFolderName(Long userIdx, String folderName);
 }

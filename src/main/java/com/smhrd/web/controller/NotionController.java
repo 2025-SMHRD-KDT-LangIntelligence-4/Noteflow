@@ -1,18 +1,13 @@
 package com.smhrd.web.controller;
 
 import com.smhrd.web.dto.CategoryResult;
-import com.smhrd.web.entity.Note;
-import com.smhrd.web.entity.NoteTag;
-import com.smhrd.web.entity.Prompt;
-import com.smhrd.web.entity.Tag;
-import com.smhrd.web.repository.NoteRepository;
-import com.smhrd.web.repository.NoteTagRepository;
-import com.smhrd.web.repository.PromptRepository;
-import com.smhrd.web.repository.TagRepository;
+import com.smhrd.web.entity.*;
+import com.smhrd.web.repository.*;
 import com.smhrd.web.security.CustomUserDetails;
 import com.smhrd.web.service.*;
 
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -35,6 +30,7 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -56,6 +52,9 @@ public class NotionController {
 
     private final TagRepository tagRepository;
     private final NoteTagRepository noteTagRepository;
+    private final FileMetadataRepository fileMetadataRepository;
+    private final FolderRepository folderRepository;
+    private final NoteFolderRepository noteFolderRepository;
 
 
     // ------------------------------------------------------------
@@ -229,88 +228,204 @@ public class NotionController {
     }
 
 
-    /**
-     * 노트 저장 (자동 카테고리 추출 + 폴더 생성)
-     * POST /notion/save-note
-     */
     @PostMapping("/save-note")
     @Transactional
     @ResponseBody
     public ResponseEntity<Map<String, Object>> saveNote(
             @RequestBody Map<String, String> req,
-            Authentication auth
-    ) {
+            Authentication auth,
+            HttpSession session) {
+
         Long userIdx = ((CustomUserDetails) auth.getPrincipal()).getUserIdx();
-        String title = req.getOrDefault("title", "제목없음");
+        String title = req.getOrDefault("title", "");
         String summary = req.getOrDefault("summary", "");
+        String originalContent = req.getOrDefault("originalContent", "");
         Long promptId = Long.parseLong(req.getOrDefault("promptId", "0"));
+        String gridfsId = req.get("gridfsId");
 
         Map<String, Object> res = new HashMap<>();
+
         try {
-            // 1) 노트 저장
+            // 1. 노트 생성 (요약본은 MySQL Note 테이블에 저장)
             Long noteId = notionContentService.saveNote(userIdx, title, summary, promptId);
+            log.info("✅ 노트 생성 완료: noteId={}", noteId);
 
-            // 2) ✅ 키워드/카테고리 자동 추출 (공개 + 본인 카테고리 기준)
+            // 2. 키워드 추출 및 분류
             CategoryResult categoryResult = keywordExtractionService
-                    .extractAndClassifyWithRAG(title, summary, userIdx);  // ✅ userIdx 전달
+                    .extractAndClassifyWithRAG(title, summary, userIdx);
 
-            // 키워드 추출 (최대 5개)
             List<String> keywords = new ArrayList<>(categoryResult.getExtractedKeywords());
             if (keywords.size() > 5) {
                 keywords = keywords.subList(0, 5);
             }
+            log.info("✅ 키워드 추출: {}", keywords);
 
-            // 3) ✅ 폴더 생성/조회 (AutoFolderService가 대/중/소 추출)
-            Long folderId = null;
+            // 3. 폴더 생성 (MySQL + MongoDB)
+            Long noteFolderId = null;
+            String mongoFolderId = null;
+            String categoryPath = "미분류";
+
             if (categoryResult.hasCategory()) {
-                folderId = autoFolderService.createOrFindFolder(userIdx, categoryResult);
+                // MySQL 폴더 생성
+                noteFolderId = autoFolderService.createOrFindFolder(userIdx, categoryResult);
 
-                if (folderId != null) {
-                    noteRepository.updateNoteFolderId(noteId, folderId);
-                    log.info("노트 {} → 폴더 {} 연결", noteId, folderId);
+                // MongoDB 폴더 생성 (계층 구조)
+                mongoFolderId = getOrCreateMongoFolder(userIdx, categoryResult);
+
+                categoryPath = autoFolderService.generateFolderPath(categoryResult);
+                log.info("✅ 자동 분류 폴더: mysql={}, mongo={}", noteFolderId, mongoFolderId);
+            }
+
+            // 4. 원본 파일 처리
+            String originalGridId = null;
+
+            if (gridfsId != null && !gridfsId.isBlank()) {
+                // ✅ 업로드한 파일: 카테고리 폴더로 이동
+                originalGridId = gridfsId;
+
+                if (mongoFolderId != null) {
+                    try {
+                        Optional<FileMetadata> fileMeta = fileMetadataRepository.findById(gridfsId);
+                        if (fileMeta.isPresent()) {
+                            FileMetadata file = fileMeta.get();
+                            file.setFolderId(mongoFolderId);
+                            fileMetadataRepository.save(file);
+                            log.info("✅ 업로드 파일 폴더 이동: {}", mongoFolderId);
+                        }
+                    } catch (Exception e) {
+                        log.warn("⚠️ 파일 이동 실패: {}", e.getMessage());
+                    }
+                }
+
+            } else if (originalContent != null && !originalContent.isBlank()) {
+                // ✅ 텍스트 작성: 원본 텍스트를 카테고리 폴더에 저장
+                try {
+                    originalGridId = fileStorageService.storeTextAsFile(
+                            title + "_원본.md",
+                            originalContent,
+                            userIdx,
+                            mongoFolderId  // ✅ 카테고리 폴더에 저장
+                    );
+                    log.info("✅ 원본 텍스트 GridFS 저장: {} (폴더: {})", originalGridId, mongoFolderId);
+                } catch (Exception e) {
+                    log.warn("⚠️ 원본 저장 실패: {}", e.getMessage());
                 }
             }
 
-            // 4) 원본 파일 저장 (GridFS)
-            String sourceGridId = fileStorageService.storeTextAsFile(
-                    title + ".md",
-                    summary,
-                    userIdx,
-                    folderId
-            );
-            noteRepository.updateNoteSourceId(noteId, sourceGridId);
+            // 5. 노트 폴더 연결
+            if (noteFolderId != null) {
+                noteRepository.updateNoteFolderId(noteId, noteFolderId);
+            }
 
-            // 5) 응답
+            // 6. 노트에 원본 파일 ID 연결
+            if (originalGridId != null) {
+                noteRepository.updateNoteSourceId(noteId, originalGridId);
+            }
+
+            // 7. 태그 저장
+            notionContentService.syncNoteTags(noteRepository.findById(noteId).get(), keywords);
+
+            // 8. Session에 저장
+            session.setAttribute("savedNoteId", noteId);
+            session.setAttribute("savedTitle", title);
+            session.setAttribute("savedCreatedAt", LocalDateTime.now().format(
+                    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+            ));
+            session.setAttribute("savedKeywords", String.join(", ", keywords));
+            session.setAttribute("savedCategoryPath", categoryPath);
+            session.setAttribute("savedFolderId", noteFolderId);
+
             res.put("success", true);
             res.put("message", "노트가 저장되었습니다.");
             res.put("noteId", noteId);
             res.put("keywords", keywords);
-            res.put("categoryPath", categoryResult.generateFolderPath());  // ✅ 개선
-            res.put("folderId", folderId);
+            res.put("categoryPath", categoryPath);
+            res.put("folderId", noteFolderId);
 
             return ResponseEntity.ok(res);
-
         } catch (Exception e) {
-            log.error("노트 저장 오류: {}", e.getMessage(), e);
+            log.error("❌ 노트 저장 실패: {}", e.getMessage(), e);
             res.put("success", false);
             res.put("error", e.getMessage());
             return ResponseEntity.status(500).body(res);
         }
     }
 
+    // ✅ MongoDB 폴더 계층적 생성
+    private String getOrCreateMongoFolder(Long userIdx, CategoryResult categoryResult) {
+        String fullPath = autoFolderService.generateFolderPath(categoryResult);
 
+        if (fullPath == null || fullPath.isEmpty()) {
+            return null;
+        }
+
+        // "Spring > 데이터 접근 > Repository" → ["Spring", "데이터 접근", "Repository"]
+        String[] pathParts = fullPath.split(" > ");
+
+        String parentId = null;
+
+        for (String folderName : pathParts) {
+            folderName = folderName.trim();
+            if (folderName.isEmpty()) continue;
+
+            Optional<Folder> existing;
+            if (parentId == null) {
+                existing = folderRepository.findByUserIdxAndFolderNameAndParentFolderIdIsNull(
+                        userIdx, folderName
+                );
+            } else {
+                existing = folderRepository.findByUserIdxAndFolderNameAndParentFolderId(
+                        userIdx, folderName, parentId
+                );
+            }
+
+            if (existing.isPresent()) {
+                parentId = existing.get().getId();
+            } else {
+                Folder newFolder = new Folder();
+                newFolder.setUserIdx(userIdx);
+                newFolder.setFolderName(folderName);
+                newFolder.setParentFolderId(parentId);
+                newFolder.setCreatedAt(LocalDateTime.now());
+
+                parentId = folderRepository.save(newFolder).getId();
+                log.info("✅ MongoDB 폴더 생성: {} (parent={})", folderName, parentId);
+            }
+        }
+
+        return parentId;
+    }
 
     @GetMapping("/complete")
-    public String showCompletePage(Model model, @AuthenticationPrincipal UserDetails userDetails) {
-        model.addAttribute("pageTitle", "저장 완료");
-        if (userDetails != null) {
-            String nickname = ((CustomUserDetails) userDetails).getNickname();
-            model.addAttribute("nickname", nickname);
-            String email = ((CustomUserDetails) userDetails).getEmail();
-            model.addAttribute("email", email);
-        }
+    public String completePage(Model model, HttpSession session) {
+        Long noteId = (Long) session.getAttribute("savedNoteId");
+        String title = (String) session.getAttribute("savedTitle");  // ✅ 추가
+        String createdAt = (String) session.getAttribute("savedCreatedAt");  // ✅ 추가
+        String keywords = (String) session.getAttribute("savedKeywords");
+        String categoryPath = (String) session.getAttribute("savedCategoryPath");
+        Long folderId = (Long) session.getAttribute("savedFolderId");
+
+        model.addAttribute("noteId", noteId);
+        model.addAttribute("title", title);  // ✅ 추가
+        model.addAttribute("createdAt", createdAt);  // ✅ 추가
+        model.addAttribute("keywords", keywords);
+        model.addAttribute("categoryPath", categoryPath);
+        model.addAttribute("folderId", folderId);
+
+        // Session 정리
+        session.removeAttribute("savedNoteId");
+        session.removeAttribute("savedTitle");  // ✅ 추가
+        session.removeAttribute("savedCreatedAt");  // ✅ 추가
+        session.removeAttribute("savedKeywords");
+        session.removeAttribute("savedCategoryPath");
+        session.removeAttribute("savedFolderId");
+
+        log.info("✅ Complete 페이지: noteId={}, title={}, keywords={}", noteId, title, keywords);
+
         return "NotionComplete";
     }
+
+
     @PutMapping("/api/notion/{noteIdx}")
     @ResponseBody
     @Transactional

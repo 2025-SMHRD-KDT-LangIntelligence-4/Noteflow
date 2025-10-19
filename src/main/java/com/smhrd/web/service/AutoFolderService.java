@@ -14,11 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * 자동 폴더 생성 서비스
- * - CategoryResult 기반으로 폴더 계층 생성
- * - 대/중/소 분류를 폴더로 변환
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -26,64 +21,67 @@ public class AutoFolderService {
 
     private final NoteFolderRepository noteFolderRepository;
 
-    /**
-     * CategoryResult를 기반으로 폴더 생성 또는 조회
-     * @param userIdx 사용자 ID
-     * @param categoryResult 카테고리 분류 결과
-     * @return 최종 폴더 ID (대 > 중 > 소의 마지막 레벨)
-     */
     @Transactional
     public Long createOrFindFolder(Long userIdx, CategoryResult categoryResult) {
         if (categoryResult == null || !categoryResult.hasCategory()) {
-            log.warn("CategoryResult가 없거나 카테고리가 설정되지 않음");
+            log.warn("CategoryResult가 비어있습니다.");
             return null;
         }
 
-        // ✅ CategoryResult에서 대/중/소 추출
         List<String> levels = new ArrayList<>();
-
         String large = categoryResult.getLargeCategory();
         String medium = categoryResult.getMediumCategory();
         String small = categoryResult.getSmallCategory();
 
         if (large != null && !large.trim().isEmpty()) {
             levels.add(sanitize(large));
-
-            if (medium != null && !medium.trim().isEmpty()) {
-                levels.add(sanitize(medium));
-
-                if (small != null && !small.trim().isEmpty()) {
-                    levels.add(sanitize(small));
-                }
-            }
+        }
+        if (medium != null && !medium.trim().isEmpty()) {
+            levels.add(sanitize(medium));
+        }
+        if (small != null && !small.trim().isEmpty()) {
+            levels.add(sanitize(small));
         }
 
         if (levels.isEmpty()) {
-            log.warn("폴더 레벨이 비어있음");
+            log.warn("폴더명이 비어있습니다.");
             return null;
         }
 
         log.info("폴더 생성/조회: {} (user={})", levels, userIdx);
 
-        // ✅ 계층적으로 폴더 생성/조회
-        Long parentId = null; // 루트부터 시작
+        Long parentId = null;
         for (String folderName : levels) {
             parentId = getOrCreate(userIdx, parentId, folderName);
         }
 
-        return parentId; // 마지막 레벨 폴더 ID
+        return parentId;
     }
 
-    /**
-     * 폴더 조회 또는 생성
-     * @param userIdx 사용자 ID
-     * @param parentId 부모 폴더 ID (null이면 루트)
-     * @param folderName 폴더명
-     * @return 폴더 ID
-     */
+    // ✅ 폴더 경로 생성 메서드 추가
+    public String generateFolderPath(CategoryResult categoryResult) {
+        if (categoryResult == null || !categoryResult.hasCategory()) {
+            return "";
+        }
+
+        List<String> parts = new ArrayList<>();
+
+        if (categoryResult.getLargeCategory() != null && !categoryResult.getLargeCategory().trim().isEmpty()) {
+            parts.add(categoryResult.getLargeCategory());
+        }
+        if (categoryResult.getMediumCategory() != null && !categoryResult.getMediumCategory().trim().isEmpty()) {
+            parts.add(categoryResult.getMediumCategory());
+        }
+        if (categoryResult.getSmallCategory() != null && !categoryResult.getSmallCategory().trim().isEmpty()) {
+            parts.add(categoryResult.getSmallCategory());
+        }
+
+        // ✅ 구분자를 " > "로 설정 (슬래시 문제 해결)
+        return String.join(" > ", parts);
+    }
+
     private Long getOrCreate(Long userIdx, Long parentId, String folderName) {
-        // 1) 기존 폴더 조회
-        Optional<NoteFolder> existing = (parentId == null)
+        Optional<NoteFolder> existing = parentId == null
                 ? noteFolderRepository.findRootByUserIdxAndFolderName(userIdx, folderName)
                 : noteFolderRepository.findByUserIdxAndParentFolderIdAndFolderName(userIdx, parentId, folderName);
 
@@ -92,11 +90,10 @@ public class AutoFolderService {
             return existing.get().getFolderId();
         }
 
-        // 2) 새 폴더 생성
         try {
             NoteFolder folder = NoteFolder.builder()
                     .userIdx(userIdx)
-                    .parentFolderId(parentId)       // ✅ 핵심: 부모 연결
+                    .parentFolderId(parentId)
                     .folderName(folderName)
                     .sortOrder(0)
                     .status("ACTIVE")
@@ -106,32 +103,22 @@ public class AutoFolderService {
 
             NoteFolder saved = noteFolderRepository.save(folder);
             log.info("새 폴더 생성: {} (id={}, parent={})", folderName, saved.getFolderId(), parentId);
-
             return saved.getFolderId();
-
         } catch (DataIntegrityViolationException e) {
-            // ✅ 경쟁 상태 보정: unique 제약 충돌 시 재조회
-            log.warn("폴더 생성 충돌 발생, 재조회: {}", folderName);
-
+            log.warn("동시성 문제로 재조회: {}", folderName);
             return (parentId == null
                     ? noteFolderRepository.findRootByUserIdxAndFolderName(userIdx, folderName)
                     : noteFolderRepository.findByUserIdxAndParentFolderIdAndFolderName(userIdx, parentId, folderName))
                     .map(NoteFolder::getFolderId)
-                    .orElseThrow(() -> new RuntimeException("폴더 생성/조회 실패: " + folderName, e));
+                    .orElseThrow(() -> new RuntimeException("폴더 생성 실패: " + folderName, e));
         }
     }
 
-    /**
-     * 폴더명 정제 (특수문자 처리)
-     * @param name 원본 폴더명
-     * @return 정제된 폴더명
-     */
     private String sanitize(String name) {
         if (name == null) return "";
-
-        return name.replace("/", "／")      // ✅ 슬래시를 전각문자로 치환
-                .replaceAll("[\\t\\n\\r]", " ")  // 제어문자 제거
-                .replaceAll("\\s+", " ")         // 연속 공백 제거
+        return name.replace("/", "／")
+                .replaceAll("[\\\\:*?\"<>|]", "")
+                .replaceAll("\\s+", " ")
                 .trim();
     }
 }

@@ -15,6 +15,7 @@ public class UnifiedFolderService {
 
     private final NoteFolderRepository noteFolderRepository;
     private final NoteRepository noteRepository;
+    private final NoteTagRepository noteTagRepository;
 
     // ========================================
     // NoteFolder 트리 조회
@@ -25,7 +26,15 @@ public class UnifiedFolderService {
                 .findByUserIdxOrderByFolderNameAsc(userIdx);  // status 제거
         List<Note> allNotes = noteRepository
                 .findByUser_UserIdxAndStatusOrderByCreatedAtDesc(userIdx, "ACTIVE");
-
+        // ✅ 각 노트에 태그 로드
+        allNotes.forEach(note -> {
+            List<NoteTag> noteTags = noteTagRepository.findAllByNote(note);
+            System.out.println("Note: " + note.getTitle() + " has " + noteTags.size() + " tags");  // ✅ 로그
+            List<Tag> tags = noteTags.stream()
+                    .map(NoteTag::getTag)
+                    .collect(Collectors.toList());
+            note.setTags(tags);
+        });
         // null 제외하고 그룹화
         Map<Long, List<NoteFolder>> foldersByParent = allFolders.stream()
                 .filter(f -> f.getParentFolderId() != null)
@@ -60,8 +69,19 @@ public class UnifiedFolderService {
     }
 
     public List<Note> getRootNotes(Long userIdx) {
-        return noteRepository
+        List<Note> notes = noteRepository
                 .findByUser_UserIdxAndFolderIdIsNullAndStatusOrderByCreatedAtDesc(userIdx, "ACTIVE");
+
+        // 루트 노트태그 로드
+        notes.forEach(note -> {
+            List<NoteTag> noteTags = noteTagRepository.findAllByNote(note);
+            List<Tag> tags = noteTags.stream()
+                    .map(NoteTag::getTag)
+                    .collect(Collectors.toList());
+            note.setTags(tags);
+        });
+
+        return notes;
     }
 
     // ========================================

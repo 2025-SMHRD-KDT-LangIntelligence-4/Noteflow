@@ -787,10 +787,11 @@ function updateMultiSelectionButtons() {
 function createNoteElement(note, depth) {
     const div = document.createElement('div');
     div.className = 'note-item';
-    div.draggable = true;  // ✅ 드래그 가능
-    div.style.paddingLeft = `${depth * 20 + 30}px`;
+    div.draggable = true;
+    div.style.paddingLeft = (depth * 20 + 30) + 'px';
+    div.dataset.noteIdx = note.noteIdx; // ✅ 추가
 
-    // 체크박스
+    // ✅ Checkbox 추가
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.className = 'item-checkbox';
@@ -805,19 +806,13 @@ function createNoteElement(note, depth) {
     checkbox.addEventListener('change', (e) => {
         e.stopPropagation();
         if (e.target.checked) {
-            toggleMultiFileSelection({
-                item: note,
-                el: div,
-                type: 'note'
-            });
+            toggleMultiFileSelection({ item: note, el: div, type: 'note' });
         } else {
-            const idx = selectedItems.findIndex(si =>
-                si.item.noteIdx === note.noteIdx
-            );
+            const idx = selectedItems.findIndex(si => si.item.noteIdx === note.noteIdx);
             if (idx !== -1) {
                 selectedItems.splice(idx, 1);
+                div.classList.remove('multi-selected');
             }
-            div.classList.remove('multi-selected');
         }
         updateMultiSelectionUI();
     });
@@ -828,33 +823,26 @@ function createNoteElement(note, depth) {
 
     const title = document.createElement('span');
     title.className = 'note-title';
-    title.textContent = note.title || '(제목없음)';
+    title.textContent = note.title;
 
-    div.appendChild(checkbox);
+    div.appendChild(checkbox); // ✅ checkbox 먼저 추가
     div.appendChild(icon);
     div.appendChild(title);
 
     div.addEventListener('click', (e) => {
-        if (dragging) return;  // ✅ 드래그 중에는 선택 안되게
+        if (dragging) return;
         e.stopPropagation();
 
         const multi = e.ctrlKey || e.metaKey;
         if (multi && currentTab === 'notes') {
-            toggleMultiFileSelection({
-                item: note,
-                el: div,
-                type: 'note'
-            });
-            checkbox.checked = selectedItems.some(si =>
-                si.item.noteIdx === note.noteIdx
-            );
+            toggleMultiFileSelection({ item: note, el: div, type: 'note' });
+            checkbox.checked = selectedItems.some(si => si.item.noteIdx === note.noteIdx);
         } else {
             clearMultiSelection();
             selectNote(note, div);
         }
     });
 
-    // ✅ 드래그 이벤트 추가
     div.addEventListener('dragstart', (e) => handleDragStart(e, note, 'note'));
     div.addEventListener('dragend', handleDragEnd);
 
@@ -963,7 +951,8 @@ function toggleFolder(container, toggle) {
 
 // ========== 15. 선택 처리 ==========
 function selectNote(note, el) {
-    clearMultiSelection();  // ✅ 추가
+    clearMultiSelection();
+    hideCategorySelectArea();
     selectedItem = note;
     selectedItemType = 'note';
     updateSelectedState(el);
@@ -975,20 +964,25 @@ function selectNote(note, el) {
 // ========== updateMultiSelectionUI 함수 추가 ==========
 function updateMultiSelectionUI() {
     const container = document.getElementById('buttonContainer');
+    const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+
     if (!container) return;
 
+    // ✅ 삭제 버튼 표시/숨김
+    if (bulkDeleteBtn) {
+        bulkDeleteBtn.style.display = selectedItems.length > 0 ? 'inline-block' : 'none';
+    }
+
     if (selectedItems.length > 0) {
-        // 선택된 항목들 하이라이트
         selectedItems.forEach(si => {
             si.el.classList.add('multi-selected');
             const cb = si.el.querySelector('.item-checkbox');
             if (cb) cb.checked = true;
         });
 
-        // ✅ 다중 선택 버튼 표시
         container.innerHTML = `
-            <button class="btn-download" onclick="downloadSelectedAsZip()">📦 선택 항목 ZIP (${selectedItems.length}개)</button>
-            <button class="btn-cancel" onclick="clearMultiSelection()">❌ 선택 해제</button>
+            <button class="btn-download" onclick="downloadSelectedAsZip()">📦 ZIP 다운로드 (${selectedItems.length})</button>
+            <button class="btn-cancel" onclick="clearMultiSelection()">✖ 선택 해제</button>
         `;
     } else {
         // 모든 하이라이트 제거
@@ -1016,10 +1010,12 @@ function selectFile(file, el) {
     selectedItemType = 'file';
     updateSelectedState(el);
     showFileContent(file);
+    hideCategorySelectArea();
 }
 
 function selectFolder(folder, el, type) {
-    clearMultiSelection();  // ✅ 추가
+    clearMultiSelection();
+    hideCategorySelectArea();
     selectedItem = folder;
     selectedItemType = type;
     updateSelectedState(el);
@@ -1048,15 +1044,13 @@ function clearSelection() {
 }
 // ========== 16. 다중 선택 ==========
 function toggleMultiFileSelection(item) {
-    // ✅ item에 type이 있는지 확인
+    // 타입 추론
     if (!item.type) {
-        console.warn('⚠️ toggleMultiFileSelection: type이 없음', item);
-        // type 추론
         if (item.item.gridfsId) {
             item.type = 'file';
         } else if (item.item.noteIdx) {
             item.type = 'note';
-        } else if (item.item.folderId) {
+        } else if (item.item.folderId || item.item.id) {
             item.type = 'folder';
         }
     }
@@ -1075,6 +1069,11 @@ function toggleMultiFileSelection(item) {
         item.el.classList.remove('multi-selected');
         const cb = item.el.querySelector('.item-checkbox');
         if (cb) cb.checked = false;
+
+        // ✅ 전체선택 상태 해제
+        isAllSelected = false;
+        const selectAllBtn = document.getElementById('selectAllBtn');
+        if (selectAllBtn) selectAllBtn.textContent = '🔲 전체선택';
     } else {
         selectedItems.push(item);
         item.el.classList.add('multi-selected');
@@ -1091,6 +1090,7 @@ let toastEditor = null;
 // 노트 내용 표시 시 Toast Editor 사용
 function showNoteContent(note) {
     hideAllViews();
+    hideCategorySelectArea();
 
     const titleEl = document.getElementById('itemTitle');
     const contentEl = document.getElementById('itemContent');
@@ -1145,6 +1145,7 @@ function showNoteContent(note) {
 
 async function showFileContent(file) {
     hideAllViews();
+    hideCategorySelectArea();
 
     const titleEl = document.getElementById('itemTitle');
     const contentEl = document.getElementById('itemContent');
@@ -1629,16 +1630,23 @@ function enterEditMode() {
 }
 // ✅ 태그 렌더링
 function renderTags() {
-    const tagList = document.getElementById('tagList');
+    const tagList = document.getElementById('tagDisplay');
     if (!tagList) return;
 
-    tagList.innerHTML = '';
+    tagList.innerHTML = ''; // ✅ 초기화
+
     currentTags.forEach(tag => {
         const chip = document.createElement('span');
         chip.className = 'tag-chip';
         chip.innerHTML = `${tag} <span class="remove-tag">×</span>`;
-        chip.addEventListener('click', () => removeTag(tag));
-        tagList.appendChild(chip);
+
+        const removeBtn = chip.querySelector('.remove-tag');
+        removeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            removeTag(tag);
+        });
+
+        tagList.appendChild(chip); // ✅ appendChild로 추가
     });
 }
 
@@ -2298,38 +2306,47 @@ async function deleteNoteFolder(folderId) {
 
 // ========== 25. 폴더 생성/이름 변경 ==========
 async function createFolder() {
-    const name = prompt('새 폴더 이름을 입력하세요:');
+    const name = prompt('📁 폴더 이름을 입력하세요');
     if (!name || !name.trim()) return;
 
     try {
         if (currentTab === 'files') {
+            // ✅ 파일 폴더 생성 (MongoDB)
             const params = new URLSearchParams();
             params.set('folderName', name.trim());
+
             if (selectedItemType === 'folder' && selectedItem?.id) {
                 params.set('parentFolderId', selectedItem.id);
             }
 
-            const res = await secureFetch(`/api/folders?${params.toString()}`, {
+            const res = await secureFetch(`/api/unified/files/folder?${params.toString()}`, {
                 method: 'POST',
-                headers: new Headers({ [csrfHeader]: csrfToken })
+                headers: new Headers({
+                    [csrfHeader]: csrfToken
+                })
             });
 
             const json = await res.json();
-            json.success ? (showMessage('폴더 생성 성공'), fetchTreeData()) : showMessage(json.message);
+            json.success ? (showMessage('폴더 생성 완료'), fetchTreeData()) : showMessage(json.message);
+
         } else {
+            // ✅ 노트 폴더 생성
             const params = new URLSearchParams();
             params.set('folderName', name.trim());
+
             if (selectedItemType === 'noteFolder' && selectedItem?.folderId) {
                 params.set('parentFolderId', selectedItem.folderId);
             }
 
             const res = await secureFetch(`/api/unified/notes/folder?${params.toString()}`, {
                 method: 'POST',
-                headers: new Headers({ [csrfHeader]: csrfToken })
+                headers: new Headers({
+                    [csrfHeader]: csrfToken
+                })
             });
 
             const json = await res.json();
-            json.success ? (showMessage('폴더 생성 성공'), fetchTreeData()) : showMessage(json.message);
+            json.success ? (showMessage('폴더 생성 완료'), fetchTreeData()) : showMessage(json.message);
         }
     } catch (e) {
         console.error('폴더 생성 오류:', e);
@@ -3064,31 +3081,31 @@ function setupAddCategoryButton() {
 
 /**
  * 편집 모드 진입 시 카테고리 셀렉트 표시 및 현재 값 설정
- */
-function showCategorySelectArea() {
+ */function showCategorySelectArea() {
     const categorySelectArea = document.getElementById('categorySelectArea');
+    const tagInputArea = document.getElementById('tagInputArea');
+
     if (!categorySelectArea) return;
 
+    // 카테고리/태그 영역 표시
     categorySelectArea.style.display = 'block';
+    if (tagInputArea) tagInputArea.style.display = 'block';
 
-    // 현재 노트의 카테고리 정보가 있으면 설정
+    // ✅ 기존 카테고리 데이터 로드
     if (selectedItem && selectedItem.category) {
-        const { large, medium, small } = selectedItem.category;
+        const [large, medium, small] = selectedItem.category;
 
-        // 대분류 설정
         if (large) {
             const largeSelect = document.getElementById('largeCategorySelect');
             largeSelect.value = large;
             largeSelect.dispatchEvent(new Event('change'));
 
-            // 중분류 설정 (비동기 처리)
             setTimeout(() => {
                 if (medium) {
                     const mediumSelect = document.getElementById('mediumCategorySelect');
                     mediumSelect.value = medium;
                     mediumSelect.dispatchEvent(new Event('change'));
 
-                    // 소분류 설정
                     setTimeout(() => {
                         if (small) {
                             const smallSelect = document.getElementById('smallCategorySelect');
@@ -3099,17 +3116,205 @@ function showCategorySelectArea() {
             }, 100);
         }
     }
+
+    // ✅ 기존 태그 데이터 로드 (중복 제거)
+    if (selectedItem && selectedItem.tags && Array.isArray(selectedItem.tags)) {
+        currentTags = selectedItem.tags.map(tagObj =>
+            tagObj.name || tagObj.tagName || tagObj
+        );
+        renderTags(); // ✅ renderTags()만 호출
+    } else {
+        currentTags = [];
+        renderTags(); // ✅ 빈 상태로 렌더링
+    }
 }
 
-/**
- * 편집 취소 시 카테고리 영역 숨김
- */
 function hideCategorySelectArea() {
-    const categorySelectArea = document.getElementById('categorySelectArea');
-    if (categorySelectArea) {
-        categorySelectArea.style.display = 'none';
+    const categoryArea = document.getElementById('categorySelectArea');
+    const tagArea = document.getElementById('tagInputArea');
+
+    if (categoryArea) {
+        categoryArea.style.display = 'none';
     }
 
-    // 선택 초기화
-    currentCategory = { large: null, medium: null, small: null };
+    if (tagArea) {
+        tagArea.style.display = 'none';
+    }
+
+    resetCategoryAndTags();
+}
+
+
+
+function resetCategoryAndTags() {
+    // 카테고리 선택 초기화
+    const largeSelect = document.getElementById('largeCategorySelect');
+    const mediumSelect = document.getElementById('mediumCategorySelect');
+    const smallSelect = document.getElementById('smallCategorySelect');
+
+    if (largeSelect) largeSelect.value = '';
+    if (mediumSelect) {
+        mediumSelect.value = '';
+        mediumSelect.disabled = true;
+        mediumSelect.innerHTML = '<option value="">중분류 선택</option>';
+    }
+    if (smallSelect) {
+        smallSelect.value = '';
+        smallSelect.disabled = true;
+        smallSelect.innerHTML = '<option value="">소분류 선택</option>';
+    }
+
+    // 태그 초기화
+    currentTags = [];
+    const tagInput = document.getElementById('tagInput');
+    const tagDisplay = document.getElementById('tagDisplay');
+
+    if (tagInput) tagInput.value = '';
+    if (tagDisplay) tagDisplay.innerHTML = '';
+}
+
+// ===== 전체선택 기능 =====
+const selectAllBtn = document.getElementById('selectAllBtn');
+let isAllSelected = false;
+
+if (selectAllBtn) {
+    selectAllBtn.addEventListener('click', function() {
+        const checkboxes = document.querySelectorAll('.item-checkbox');
+        isAllSelected = !isAllSelected;
+
+        if (isAllSelected) {
+            // ✅ 전체 선택
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = true;
+
+                const item = checkbox.closest('.file-item, .note-item, .folder-item');
+                if (!item) return;
+
+                item.classList.add('multi-selected');
+
+                let itemData, type;
+
+                if (item.classList.contains('note-item')) {
+                    type = 'note';
+                    const noteIdx = item.dataset.noteIdx;
+                    itemData = itemsData.notes.find(n => n.noteIdx == noteIdx);
+
+                } else if (item.classList.contains('file-item')) {
+                    type = 'file';
+                    const gridfsId = item.dataset.gridfsId;
+                    itemData = itemsData.files.find(f => f.gridfsId === gridfsId);
+
+                } else if (item.classList.contains('folder-item')) {
+                    const folderId = item.dataset.folderId;
+
+                    if (currentTab === 'files') {
+                        type = 'folder';
+                        itemData = itemsData.fileFolders.find(f => f.id == folderId);
+                    } else {
+                        type = 'noteFolder';
+                        itemData = itemsData.noteFolders.find(f => f.folderId == folderId);
+                    }
+                }
+
+                if (itemData) {
+                    const exists = selectedItems.some(si => {
+                        if (type === 'note') return si.item.noteIdx === itemData.noteIdx;
+                        if (type === 'file') return si.item.gridfsId === itemData.gridfsId;
+                        if (type === 'folder') return si.item.id === itemData.id;
+                        if (type === 'noteFolder') return si.item.folderId === itemData.folderId;
+                        return false;
+                    });
+
+                    if (!exists) {
+                        selectedItems.push({ item: itemData, el: item, type: type });
+                    }
+                }
+            });
+
+            selectAllBtn.textContent = '☑️ 전체해제';
+
+        } else {
+            clearMultiSelection();
+            selectAllBtn.textContent = '🔲 전체선택';
+        }
+
+        updateMultiSelectionUI();
+        console.log('✅ 선택된 항목:', selectedItems.length + '개');
+    });
+}
+
+// ===== 선택 삭제 기능 =====
+const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+
+if (bulkDeleteBtn) {
+    bulkDeleteBtn.addEventListener('click', async function() {
+        if (selectedItems.length === 0) {
+            alert('삭제할 항목을 선택해주세요.');
+            return;
+        }
+
+        if (!confirm(`선택한 ${selectedItems.length}개 항목을 삭제하시겠습니까?`)) {
+            return;
+        }
+
+        const deletePromises = [];
+
+        for (const si of selectedItems) {
+            const { type, item } = si;
+
+            console.log('삭제 중:', type, item);
+
+            if (type === 'file') {
+                // ✅ 파일 삭제
+                deletePromises.push(
+                    secureFetch(`/api/files/delete/${item.gridfsId}`, {
+                        method: 'DELETE'
+                    })
+                );
+            } else if (type === 'note') {
+                // ✅ 노트 삭제
+                deletePromises.push(
+                    secureFetch(`/notion/api/notion/${item.noteIdx}`, {
+                        method: 'DELETE'
+                    })
+                );
+            } else if (type === 'folder') {
+                // ✅ 파일 폴더 삭제
+                deletePromises.push(
+                    secureFetch(`/api/unified/files/folder/${item.id}`, {
+                        method: 'DELETE'
+                    })
+                );
+            } else if (type === 'noteFolder') {
+                // ✅ 노트 폴더 삭제
+                deletePromises.push(
+                    secureFetch(`/api/unified/notes/folder/${item.folderId}`, {
+                        method: 'DELETE'
+                    })
+                );
+            }
+        }
+
+        try {
+            const results = await Promise.allSettled(deletePromises);
+
+            const failed = results.filter(r => r.status === 'rejected');
+
+            if (failed.length > 0) {
+                console.error('삭제 실패:', failed);
+                alert(`${selectedItems.length - failed.length}개 삭제 완료, ${failed.length}개 실패`);
+            } else {
+                alert('선택한 항목이 모두 삭제되었습니다.');
+            }
+
+            clearMultiSelection();
+            isAllSelected = false;
+            selectAllBtn.textContent = '🔲 전체선택';
+            await fetchTreeData();
+
+        } catch (error) {
+            console.error('삭제 중 오류:', error);
+            alert('삭제 중 오류가 발생했습니다.');
+        }
+    });
 }

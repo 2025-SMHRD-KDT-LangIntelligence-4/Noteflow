@@ -18,8 +18,6 @@ public class Prompt {
     @Column(nullable = false)
     private String title;
 
-
-
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
@@ -28,4 +26,12 @@ public class Prompt {
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "priority", nullable = false)
+    private Integer priority = 0;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+    }
 }

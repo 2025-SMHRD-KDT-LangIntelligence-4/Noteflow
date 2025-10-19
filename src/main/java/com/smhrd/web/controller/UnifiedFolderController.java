@@ -203,6 +203,52 @@ public class UnifiedFolderController {
         }
     }
 
+    @PostMapping("/files/folder")
+    public ResponseEntity<Map<String, Object>> createFileFolder(
+            @RequestParam String folderName,
+            @RequestParam(required = false) String parentFolderId,
+            Authentication auth) {
+
+        if (isAnonymous(auth)) return unauthorized();
+
+        Long userIdx = getUserIdx(auth);
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            String folderId = folderService.createFolder(userIdx, folderName, parentFolderId);
+            result.put("success", true);
+            result.put("folderId", folderId);
+            result.put("message", "폴더가 생성되었습니다.");
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
+        }
+    }
+
+    @DeleteMapping("/files/folder/{folderId}")
+    public ResponseEntity<Map<String, Object>> deleteFileFolder(
+            @PathVariable String folderId,
+            Authentication auth) {
+
+        if (isAnonymous(auth)) return unauthorized();
+
+        Long userIdx = getUserIdx(auth);
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            folderService.deleteFolder(userIdx, folderId);
+            result.put("success", true);
+            result.put("message", "폴더가 삭제되었습니다.");
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
+        }
+    }
+
     // ========== 유틸: 순환 참조 체크 ==========
 
     private boolean isDescendant(Long ancestorId, Long descendantId) {

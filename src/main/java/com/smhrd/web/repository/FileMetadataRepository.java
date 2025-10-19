@@ -5,6 +5,7 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,4 +34,7 @@ public interface FileMetadataRepository extends MongoRepository<FileMetadata, St
     List<FileMetadata> findRootFilesByUserIdx(Long userIdx);
 
     List<FileMetadata> findByFolderId(String folderId);
+
+
+    List<FileMetadata> findByUploadDateBeforeAndStatus(LocalDateTime threshold, String active);
 }
