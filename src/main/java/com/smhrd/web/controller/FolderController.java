@@ -4,6 +4,7 @@ import com.smhrd.web.entity.Folder;
 import com.smhrd.web.repository.FolderRepository;
 import com.smhrd.web.repository.UserRepository;
 import com.smhrd.web.security.CustomUserDetails;
+import com.smhrd.web.service.FileMetadataService;
 import com.smhrd.web.service.FolderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +23,7 @@ public class FolderController {
     private final FolderService folderService;
     private final UserRepository userRepository;
     private final FolderRepository folderRepository;
+    private final FileMetadataService fileMetadataService;
 
     // --------------------------
     // 폴더 트리 조회
@@ -34,8 +36,8 @@ public class FolderController {
                 .getUserIdx();
 
         Map<String, Object> result = new HashMap<>();
-        result.put("folders", folderService.getFolderTree(userIdx));
-        result.put("rootFiles", folderService.getRootFiles(userIdx));
+        result.put("folders", folderService.getFileFolderTree(userIdx));
+        result.put("rootFiles", fileMetadataService.getRootFiles(userIdx));
         return ResponseEntity.ok(result);
     }
 

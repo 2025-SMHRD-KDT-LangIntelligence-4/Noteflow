@@ -870,3 +870,42 @@ body {
 }
 
 
+/* 태그 입력 영역 */
+#tagInputArea {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #e1e4e8;
+}
+
+#tagList {
+    min-height: 32px;
+}
+
+/* 태그 칩 스타일 */
+.tag-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    background: #4a90e2;
+    color: white;
+    border-radius: 16px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.tag-chip:hover {
+    background: #357abd;
+    transform: scale(1.05);
+}
+
+.tag-chip .remove-tag {
+    font-weight: bold;
+    margin-left: 3px;
+}
+
+#tagInput {
+    font-size: 14px;
+}

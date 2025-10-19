@@ -2,9 +2,13 @@ package com.smhrd.web.controller;
 
 import com.smhrd.web.dto.CategoryResult;
 import com.smhrd.web.entity.Note;
+import com.smhrd.web.entity.NoteTag;
 import com.smhrd.web.entity.Prompt;
+import com.smhrd.web.entity.Tag;
 import com.smhrd.web.repository.NoteRepository;
+import com.smhrd.web.repository.NoteTagRepository;
 import com.smhrd.web.repository.PromptRepository;
+import com.smhrd.web.repository.TagRepository;
 import com.smhrd.web.security.CustomUserDetails;
 import com.smhrd.web.service.*;
 
@@ -15,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.metadata.HttpHeaders;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -31,6 +36,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Controller
@@ -47,6 +53,10 @@ public class NotionController {
     private final NoteRepository noteRepository;
     private final FileStorageService fileStorageService;
     private final FileParseService fileParseService;
+
+    private final TagRepository tagRepository;
+    private final NoteTagRepository noteTagRepository;
+
 
     // ------------------------------------------------------------
     // (선택) 예전 precreate 경로: 통합 페이지로 유도
@@ -218,38 +228,77 @@ public class NotionController {
         }
     }
 
+
+    /**
+     * 노트 저장 (자동 카테고리 추출 + 폴더 생성)
+     * POST /notion/save-note
+     */
     @PostMapping("/save-note")
     @Transactional
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> saveNote(@RequestBody Map<String, String> req, Authentication auth) {
+    public ResponseEntity<Map<String, Object>> saveNote(
+            @RequestBody Map<String, String> req,
+            Authentication auth
+    ) {
         Long userIdx = ((CustomUserDetails) auth.getPrincipal()).getUserIdx();
         String title = req.getOrDefault("title", "제목없음");
         String summary = req.getOrDefault("summary", "");
         Long promptId = Long.parseLong(req.getOrDefault("promptId", "0"));
+
         Map<String, Object> res = new HashMap<>();
         try {
+            // 1) 노트 저장
             Long noteId = notionContentService.saveNote(userIdx, title, summary, promptId);
-            CategoryResult categoryResult = keywordExtractionService.extractAndClassifyWithRAG(title, summary);
+
+            // 2) ✅ 키워드/카테고리 자동 추출 (공개 + 본인 카테고리 기준)
+            CategoryResult categoryResult = keywordExtractionService
+                    .extractAndClassifyWithRAG(title, summary, userIdx);  // ✅ userIdx 전달
+
+            // 키워드 추출 (최대 5개)
             List<String> keywords = new ArrayList<>(categoryResult.getExtractedKeywords());
-            if (keywords.size() > 5) keywords = keywords.subList(0, 5);
-            String categoryPath = categoryResult.getSuggestedFolderPath();
-            Long folderId = autoFolderService.createOrFindFolder(userIdx, categoryResult);
-            noteRepository.updateNoteFolderId(noteId, folderId);
-            String sourceGridId = fileStorageService.storeTextAsFile(title + ".md", summary, userIdx, folderId);
+            if (keywords.size() > 5) {
+                keywords = keywords.subList(0, 5);
+            }
+
+            // 3) ✅ 폴더 생성/조회 (AutoFolderService가 대/중/소 추출)
+            Long folderId = null;
+            if (categoryResult.hasCategory()) {
+                folderId = autoFolderService.createOrFindFolder(userIdx, categoryResult);
+
+                if (folderId != null) {
+                    noteRepository.updateNoteFolderId(noteId, folderId);
+                    log.info("노트 {} → 폴더 {} 연결", noteId, folderId);
+                }
+            }
+
+            // 4) 원본 파일 저장 (GridFS)
+            String sourceGridId = fileStorageService.storeTextAsFile(
+                    title + ".md",
+                    summary,
+                    userIdx,
+                    folderId
+            );
             noteRepository.updateNoteSourceId(noteId, sourceGridId);
 
+            // 5) 응답
             res.put("success", true);
+            res.put("message", "노트가 저장되었습니다.");
             res.put("noteId", noteId);
             res.put("keywords", keywords);
-            res.put("categoryPath", categoryPath);
+            res.put("categoryPath", categoryResult.generateFolderPath());  // ✅ 개선
             res.put("folderId", folderId);
+
             return ResponseEntity.ok(res);
+
         } catch (Exception e) {
+            log.error("노트 저장 오류: {}", e.getMessage(), e);
             res.put("success", false);
             res.put("error", e.getMessage());
             return ResponseEntity.status(500).body(res);
         }
     }
+
+
 
     @GetMapping("/complete")
     public String showCompletePage(Model model, @AuthenticationPrincipal UserDetails userDetails) {
@@ -264,62 +313,165 @@ public class NotionController {
     }
     @PutMapping("/api/notion/{noteIdx}")
     @ResponseBody
+    @Transactional
     public ResponseEntity<Map<String, Object>> updateNote(
-        @PathVariable Long noteIdx,
-        @RequestBody Map<String, String> req,
-        Authentication auth
+            @PathVariable Long noteIdx,
+            @RequestBody Map<String, Object> req,
+            Authentication auth
     ) {
         Long userIdx = ((CustomUserDetails) auth.getPrincipal()).getUserIdx();
-        String title = req.getOrDefault("title", "제목없음");
-        String content = req.getOrDefault("content", "");
-        
+        String title = (String) req.getOrDefault("title", "제목없음");
+        String content = (String) req.getOrDefault("content", "");
+
         Map<String, Object> res = new HashMap<>();
         try {
             Note note = noteRepository.findById(noteIdx)
-                .orElseThrow(() -> new IllegalArgumentException("노트를 찾을 수 없습니다."));
-            
+                    .orElseThrow(() -> new IllegalArgumentException("노트를 찾을 수 없습니다."));
+
+            // 권한 체크
             if (!note.getUser().getUserIdx().equals(userIdx)) {
                 res.put("success", false);
                 res.put("message", "권한이 없습니다.");
                 return ResponseEntity.status(403).body(res);
             }
-            
+
+            // 제목/내용 수정
             note.setTitle(title);
             note.setContent(content);
             note.setUpdatedAt(LocalDateTime.now());
+
+            // ✅ 카테고리 변경 시 폴더 자동 이동
+            String large = (String) req.get("largeCategory");
+            String medium = (String) req.get("mediumCategory");
+            String small = (String) req.get("smallCategory");
+
+            if (large != null && !large.trim().isEmpty()) {
+                log.info("카테고리 변경 요청: {} / {} / {}", large, medium, small);
+
+                // CategoryResult 수동 생성
+                CategoryResult categoryResult = CategoryResult.builder()
+                        .largeCategory(large.trim())
+                        .mediumCategory(medium != null ? medium.trim() : null)
+                        .smallCategory(small != null ? small.trim() : null)
+                        .build();
+
+                // 폴더 찾기 or 생성 (공개 + 본인 카테고리 기준)
+                Long newFolderId = autoFolderService.createOrFindFolder(userIdx, categoryResult);
+
+                if (newFolderId != null) {
+                    Long oldFolderId = note.getFolderId();
+                    note.setFolderId(newFolderId);
+
+                    res.put("folderChanged", true);
+                    res.put("oldFolderId", oldFolderId);
+                    res.put("newFolderId", newFolderId);
+
+                    log.info("폴더 이동: {} → {}", oldFolderId, newFolderId);
+                }
+            }
+
+            // ✅ 태그 동기화
+            List<String> keywords = (List<String>) req.get("keywords");
+            if (keywords != null && !keywords.isEmpty()) {
+                log.info("태그 업데이트: {}", keywords);
+
+
+                 notionContentService.syncNoteTags(note, keywords);
+            }
+
             noteRepository.save(note);
-            
+
             res.put("success", true);
             res.put("message", "저장되었습니다.");
             return ResponseEntity.ok(res);
+
         } catch (Exception e) {
+            log.error("노트 수정 오류: noteIdx={}, error={}", noteIdx, e.getMessage(), e);
             res.put("success", false);
             res.put("message", e.getMessage());
             return ResponseEntity.status(500).body(res);
         }
     }
 
+    /**
+     * ✅ 태그 동기화 헬퍼 메소드
+     * - 기존 태그 제거 (usage_count -1)
+     * - 신규 태그 추가 (usage_count +1)
+     */
+    private void syncNoteTags(Note note, List<String> newKeywords) {
+        // 1) 기존 태그 조회
+        List<NoteTag> oldNoteTags = noteTagRepository.findAllByNote(note);
+        Set<String> oldTagNames = oldNoteTags.stream()
+                .map(nt -> nt.getTag().getName())
+                .collect(Collectors.toSet());
+
+        Set<String> newTagNames = new HashSet<>(newKeywords);
+
+        // 2) 제거할 태그 (old - new)
+        for (NoteTag nt : oldNoteTags) {
+            if (!newTagNames.contains(nt.getTag().getName())) {
+                tagRepository.bumpUsage(nt.getTag().getTagIdx(), -1);
+                noteTagRepository.delete(nt);
+            }
+        }
+
+        // 3) 추가할 태그 (new - old)
+        for (String tagName : newKeywords) {
+            String name = tagName.trim();
+            if (name.isEmpty()) continue;
+
+            if (!oldTagNames.contains(name)) {
+                // 태그 생성 or 조회
+                Tag tag = tagRepository.findByName(name).orElseGet(() -> {
+                    try {
+                        return tagRepository.save(Tag.builder().name(name).build());
+                    } catch (DataIntegrityViolationException e) {
+                        return tagRepository.findByName(name).orElseThrow();
+                    }
+                });
+
+                // 연결 추가
+                if (!noteTagRepository.existsByNoteAndTag(note, tag)) {
+                    noteTagRepository.save(NoteTag.builder().note(note).tag(tag).build());
+                    tagRepository.bumpUsage(tag.getTagIdx(), 1);
+                }
+            }
+        }
+    }
     @DeleteMapping("/api/notion/{noteIdx}")
     @ResponseBody
+    @Transactional
     public ResponseEntity<Map<String, Object>> deleteNote(
-        @PathVariable Long noteIdx,
-        Authentication auth
+            @PathVariable Long noteIdx,
+            Authentication auth
     ) {
         Long userIdx = ((CustomUserDetails) auth.getPrincipal()).getUserIdx();
         Map<String, Object> res = new HashMap<>();
         try {
             Note note = noteRepository.findById(noteIdx)
-                .orElseThrow(() -> new IllegalArgumentException("노트를 찾을 수 없습니다."));
-            
+                    .orElseThrow(() -> new IllegalArgumentException("노트를 찾을 수 없습니다."));
+
             if (!note.getUser().getUserIdx().equals(userIdx)) {
                 res.put("success", false);
                 res.put("message", "권한이 없습니다.");
                 return ResponseEntity.status(403).body(res);
             }
-            
+
+            // ✅ 태그 관계 조회
+            List<NoteTag> noteTags = noteTagRepository.findAllByNote(note);
+
+            // ✅ usage_count 감소
+            for (NoteTag nt : noteTags) {
+                tagRepository.bumpUsage(nt.getTag().getTagIdx(), -1);
+            }
+
+            // ✅ 관계 삭제
+            noteTagRepository.deleteAll(noteTags);
+
+            // ✅ 노트 상태 변경 (소프트 삭제)
             note.setStatus("DELETED");
             noteRepository.save(note);
-            
+
             res.put("success", true);
             res.put("message", "삭제되었습니다.");
             return ResponseEntity.ok(res);

@@ -1,15 +1,12 @@
 package com.smhrd.web.service;
 
-import com.smhrd.web.entity.Folder;
-import com.smhrd.web.entity.FileMetadata;
-import com.smhrd.web.repository.FolderRepository;
-import com.smhrd.web.repository.FileMetadataRepository;
+import com.smhrd.web.entity.*;
+import com.smhrd.web.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
+import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -19,95 +16,67 @@ public class FolderService {
     private final FolderRepository folderRepository;
     private final FileMetadataRepository fileMetadataRepository;
 
-    /**
-     * 사용자의 폴더 트리 구조 조회
-     */
-    public List<Folder> getFolderTree(Long userIdx) {
-        // 1. 모든 폴더와 파일 조회
-        List<Folder> allFolders = folderRepository.findByUserIdxOrderByFolderNameAsc(userIdx);
+    // ========================================
+    // Folder 트리 조회
+    // ========================================
+
+    public List<Folder> getFileFolderTree(Long userIdx) {
+        List<Folder> allFolders = folderRepository.findByUserIdxOrderByCreatedAtAsc(userIdx);
         List<FileMetadata> allFiles = fileMetadataRepository.findByUserIdxOrderByUploadDateDesc(userIdx);
 
-        // 2. 폴더 ID로 그룹화
         Map<String, List<Folder>> foldersByParent = allFolders.stream()
-                .collect(Collectors.groupingBy(folder ->
-                        folder.getParentFolderId() != null ? folder.getParentFolderId() : "ROOT"));
+                .filter(f -> f.getParentFolderId() != null)
+                .collect(Collectors.groupingBy(Folder::getParentFolderId));
 
-        // 3. 각 폴더에 파일 배치
         Map<String, List<FileMetadata>> filesByFolder = allFiles.stream()
-                .collect(Collectors.groupingBy(file ->
-                        file.getFolderId() != null ? file.getFolderId() : "ROOT"));
+                .filter(f -> f.getFolderId() != null && !f.getFolderId().isBlank())
+                .collect(Collectors.groupingBy(FileMetadata::getFolderId));
 
-        // 4. 루트 폴더들 가져오기
-        List<Folder> rootFolders = foldersByParent.get("ROOT");
-        if (rootFolders == null) return List.of();
-
-        // 5. 각 루트 폴더에 하위 구조 빌드
-        return rootFolders.stream()
-                .peek(folder -> buildFolderTree(folder, foldersByParent, filesByFolder))
+        List<Folder> roots = allFolders.stream()
+                .filter(f -> f.getParentFolderId() == null)
                 .collect(Collectors.toList());
+
+        roots.forEach(root -> buildFolderTree(root, foldersByParent, filesByFolder));
+
+        return roots;
     }
 
-    /**
-     * 재귀적으로 폴더 트리 구조 빌드
-     */
     private void buildFolderTree(Folder folder,
                                  Map<String, List<Folder>> foldersByParent,
                                  Map<String, List<FileMetadata>> filesByFolder) {
+        List<Folder> subs = foldersByParent.getOrDefault(folder.getId(), new ArrayList<>());
+        subs.forEach(sub -> {
+            folder.addSubfolder(sub);
+            buildFolderTree(sub, foldersByParent, filesByFolder);
+        });
 
-        // 하위 폴더들 추가
-        List<Folder> subfolders = foldersByParent.get(folder.getId());
-        if (subfolders != null) {
-            subfolders.forEach(subfolder -> {
-                folder.addSubfolder(subfolder);
-                buildFolderTree(subfolder, foldersByParent, filesByFolder); // 재귀
-            });
-        }
-
-        // 폴더 내 파일들 추가
-        List<FileMetadata> files = filesByFolder.get(folder.getId());
-        if (files != null) {
-            files.forEach(folder::addFile);
-        }
+        List<FileMetadata> files = filesByFolder.getOrDefault(folder.getId(), new ArrayList<>());
+        files.forEach(folder::addFile);
     }
 
-    /**
-     * 루트 레벨 파일들 (폴더에 속하지 않은 파일들)
-     */
-    public List<FileMetadata> getRootFiles(Long userIdx) {
-        return fileMetadataRepository.findByUserIdxAndFolderIdIsNullOrderByOriginalNameAsc(userIdx);
-    }
+    // ========================================
+    // Folder 생성/삭제/이름변경
+    // ========================================
 
-    /**
-     * 새 폴더 생성
-     */
+    @Transactional
     public String createFolder(Long userIdx, String folderName, String parentFolderId) {
-        // 중복 검사
-        if (folderRepository.existsByUserIdxAndFolderNameAndParentFolderId(userIdx, folderName, parentFolderId)) {
-            throw new IllegalArgumentException("같은 이름의 폴더가 이미 존재합니다.");
-        }
-
-        Folder folder = Folder.builder()
-                .folderName(folderName)
-                .parentFolderId(parentFolderId)
-                .userIdx(userIdx)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .build();
+        Folder folder = new Folder();
+        folder.setUserIdx(userIdx);
+        folder.setFolderName(folderName);
+        folder.setParentFolderId(parentFolderId);
+        folder.setCreatedAt(LocalDateTime.now());
+        folder.setUpdatedAt(LocalDateTime.now());
 
         return folderRepository.save(folder).getId();
     }
 
-    /**
-     * 폴더 이름 변경
-     */
+    @Transactional
     public void renameFolder(Long userIdx, String folderId, String newName) {
-        Folder folder = folderRepository.findByIdAndUserIdx(folderId, userIdx)
+        Folder folder = folderRepository.findById(folderId)
                 .orElseThrow(() -> new IllegalArgumentException("폴더를 찾을 수 없습니다."));
 
-        // 같은 부모 폴더 내에서 이름 중복 검사
-        if (folderRepository.existsByUserIdxAndFolderNameAndParentFolderId(
-                userIdx, newName, folder.getParentFolderId())) {
-            throw new IllegalArgumentException("같은 이름의 폴더가 이미 존재합니다.");
+        if (!folder.getUserIdx().equals(userIdx)) {
+            throw new IllegalArgumentException("권한이 없습니다.");
         }
 
         folder.setFolderName(newName);
@@ -115,51 +84,102 @@ public class FolderService {
         folderRepository.save(folder);
     }
 
-    /**
-     * 폴더 삭제 (하위 폴더와 파일 포함)
-     */
+    @Transactional
     public void deleteFolder(Long userIdx, String folderId) {
-        Folder folder = folderRepository.findByIdAndUserIdx(folderId, userIdx)
+        Folder folder = folderRepository.findById(folderId)
                 .orElseThrow(() -> new IllegalArgumentException("폴더를 찾을 수 없습니다."));
 
-        // 하위 폴더들 재귀적 삭제
-        deleteSubfoldersRecursively(userIdx, folderId);
+        if (!folder.getUserIdx().equals(userIdx)) {
+            throw new IllegalArgumentException("권한이 없습니다.");
+        }
 
-        // 폴더 내 파일들 삭제
-        List<FileMetadata> files = fileMetadataRepository.findByUserIdxAndFolderIdOrderByOriginalNameAsc(userIdx, folderId);
-        files.forEach(file -> fileMetadataRepository.deleteByIdAndUserIdx(file.getId(), userIdx));
-
-        // 폴더 자체 삭제
-        folderRepository.deleteByIdAndUserIdx(folderId, userIdx);
+        // 하위 폴더 재귀 삭제
+        deleteFolderRecursively(folderId);
     }
 
-    private void deleteSubfoldersRecursively(Long userIdx, String parentFolderId) {
-        List<Folder> subfolders = folderRepository.findByUserIdxAndParentFolderIdOrderByFolderNameAsc(userIdx, parentFolderId);
+    private void deleteFolderRecursively(String folderId) {
+        List<Folder> subfolders = folderRepository.findByParentFolderId(folderId);
+        subfolders.forEach(sub -> deleteFolderRecursively(sub.getId()));
 
-        for (Folder subfolder : subfolders) {
-            // 재귀적으로 하위 폴더 삭제
-            deleteSubfoldersRecursively(userIdx, subfolder.getId());
+        // 폴더 내 파일 삭제
+        List<FileMetadata> files = fileMetadataRepository.findByFolderId(folderId);
+        fileMetadataRepository.deleteAll(files);
 
-            // 폴더 내 파일들 삭제
-            List<FileMetadata> files = fileMetadataRepository.findByUserIdxAndFolderIdOrderByOriginalNameAsc(userIdx, subfolder.getId());
-            files.forEach(file -> fileMetadataRepository.deleteByIdAndUserIdx(file.getId(), userIdx));
+        // 폴더 삭제
+        folderRepository.deleteById(folderId);
+    }
 
-            // 폴더 삭제
-            folderRepository.deleteByIdAndUserIdx(subfolder.getId(), userIdx);
+    // ========================================
+    // Folder 이동 (병합 지원)
+    // ========================================
+
+    @Transactional
+    public void moveFolder(Long userIdx, String folderId, String targetParentId) {
+        Folder folder = folderRepository.findById(folderId)
+                .orElseThrow(() -> new IllegalArgumentException("폴더를 찾을 수 없습니다."));
+
+        if (!folder.getUserIdx().equals(userIdx)) {
+            throw new IllegalArgumentException("권한이 없습니다.");
+        }
+
+        Optional<Folder> existingFolder = folderRepository
+                .findByUserIdxAndParentFolderIdAndFolderName(userIdx, targetParentId, folder.getFolderName());
+
+        if (existingFolder.isPresent() && !existingFolder.get().getId().equals(folderId)) {
+            Folder target = existingFolder.get();
+            mergeFolders(folder, target, userIdx);
+        } else {
+            folder.setParentFolderId(targetParentId);
+            folder.setUpdatedAt(LocalDateTime.now());
+            folderRepository.save(folder);
         }
     }
 
-    /**
-     * 파일을 폴더로 이동
-     */
+    private void mergeFolders(Folder source, Folder target, Long userIdx) {
+        List<Folder> subfolders = folderRepository.findByParentFolderId(source.getId());
+
+        for (Folder sub : subfolders) {
+            Optional<Folder> existingSubFolder = folderRepository
+                    .findByUserIdxAndParentFolderIdAndFolderName(userIdx, target.getId(), sub.getFolderName());
+
+            if (existingSubFolder.isPresent()) {
+                mergeFolders(sub, existingSubFolder.get(), userIdx);
+            } else {
+                sub.setParentFolderId(target.getId());
+                sub.setUpdatedAt(LocalDateTime.now());
+                folderRepository.save(sub);
+            }
+        }
+
+        List<FileMetadata> files = fileMetadataRepository.findByFolderId(source.getId());
+        files.forEach(file -> {
+            file.setFolderId(target.getId());
+            fileMetadataRepository.save(file);
+        });
+
+        folderRepository.delete(source);
+    }
+
+    // ========================================
+    // 파일 이동 (FolderController에서 사용)
+    // ========================================
+
+    @Transactional
     public void moveFileToFolder(Long userIdx, String fileId, String targetFolderId) {
-        FileMetadata file = fileMetadataRepository.findByIdAndUserIdx(fileId, userIdx)
+        FileMetadata file = fileMetadataRepository.findById(fileId)
                 .orElseThrow(() -> new IllegalArgumentException("파일을 찾을 수 없습니다."));
 
-        // 대상 폴더 존재 확인 (null이면 루트로 이동)
-        if (targetFolderId != null) {
-            folderRepository.findByIdAndUserIdx(targetFolderId, userIdx)
+        if (!file.getUserIdx().equals(userIdx)) {
+            throw new IllegalArgumentException("권한이 없습니다.");
+        }
+
+        if (targetFolderId != null && !targetFolderId.isEmpty()) {
+            Folder targetFolder = folderRepository.findById(targetFolderId)
                     .orElseThrow(() -> new IllegalArgumentException("대상 폴더를 찾을 수 없습니다."));
+
+            if (!targetFolder.getUserIdx().equals(userIdx)) {
+                throw new IllegalArgumentException("대상 폴더에 권한이 없습니다.");
+            }
         }
 
         file.setFolderId(targetFolderId);

@@ -23,6 +23,7 @@ public class Note {
     @JoinColumn(name = "user_idx", nullable = false)
     @JsonIgnore
     private User user;
+
     @Column(name = "source_id")
     private String sourceId;
 
@@ -74,10 +75,11 @@ public class Note {
     @Column(name = "folder_id")
     private Long folderId;
 
+
     @OneToMany(mappedBy = "note", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<NoteTag> tags;
 
-    // 일단 조회수 비어있을경우 자동 0 처리
     public void incrementViewCount() {
         if (this.viewCount == null) {
             this.viewCount = 0;

@@ -1,6 +1,7 @@
 package com.smhrd.web.entity;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 import lombok.AllArgsConstructor;
@@ -37,8 +38,10 @@ public class Folder {
     @Field("updated_at")
     private LocalDateTime updatedAt;
 
-    // 트리 구조를 위한 가상 필드 (DB에 저장되지 않음)
+    @Transient
     private List<Folder> subfolders = new ArrayList<>();
+
+    // 트리 구조를 위한 가상 필드 (DB에 저장되지 않음)
     private List<FileMetadata> files = new ArrayList<>();
 
     public boolean isRoot() {

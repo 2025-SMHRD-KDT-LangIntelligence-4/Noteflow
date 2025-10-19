@@ -35,4 +35,6 @@ public interface NoteTagRepository extends JpaRepository<NoteTag, Long> {
      * 특정 노트의 모든 태그 연결 삭제
      */
     void deleteByNote(Note note);
+
+    List<NoteTag> findAllByNote(Note note);
 }

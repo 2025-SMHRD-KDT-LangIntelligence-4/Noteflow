@@ -185,4 +185,28 @@ public class NotionContentService {
 		return saved.getNoteIdx();
 	}
 
+	public void syncNoteTags(Note note, List<String> keywords) {
+		// 기존 태그 관계 삭제
+		noteTagRepository.deleteByNote(note);
+
+		// 새 태그 저장 및 연결
+		for (String keyword : keywords) {
+			Tag tag = tagRepository.findByName(keyword)
+					.orElseGet(() -> {
+						Tag newTag = new Tag();
+						newTag.setName(keyword);
+						newTag.setUsageCount(0);
+						return tagRepository.save(newTag);
+					});
+
+			// usage_count 증가
+			tagRepository.bumpUsage(tag.getTagIdx(), 1);
+
+			// 노트-태그 연결
+			NoteTag noteTag = new NoteTag();
+			noteTag.setNote(note);
+			noteTag.setTag(tag);
+			noteTagRepository.save(noteTag);
+		}
+	}
 }

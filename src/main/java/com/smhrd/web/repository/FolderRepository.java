@@ -30,4 +30,9 @@ public interface FolderRepository extends MongoRepository<Folder, String> {
 
     // 생성일 기준 정렬
     List<Folder> findByUserIdxOrderByCreatedAtAsc(Long userIdx);
+    List<Folder> findByParentFolderId(String parentFolderId);
+
+    Optional<Folder> findByUserIdxAndParentFolderIdAndFolderName(
+            Long userIdx, String parentFolderId, String folderName);
 }
+
