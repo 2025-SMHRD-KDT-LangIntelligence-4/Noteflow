@@ -8,69 +8,69 @@
 <link rel="stylesheet" th:href="@{/css/footer.css}" />
 </head>
 <body>
-<!-- 헤더 -->
-<div th:replace="~{fragments/header :: siteHeader}"></div>
+	<!-- 헤더 -->
+	<div th:replace="~{fragments/header :: siteHeader}"></div>
 
-<div class="message-container">
-    <div class="message-box">
-        <!-- 메시지 -->
-        <div class="message">
-            저장이 완료되었습니다.
-        </div>
+	<div class="message-container">
+		<div class="message-box">
+			<!-- 메시지 -->
+			<div class="message">저장이 완료되었습니다.</div>
 
-        <div class="AI-model-box-location-container">
-            <!-- AI 이미지 -->
-            <div class="AI-model-box">
-                <img th:src="@{/images/AI.png}" class="AI-image">
-            </div>
+			<div class="AI-model-box-location-container">
+				<!-- AI 이미지 -->
+				<div class="AI-model-box">
+					<img th:src="@{/images/AI.png}" class="AI-image">
+				</div>
 
-            <!-- 제목 -->
-            <div class="title">
-                <span th:text="${title != null ? title : '노선 제목'}">노선 제목</span>
-            </div>
+				<!-- 제목 -->
+				<div class="title">
+					<span th:text="${title != null ? title : '노선 제목'}">노선 제목</span>
+				</div>
 
-            <!-- 작성일 -->
-            <div class="date">
-                <span th:text="${createdAt != null ? createdAt : '노선 작성일'}">노선 작성일</span>
-            </div>
+				<!-- 작성일 -->
+				<div class="date">
+					<span th:text="${createdAt != null ? createdAt : '노선 작성일'}">노선
+						작성일</span>
+				</div>
 
-            <!-- 키워드 -->
-            <div class="info-line">
-                <strong>키워드:</strong>
-                <span th:text="${keywords != null ? keywords : '없음'}">키워드</span>
-            </div>
+				<!-- 키워드 -->
+				<div class="info-line">
+					<strong>키워드:</strong> <span
+						th:text="${keywords != null ? keywords : '없음'}">키워드</span>
+				</div>
 
-<!--            &lt;!&ndash; 노트 ID &ndash;&gt;-->
-<!--            <div class="info-line">-->
-<!--                <strong>노트 ID:</strong>-->
-<!--                <span th:text="${noteId != null ? noteId : 'N/A'}">N/A</span>-->
-<!--            </div>-->
+				<!--            &lt;!&ndash; 노트 ID &ndash;&gt;-->
+				<!--            <div class="info-line">-->
+				<!--                <strong>노트 ID:</strong>-->
+				<!--                <span th:text="${noteId != null ? noteId : 'N/A'}">N/A</span>-->
+				<!--            </div>-->
 
-            <!-- 폴더 경로 -->
-            <div class="info-line">
-                <strong>폴더 경로:</strong>
-                <span th:text="${categoryPath != null ? categoryPath : '없음'}">없음</span>
-            </div>
+				<!-- 폴더 경로 -->
+				<div class="info-line">
+					<strong>폴더 경로:</strong> <span
+						th:text="${categoryPath != null ? categoryPath : '없음'}">없음</span>
+				</div>
 
-<!--            &lt;!&ndash; 폴더 ID &ndash;&gt;-->
-<!--            <div class="info-line">-->
-<!--                <strong>폴더 ID:</strong>-->
-<!--                <span th:text="${folderId != null ? folderId : 'N/A'}">N/A</span>-->
-<!--            </div>-->
+				<!--            &lt;!&ndash; 폴더 ID &ndash;&gt;-->
+				<!--            <div class="info-line">-->
+				<!--                <strong>폴더 ID:</strong>-->
+				<!--                <span th:text="${folderId != null ? folderId : 'N/A'}">N/A</span>-->
+				<!--            </div>-->
 
-            <!-- 버튼들 (가로 배치) -->
-            <div class="button-location-container">
-                <a th:href="@{/notion/create}" class="action-btn">작성페이지로</a>
-                <a th:href="@{/notion/manage}" class="action-btn">노션 관리</a>
-                <a th:href="@{/quiz/create}" class="action-btn">퀴즈 생성</a>
-                <a th:href="@{/main}" class="action-btn">메인으로</a>
-            </div>
-        </div>
-    </div>
-</div>
+				<!-- 버튼들 (가로 배치) -->
+				<div class="button-location-container">
+				<a th:href="@{'/lecture/recommend'(keywords=${keywords}, categoryPath=${categoryPath}, noteId=${noteId})}">강의페이지</a>
+					<a th:href="@{/notion/create}" class="action-btn">작성페이지로</a> <a
+						th:href="@{/notion/manage}" class="action-btn">노션 관리</a> <a
+						th:href="@{/quiz/create}" class="action-btn">퀴즈 생성</a> <a
+						th:href="@{/main}" class="action-btn">메인으로</a>
+				</div>
+			</div>
+		</div>
+	</div>
 
-<!-- 푸터 -->
-<div th:replace="~{fragments/footer :: siteFooter}"></div>
+	<!-- 푸터 -->
+	<div th:replace="~{fragments/footer :: siteFooter}"></div>
 </body>
 
 </html>

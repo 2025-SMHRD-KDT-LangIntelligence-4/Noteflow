@@ -3,7 +3,10 @@ package com.smhrd.web.repository;
 import com.smhrd.web.entity.NoteTag;
 import com.smhrd.web.entity.Note;
 import com.smhrd.web.entity.Tag;
+
+import org.apache.ibatis.annotations.Param;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -37,4 +40,10 @@ public interface NoteTagRepository extends JpaRepository<NoteTag, Long> {
     void deleteByNote(Note note);
 
     List<NoteTag> findAllByNote(Note note);
+    
+
+    //  노트에 달린 태그명만 빠르게 로딩 (검색용)
+     @Query("select lower(nt.tag.name) from NoteTag nt where nt.note.noteIdx = :noteIdx")
+     List<String> findTagNamesByNoteIdx(@Param("noteIdx") Long noteIdx);
+
 }

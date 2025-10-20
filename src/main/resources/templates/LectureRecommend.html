@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <title th:text="${pageTitle}">강의 추천</title>
+  <style>
+    .lr-wrap { max-width: 860px; margin: 30px auto; font-family: system-ui, sans-serif; }
+    .lr-head { display:flex; gap:6px; align-items:flex-start; flex-wrap: wrap; }
+    .lr-head .kv { background:#f6f8fa; border:1px solid #e1e4e8; padding:8px 10px; border-radius:6px; }
+    .lr-tools { margin:12px 0; display:flex; gap:8px; }
+    .lr-tools input { flex:1; padding:8px; }
+    .lr-results .card { border:1px solid #e1e4e8; border-radius:8px; padding:10px 12px; margin:8px 0; }
+    .lr-results .title { font-weight:600; margin-bottom:6px; }
+    .lr-results .tags { color:#555; font-size:13px; }
+    .lr-empty { color:#666; padding:14px 10px; background:#fafbfc; border:1px dashed #e1e4e8; border-radius:8px; }
+    .nc-btn { padding:8px 12px; border:1px solid #d0d7de; border-radius:6px; background:#fff; cursor:pointer; }
+  </style>
+</head>
+<body>
+<div class="lr-wrap">
+  <h1>강의 추천</h1>
+
+  <div class="lr-head">
+    <div class="kv" th:if="${categoryPath}">카테고리: <strong th:text="${categoryPath}">-</strong></div>
+    <div class="kv" th:if="${keywords}">키워드: <strong th:text="${keywords}">-</strong></div>
+    <div class="kv" th:if="${noteId}">노트 ID: <strong th:text="${noteId}">-</strong></div>
+  </div>
+
+  <div class="lr-tools">
+    <input id="lr-q" type="text" placeholder="태그 또는 제목 키워드">
+    <button id="lr-btn-tags" class="nc-btn">태그 부분일치</button>
+    <button id="lr-btn-title" class="nc-btn">제목 검색</button>
+  </div>
+
+  <section id="lr-results" class="lr-results">
+    <div class="lr-empty">추천 목록을 불러오는 중이거나, 조건에 맞는 항목이 없습니다.</div>
+  </section>
+</div>
+
+<script>
+(async () => {
+  const results = document.getElementById('lr-results');
+  const params = new URLSearchParams(location.search);
+  const keywords = params.get('keywords') || '';
+  const categoryPath = params.get('categoryPath') || '';
+
+  // 초진입: 키워드 우선 → 없으면 카테고리
+  try {
+    let items = [];
+    if (keywords) {
+      const r = await fetch('/lecture/api/recommend/by-tags?q=' + encodeURIComponent(keywords) + '&size=10&like=true');
+      const data = await r.json();
+      if (data.success) items = data.items;
+    } else if (categoryPath) {
+      const parts = categoryPath.split(' > ');
+      const large = parts[0] || '';
+      const medium = parts[1] || '';
+      const small  = parts[2] || '';
+      const url = `/lecture/api/recommend/by-category?large=${encodeURIComponent(large)}`
+                + (medium ? `&medium=${encodeURIComponent(medium)}` : '')
+                + (small  ? `&small=${encodeURIComponent(small)}`   : '')
+                + `&size=10`;
+      const r = await fetch(url);
+      const data = await r.json();
+      if (data.success) items = data.items;
+    }
+    render(items);
+  } catch (e) {
+    results.innerHTML = `<div class="lr-empty">오류: ${e.message}</div>`;
+  }
+
+  document.getElementById('lr-btn-tags').addEventListener('click', async () => {
+    const q = document.getElementById('lr-q').value.trim();
+    const r = await fetch('/lecture/api/recommend/by-tags?q=' + encodeURIComponent(q) + '&size=10&like=true');
+    const data = await r.json();
+    render(data.success ? data.items : []);
+  });
+
+  document.getElementById('lr-btn-title').addEventListener('click', async () => {
+    const q = document.getElementById('lr-q').value.trim();
+    const r = await fetch('/lecture/api/recommend/by-title?keyword=' + encodeURIComponent(q) + '&size=10');
+    const data = await r.json();
+    render(data.success ? data.items : []);
+  });
+
+  // 🔒 안전하고 정확한 렌더링 (DOM API 사용)
+  function render(items) {
+    if (!items || !items.length) {
+      results.innerHTML = '<div class="lr-empty">조건에 맞는 추천 항목이 없습니다.</div>';
+      return;
+    }
+    results.innerHTML = '';
+    items.forEach(i => {
+      const card = document.createElement('div');
+      card.className = 'card';
+
+      const titleDiv = document.createElement('div');
+      titleDiv.className = 'title';
+
+      const a = document.createElement('a');
+      a.href = i.url;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.textContent = i.title || '(제목 없음)';
+
+      titleDiv.appendChild(a);
+      card.appendChild(titleDiv);
+
+      if (Array.isArray(i.tags) && i.tags.length) {
+        const tagsDiv = document.createElement('div');
+        tagsDiv.className = 'tags';
+        tagsDiv.textContent = '태그: ' + i.tags.join(', ');
+        card.appendChild(tagsDiv);
+      }
+
+      results.appendChild(card);
+    });
+  }
+})();
+</script>
+</body>
+</html>

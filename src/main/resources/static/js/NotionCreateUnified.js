@@ -113,8 +113,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const promptSelected = state.selectedPromptIdx !== null;
     const allowSave = tokens > 0 && tokens <= MAX_TOKENS;
+	const allowSummary =state.mode === 'file' ? !!state.fileId : (tokens >= 50 && tokens <= MAX_TOKENS);
+	if ($temsetBtn) $temsetBtn.disabled = !promptSelected || !allowSummary;
 
-    if ($temsetBtn) $temsetBtn.disabled = !promptSelected || !allowText || state.mode === 'file';
     if ($saveBtn) $saveBtn.disabled = !allowSave;
   }
   state.editor.on('change', updateCounters);
@@ -786,4 +787,3 @@ document.addEventListener('DOMContentLoaded', () => {
   renderSlider();
   updateCounters();
 });
-
