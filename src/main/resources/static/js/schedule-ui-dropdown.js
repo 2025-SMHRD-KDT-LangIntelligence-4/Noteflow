@@ -1,7 +1,9 @@
-// schedule-ui-dropdown.js
+// schedule-ui-dropdown.js (변동 없음. Quick Add Modal과는 별개로 동작)
 // 드롭다운 및 기간 선택 UI 제어 모듈
 
 export const initDropdowns = () => {
+  // 현재 Quick Add Modal에는 periodCheck 관련 필드가 없으므로, 
+  // 이 함수는 다른 폼(예: 편집 모달)에 사용된다고 가정하고 유지합니다.
   const periodCheckbox = document.querySelector('#periodCheck');
   const startDateInput = document.querySelector('#startDate');
   const endDateInput = document.querySelector('#endDate');
@@ -35,7 +37,7 @@ export const initDropdowns = () => {
   });
 };
 
-// 색상 선택 Dropdown 초기화
+// 색상 선택 Dropdown 초기화 (다른 폼에 사용되는 colorPreview 기준)
 export const initColorDropdown = () => {
   const colorOptions = document.querySelectorAll('.color-option');
   const colorPreview = document.querySelector('#colorPreview');

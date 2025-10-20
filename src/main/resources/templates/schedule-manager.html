@@ -7,11 +7,9 @@
 
 <title>스케줄 관리 달력</title>
 
-<!-- FullCalendar -->
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
 
-<!-- flatpickr -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ko.js"></script>
@@ -25,23 +23,52 @@
 <div th:replace="fragments/header :: siteHeader"></div>
 
 <div class="location-container">
-    <div class="calendar-wrapper">
-        <div class="calendar-header">
-            <div class="calendar-title">스케줄 달력</div>
-            <button id="calendarSearchBtn" class="icon-btn" title="검색">🔍</button>
+    <div class="main-content-wrapper"> 
+        
+        <div class="calendar-wrapper">
+            <div class="calendar-title-only">스케줄 달력</div> 
+            <div class="calendar-container">
+                <div id="calendar"></div>
+            </div>
         </div>
-        <div class="calendar-container">
-            <div id="calendar"></div>
+
+        <div id="scheduleSidebar" class="schedule-sidebar">
+            <div class="sidebar-section search-section">
+                <h3>일정 검색</h3>
+                <div class="search-input-group">
+                    <input type="text" id="scheduleSearchInput" placeholder="제목, 내용으로 검색" />
+                    <button id="searchButton" class="icon-btn">🔍</button>
+                </div>
+            </div>
+
+            <div class="sidebar-section filter-section">
+                <h3>필터 옵션</h3>
+                <div class="filter-category-list" id="categoryFilterList">
+                    <span class="category-tag active" data-filter="all">#전체</span>
+                    <span class="category-tag" data-filter="java">@Java</span>
+                    <span class="category-tag" data-filter="python">@Python</span>
+                    <span class="category-tag input-placeholder">+ 직접 입력</span>
+                </div>
+            </div>
+
+            <div class="sidebar-section temp-section">
+                <h3>임시 저장 일정</h3>
+                <div id="tempScheduleContainer" class="temp-schedule-list">
+                    <div class="no-temp-schedules">저장된 임시 일정이 없습니다.</div>
+                </div>
+            </div>
         </div>
+        
     </div>
 </div>
 
-<!-- 일정 추가 모달 -->
 <div th:replace="fragments/schedule-dropdown-ui :: quickAddModal"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/locales/ko.global.min.js"></script>
-<script type="module" src="/js/schedule-manager.js"></script>
+<script type="module" src="/js/schedule-utils.js"></script>
+<script type="module" src="/js/schedule-ui-dropdown.js"></script>
 <script type="module" src="/js/schedule-quick-add.js"></script>
+<script type="module" src="/js/schedule-manager.js"></script>
 
 <div th:replace="fragments/footer :: siteFooter"></div>
 </body>
