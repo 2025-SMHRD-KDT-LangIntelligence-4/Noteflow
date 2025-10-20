@@ -61,7 +61,7 @@
                     <h2>환영합니다!</h2>
                     <p>왼쪽에서 파일이나 정리본을 선택하시면<br>내용을 확인하고 편집할 수 있습니다</p>
                 </div>
-                <div id="categorySelectArea" style="display: none; margin: 10px 0;">
+                <div id="categorySelectArea" style="display: none; margin: 10px 0; gap:10px;">
                     <label>📂 카테고리</label>
                     <select id="largeCategorySelect">
                         <option value="">대분류 선택</option>
@@ -75,8 +75,8 @@
                     <button id="addCategoryBtn">➕ 새 카테고리 추가</button>
                 </div>
                 <!-- 태그 입력 영역 추가 -->
-                <div id="tagInputArea" style="display: none; margin-top: 15px;">
-                    <label>🏷️ 태그 (키워드)</label>
+                <div id="tagInputArea" style="display: none; margin-top: 15px; gap:10px;">
+                    <label style="width:100px;">🏷️ 태그</label>
                     <div class="tag-input-wrapper">
                         <div id="tagDisplay" class="tag-display"></div>
                         <input type="text" id="tagInput" placeholder="Enter 키로 태그 추가 | 클릭으로 제거">
@@ -87,7 +87,7 @@
                 <textarea id="itemContent" class="notion-content" style="display: none;"></textarea>
 
                 <!-- ✅ Toast UI Editor 영역 -->
-                <div id="editorArea" style="display: none;"></div>
+                <div id="editorArea" style="display: none; height:490px"></div>
 
                 <!-- ✅ 미리보기 영역 (PDF, 이미지) -->
                 <div id="previewArea" style="display: none;">

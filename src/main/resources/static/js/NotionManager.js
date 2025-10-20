@@ -161,7 +161,7 @@ function filterTree(keyword) {
                     const children = container.querySelector('.folder-children');
                     if (children) {
                         children.classList.add('expanded');
-                        children.style.display = 'block';
+                        children.style.display = 'flex';
                         children.querySelectorAll('.note-item, .folder-container').forEach(child => {
                             child.style.display = '';
                         });
@@ -212,7 +212,7 @@ function filterTree(keyword) {
                     const children = container.querySelector('.folder-children');
                     if (children) {
                         children.classList.add('expanded');
-                        children.style.display = 'block';
+                        children.style.display = 'flex';
                         children.querySelectorAll('.file-item, .folder-container').forEach(child => {
                             child.style.display = '';
                         });
@@ -252,7 +252,7 @@ function showParentFolders(element) {
             const children = parent.querySelector('.folder-children');
             if (children) {
                 children.classList.add('expanded');
-                children.style.display = 'block';
+                children.style.display = 'flex';
             }
 
             // 토글 버튼 확장
@@ -1040,7 +1040,7 @@ function clearSelection() {
     document.getElementById('itemTitle').textContent = '';
     document.getElementById('itemContent').value = '';
     document.getElementById('buttonContainer').innerHTML = '';
-    document.getElementById('welcomeMessage').style.display = 'block';
+    document.getElementById('welcomeMessage').style.display = 'flex';
 }
 // ========== 16. 다중 선택 ==========
 function toggleMultiFileSelection(item) {
@@ -1106,7 +1106,7 @@ function showNoteContent(note) {
     originalContent = note.content || '';
 
     if (editorArea) {
-        editorArea.style.display = 'block';
+        editorArea.style.display = 'flex';
         if (contentEl) contentEl.style.display = 'none';
 
         if (toastEditor) {
@@ -1119,7 +1119,7 @@ function showNoteContent(note) {
                 // ✅ Viewer 모드로 생성
                 toastEditor = toastui.Editor.factory({
                     el: editorArea,
-                    height: '70vh',
+                    height: '490px',
                     viewer: true,
                     initialValue: originalContent
                 });
@@ -1132,7 +1132,7 @@ function showNoteContent(note) {
                 console.error('Toast Editor 생성 실패:', e);
                 if (contentEl) {
                     editorArea.style.display = 'none';
-                    contentEl.style.display = 'block';
+                    contentEl.style.display = 'flex';
                     contentEl.value = originalContent;
                     contentEl.readOnly = true;
                     contentEl.classList.add('readonly');
@@ -1169,23 +1169,23 @@ async function showFileContent(file) {
     try {
         // PDF
         if (ext === 'pdf') {
-            previewArea.style.display = 'block';
-            pdfPreview.style.display = 'block';
+            previewArea.style.display = 'flex';
+            pdfPreview.style.display = 'flex';
             imagePreview.style.display = 'none';
             pdfPreview.src = `/api/files/preview/${file.gridfsId}`;
         }
 
         // 이미지
         else if (imageExts.includes(ext)) {
-            previewArea.style.display = 'block';
+            previewArea.style.display = 'flex';
             pdfPreview.style.display = 'none';
-            imagePreview.style.display = 'block';
+            imagePreview.style.display = 'flex';
             imagePreview.src = `/api/files/download/${file.gridfsId}`;
         }
 
         // Excel/CSV
         else if (ext === 'xlsx' || ext === 'xls' || ext === 'csv') {
-            spreadsheetArea.style.display = 'block';
+            spreadsheetArea.style.display = 'flex';
 
             const res = await secureFetch(`/api/files/preview/${file.gridfsId}`);
 
@@ -1211,7 +1211,7 @@ async function showFileContent(file) {
                 const arrayBuffer = await res.arrayBuffer();
 
                 if (typeof XLSX === 'undefined') {
-                    contentEl.style.display = 'block';
+                    contentEl.style.display = 'flex';
                     contentEl.value = 'Excel 파일을 표시하려면 SheetJS 라이브러리가 필요합니다.';
                     return;
                 }
@@ -1266,7 +1266,7 @@ async function showFileContent(file) {
             // 내용을 변수에 저장 (편집용)
             originalContent = text;
 
-            editorArea.style.display = 'block';
+            editorArea.style.display = 'flex';
 
             if (toastEditor) {
                 toastEditor.destroy();
@@ -1275,7 +1275,7 @@ async function showFileContent(file) {
 
             toastEditor = toastui.Editor.factory({
                 el: editorArea,
-                height: '70vh',
+                height: '490px',
                 viewer: true,
                 initialValue: text
             });
@@ -1286,14 +1286,14 @@ async function showFileContent(file) {
 
         // 기타
         else {
-            contentEl.style.display = 'block';
+            contentEl.style.display = 'flex';
             contentEl.value = `파일명: ${file.originalName}\n확장자: ${ext}\n\n이 파일 형식은 미리보기를 지원하지 않습니다.`;
             contentEl.readOnly = true;
         }
 
     } catch (e) {
         console.error('파일 로드 오류:', e);
-        contentEl.style.display = 'block';
+        contentEl.style.display = 'flex';
         contentEl.value = `파일 로드 중 오류 발생:\n${e.message}`;
         contentEl.readOnly = true;
     }
@@ -1317,7 +1317,7 @@ function enterEditModeForFile() {
 
         toastEditor = new toastui.Editor({
             el: editorArea,
-            height: '70vh',
+            height: '490px',
             initialEditType: 'wysiwyg',
             initialValue: content,
             previewStyle: 'vertical',
@@ -1362,7 +1362,7 @@ function showFolderContent(folder) {
     if (welcomeMsg) welcomeMsg.style.display = 'none';
 
     titleEl.textContent = folder.folderName || '(폴더)';
-    contentEl.style.display = 'block';
+    contentEl.style.display = 'flex';
     contentEl.value = '폴더가 선택되었습니다.\n\n아래 버튼으로 폴더를 관리하세요.';
     contentEl.classList.add('readonly');
     contentEl.readOnly = true;
@@ -1587,7 +1587,7 @@ function enterEditMode() {
     showCategorySelectArea();
     // ✅ 태그 입력 영역 표시
     if (tagInputArea) {
-        tagInputArea.style.display = 'block';
+        tagInputArea.style.display = 'flex';
     }
 
     // Viewer → Editor 전환
@@ -1596,7 +1596,7 @@ function enterEditMode() {
         toastEditor.destroy();
         toastEditor = new toastui.Editor({
             el: editorArea,
-            height: '70vh',
+            height: '490px',
             initialEditType: 'wysiwyg',
             initialValue: content,
             previewStyle: 'vertical',
@@ -1710,7 +1710,7 @@ function cancelEdit() {
         toastEditor.destroy();
         toastEditor = toastui.Editor.factory({
             el: editorArea,
-            height: '70vh',
+            height: '490px',
             viewer: true,
             initialValue: originalContent
         });
@@ -1777,7 +1777,7 @@ async function saveNote() {
                 toastEditor.destroy();
                 toastEditor = toastui.Editor.factory({
                     el: editorArea,
-                    height: '70vh',
+                    height: '490px',
                     viewer: true,
                     initialValue: originalContent
                 });
@@ -1837,7 +1837,7 @@ async function saveFile() {
 
                 toastEditor = toastui.Editor.factory({
                     el: editorArea,
-                    height: '70vh',
+                    height: '490px',
                     viewer: true,
                     initialValue: originalContent
                 });
@@ -1867,7 +1867,7 @@ function cancelFileEdit() {
 
         toastEditor = toastui.Editor.factory({
             el: editorArea,
-            height: '70vh',
+            height: '490px',
             viewer: true,
             initialValue: originalContent
         });
@@ -2765,7 +2765,7 @@ function clearContent() {
         contentEl.value = '';
         contentEl.style.display = 'none';
     }
-    if (welcomeMsg) welcomeMsg.style.display = 'block';
+    if (welcomeMsg) welcomeMsg.style.display = 'flex';
     if (buttonContainer) buttonContainer.innerHTML = '';
 }
 function setupRootDropZone() {
@@ -3088,8 +3088,8 @@ function setupAddCategoryButton() {
     if (!categorySelectArea) return;
 
     // 카테고리/태그 영역 표시
-    categorySelectArea.style.display = 'block';
-    if (tagInputArea) tagInputArea.style.display = 'block';
+    categorySelectArea.style.display = 'flex';
+    if (tagInputArea) tagInputArea.style.display = 'flex';
 
     // ✅ 기존 카테고리 데이터 로드
     if (selectedItem && selectedItem.category) {

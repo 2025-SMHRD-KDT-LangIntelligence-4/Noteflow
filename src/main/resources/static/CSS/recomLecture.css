@@ -1,0 +1,75 @@
+@charset "UTF-8";
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+body{
+	background: white; 
+	margin:0px;
+	font-family:pretendard;
+}
+.full-container{
+	position:relative;
+	display:flex;
+	flex-wrap:wrap;
+	justify-content:center;
+	width:100%;
+	height:100%;
+	top:100px;
+	padding-bottom:100px;
+}
+.full-location-container{
+	width:1240px;
+	height:100%;
+	display:flex;
+	justify-content:center;
+	flex-wrap:wrap;
+}
+.searchBar-container{
+	width:100%;
+	display:flex;
+	justify-content:center;
+	align-items:center;
+	height:50px;
+	border-radius:10px;
+	background-color:white;
+	box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.search-bar{
+	width:95%;
+	padding:10px;
+	font-size:15px;
+	border: none;
+	outline:none;
+}
+.tag-container{
+	width:100%;
+	height:300px;
+	display:flex;
+	flex-wrap:wrap;
+}
+.lecture-list-container{
+	width:100%;
+	height:100%;
+	display:flex;
+	justify-content:center;
+	flex-wrap:wrap;
+	gap:15px;
+}
+.lecture-list{
+	width:32%;
+	height:300px;
+	background-color:white;
+}
+.lecture-img{
+	width:100%;
+	height:240px;
+	overflow:hidden;
+	border: 1px solid #c7c7c7;
+	border-radius:10px;
+}
+.lecture-title{
+	width:95%;
+	height:50px;
+	overflow:hidden;
+	display:flex;
+	align-items:center;
+	padding: 0 10px;
+}

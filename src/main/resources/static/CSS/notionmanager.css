@@ -35,7 +35,7 @@ body {
 .notion-list-container {
     background-color: white;
     width: 360px;
-    min-height: 690px;
+    min-height: 800px;
     border-radius: 20px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     display: flex;
@@ -370,7 +370,7 @@ body {
 .notion-content-container {
     background-color: white;
     width: 830px;
-    min-height: 690px;
+    min-height: 800px;
     border-radius: 20px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     display: flex;
@@ -447,25 +447,33 @@ body {
 }
 
 .btn-save {
-    background-color: #28a745;
-    color: white;
+    background-color: white;
+    color: black;
+	box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .btn-save:hover {
-    background-color: #218838;
+    background-color: #96d0ff;
     transform: translateY(-2px);
+    color:white;
 }
 
 .btn-cancel {
-    background-color: #6c757d;
-    color: white;
+    background-color: white;
+    color: black;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .btn-cancel:hover {
-    background-color: #5a6268;
+    background-color: #96d0ff;
     transform: translateY(-2px);
+    color:white;   
 }
-
+#addCategoryBtn{
+    border: none;
+    padding: 5px 20px;
+    border-radius: 5px;
+}
 .btn-download {
     background-color: #17a2b8;
     color: white;
@@ -930,4 +938,17 @@ body {
 
 #tagInput {
     font-size: 14px;
+    margin-top: 10px;
+    width: 300px;
+    display:flex;
+    gap:10px;
+}
+.tag-input-wrapper{
+	display:flex;
+	gap:10px;
+	flex-wrap:wrap;
+}
+.tag-display {
+	display:flex;
+	gap:10px;
 }

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+ <link rel="stylesheet" th:href="@{/css/header.css}" />
+ <link rel="stylesheet" th:href="@{/css/footer.css}" />
+ <link rel="stylesheet" th:href="@{/css/recomLecture.css}">
+</head>
+<body>
+<div th:replace="fragments/header :: siteHeader"></div>
+	<div class="full-container">
+		<div class="full-location-container">
+			<div class="searchBar-container">
+				<input id ="lr-q" class="search-bar" type="text"  placeholder="태그 또는 제목 키워드"/>
+			</div>
+			<div class="tag-container">
+				<label style="width:100px;">🏷️ 태그</label>
+	                 <div class="tag-input-wrapper">
+	                      <div id="tagDisplay" class="tag-display"></div>
+	                      <input type="text" id="tagInput" placeholder="Enter 키로 태그 추가 | 클릭으로 제거">
+	                 </div>
+			</div>
+			<div class="lecture-list-container">
+				<div class="lecture-list">
+					<div class="lecture-img">강의썸네일</div>
+					<div class="lecture-title">강의제목</div>
+				</div>
+				<div class="lecture-list">
+					<div class="lecture-img">강의썸네일</div>
+					<div class="lecture-title">강의제목</div>
+				</div>
+				<div class="lecture-list">
+					<div class="lecture-img">강의썸네일</div>
+					<div class="lecture-title">강의제목</div>
+				</div>
+			</div>
+		</div>
+	</div>
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>
