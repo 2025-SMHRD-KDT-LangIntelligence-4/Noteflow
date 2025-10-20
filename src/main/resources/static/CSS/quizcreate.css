@@ -29,8 +29,8 @@ body {
 
 /* 2. 노션 선택 메인 박스 */
 .notion-selection-box {
-    width: 600px;
-    height: 600px; 
+    width: 900px;
+    height: 700px; 
     background-color: white;
     border-radius: 20px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
@@ -38,7 +38,8 @@ body {
     display: flex;
     flex-direction: column;
     gap: 15px;
-    box-sizing: border-box; 
+    box-sizing: border-box;
+	
 }
 .section-title {
     font-size: 24px;
@@ -53,16 +54,18 @@ body {
     border: 1px solid #ddd;
     border-radius: 8px;
     padding: 5px;
-    background-color: #fff; 
+    background-color: #fff;
+    overflow-x:hidden; 
 }
 
 .tree-container {
     width: 100%;
-    height: 100%;
+    height: 600px;
     overflow-y: auto; 
     padding-right: 10px; 
     font-size: 16px;
     line-height: 1.5;
+    overflow-x:hidden;
 }
 
 /* 안내 문구 스타일 수정: 완벽한 수직/수평 중앙 정렬 */
@@ -105,7 +108,8 @@ body {
 
 /* 4. 정보 표시 및 완료 버튼 영역 */
 .info-area {
-    width: 100%;
+    width: 200px;
+    height:700px;
     display: flex;
     flex-direction: column;
     gap: 20px;
@@ -113,10 +117,10 @@ body {
 }
 .tag-display-box {
     width: 100%;
-    min-height: 100px; 
+    height: 700px; 
     background-color: white;
     border-radius: 20px;
-    box-shadow: 0px 4px 4px 5px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     padding: 20px; 
     box-sizing: border-box;
 }
@@ -141,15 +145,15 @@ body {
 
 /* 5. 선택 완료 버튼 */
 .complete-button {
-    width: 240px;
+    width: 200px;
     height: 60px;
     border: none;
     background-color: #96D0FF; 
     color: white;
     border-radius: 20px;
-    font-size: 20px;
+    font-size: 15px;
     font-weight: bold;
-    box-shadow: 0px 2px 2px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     cursor: pointer;
     transition: background-color 0.2s;
 }
@@ -163,6 +167,45 @@ body {
 .notion-wrapper-full-size{
 	width:100%;	
 }
-.notion-selection-box{
-	width:600px;
+.ranking-container{
+	width:1200px;
+	height:300px;
+	padding:0 20px;
+	display:flex;
+	flex-wrap:wrap;
+	justify-content:center;
+	box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+	border-radius:20px;
+}
+.ranking-container h2{
+	width: 100%;
+    margin: 0px;
+    display: flex;
+    align-items: center;
+}
+.ranking-box{
+	width:235px;
+	height:200px;
+	background-color:white;
+	display:flex;
+	flex-wrap:wrap;
+	justify-content:center;
+}
+.ranking-box1{
+	width:235px;
+	height:200px;
+	background-color:white;
+	display:flex;
+	flex-wrap:wrap;
+	justify-content:center;
+}
+.profile-img{
+	width:150px;
+	height:150px;
+	border-radius:50%;
+	overflow:hidden;
+}
+.nickname{
+	width:100%;
+	height:50px;
 }
