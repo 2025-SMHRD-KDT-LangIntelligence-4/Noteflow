@@ -1,137 +1,315 @@
 @charset "UTF-8";
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-body{
-	background: white; 
-	margin:0px;
-	font-family:pretendard;
+
+body {
+	background: white;
+	margin: 0px;
+	font-family: pretendard;
 }
-.full-container{
-	position:relative;
-	display:flex;
-	flex-wrap:wrap;
-	justify-content:center;
-	width:100%;
-	height:100%;
-	top:100px;
-	padding-bottom:100px;
+
+.full-container {
+	position: relative;
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	width: 100%;
+	height: 100%;
+	top: 100px;
+	padding-bottom: 100px;
 }
-.full-location-container{
-	width:1240px;
-	height:100%;
-	display:flex;
-	justify-content:center;
-	flex-wrap:wrap;
+
+.full-location-container {
+	width: 1240px;
+	height: 100%;
+	display: flex;
+	justify-content: center;
+	flex-wrap: wrap;
 }
-.searchBar-container{
-	width:100%;
-	display:flex;
-	justify-content:center;
-	align-items:center;
-	height:50px;
-	border-radius:10px;
-	background-color:white;
+
+/* 검색창 */
+.searchBar-container {
+	width: 100%;
+	display: flex;
+	justify-content: space-between; /* center → space-between */
+	align-items: center;
+	height: 50px;
+	border-radius: 10px;
+	background-color: white;
 	box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+	margin-bottom: 16px;
+	gap: 0; /* 8px → 0 */
+	padding: 0 12px; /* 양쪽 패딩 추가 */
 }
-.search-bar{
-	width:95%;
-	padding:10px;
-	font-size:15px;
+
+.search-bar {
+	flex: 1; /* 남은 공간 전부 차지 */
+	padding: 10px;
+	font-size: 15px;
 	border: none;
-	outline:none;
+	outline: none;
 }
-.tag-container{
-	width:100%;
-	height:300px;
-	display:flex;
-	flex-wrap:wrap;
+
+.rec-search-btn {
+	padding: 10px 24px;
+	background: #2563eb;
+	color: white;
+	border: none;
+	border-radius: 8px;
+	font-size: 15px; /* 14px → 15px */
+	font-weight: 600; /* 500 → 600 */
+	cursor: pointer;
+	transition: background 0.2s;
+	white-space: nowrap;
+	flex-shrink: 0;
 }
-.lecture-list-container{
-	width:100%;
-	height:100%;
-	display:flex;
-	justify-content:center;
-	flex-wrap:wrap;
-	gap:15px;
+
+.rec-search-btn:hover {
+	background: #1d4ed8;
 }
-.lecture-list{
-	width:32%;
-	height:300px;
-	background-color:white;
+
+/* 태그 버블 영역 */
+.tag-bubble-area {
+	width: 100%;
+	background: #f8f9fa;
+	padding: 16px;
+	border-radius: 10px;
+	margin-bottom: 20px;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+	min-height: 50px;
 }
-.lecture-img{
-	width:100%;
-	height:240px;
-	overflow:hidden;
+
+.bubble-label {
+	font-weight: 600;
+	font-size: 14px;
+	color: #555;
+	white-space: nowrap;
+}
+
+.tag-bubble-container {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	flex: 1;
+}
+
+.tag-bubble {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 14px;
+	background: #2563eb;
+	color: white;
+	border-radius: 16px;
+	font-size: 13px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.2s;
+	user-select: none;
+}
+
+.tag-bubble:hover {
+	background: #1d4ed8;
+	transform: translateY(-2px);
+	box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+.tag-bubble-remove {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 16px;
+	height: 16px;
+	background: rgba(255,255,255,0.3);
+	border-radius: 50%;
+	font-size: 14px;
+	font-weight: bold;
+	line-height: 1;
+}
+
+.tag-bubble-remove:hover {
+	background: rgba(255,255,255,0.5);
+}
+
+.clear-tags-btn {
+	padding: 6px 14px;
+	background: #dc3545;
+	color: white;
+	border: none;
+	border-radius: 16px;
+	font-size: 13px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: background 0.2s;
+}
+
+.clear-tags-btn:hover {
+	background: #c82333;
+}
+
+/* 강의 리스트 컨테이너 */
+.lecture-list-container {
+	width: 100%;
+	height: 100%;
+	display: flex;
+	justify-content: center;
+	flex-wrap: wrap;
+	gap: 8px; /* 간격 줄임 */
+}
+
+/* 리스트 섹션 (세로 나열) */
+.rec-section {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: 8px; /* 간격 줄임 */
+}
+
+/* 강의 카드 (리스트형 - 더 얇게) */
+.lecture-list {
+	width: 100%;
+	height: auto;
+	background-color: white;
+	border: 1px solid #e0e0e0;
+	border-radius: 8px; /* 둥근 모서리 줄임 */
+	transition: all 0.3s;
+	display: flex;
+	flex-direction: column;
+}
+
+.lecture-list:hover {
+	box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+	transform: translateY(-1px);
+	border-color: #2563eb;
+}
+
+.lecture-img {
+	width: 100%;
+	height: 240px;
+	overflow: hidden;
 	border: 1px solid #c7c7c7;
-	border-radius:10px;
-}
-.lecture-title{
-	width:95%;
-	height:50px;
-	overflow:hidden;
-	display:flex;
-	align-items:center;
-	padding: 0 10px;
+	border-radius: 8px;
 }
 
-
-/* ====== 추천 강의 (추가 클래스) ====== */
-.rec-section { width: 100%; display: flex; flex-wrap: wrap; gap: 16px; }
-
-/* 기존 .lecture-img를 텍스트 박스로 재활용 */
+/* 텍스트 박스로 재활용 (더 얇게) */
 .lecture-list .lecture-img.rec-textbox {
-  height: auto;          /* 기존 240px override */
-  min-height: 80px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 10px 12px;
+	height: auto;
+	min-height: 40px; /* 60px → 40px */
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	padding: 12px 16px; /* 16px 20px → 12px 16px */
+	border: none;
 }
 
 .rec-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: #111827;
-  line-height: 1.35;
-  margin-bottom: 4px;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
+	font-size: 15px; /* 16px → 15px */
+	font-weight: 600;
+	color: #111827;
+	line-height: 1.3; /* 1.4 → 1.3 */
+	margin-bottom: 4px; /* 6px → 4px */
+	overflow: hidden;
+	display: -webkit-box;
+	-webkit-line-clamp: 1; /* 2줄 → 1줄 */
+	-webkit-box-orient: vertical;
 }
 
 .rec-tags {
-  font-size: 13px;
-  color: #6b7280;
-  line-height: 1.35;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
+	font-size: 12px; /* 13px → 12px */
+	color: #6b7280;
+	line-height: 1.3;
+	overflow: hidden;
+	display: -webkit-box;
+	-webkit-line-clamp: 1;
+	-webkit-box-orient: vertical;
 }
 
 .rec-row {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  padding: 8px 4px 0 4px;
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+	padding: 8px 12px; /* 12px 16px → 8px 12px */
 }
 
 .rec-openBtn {
-  padding: 6px 10px;
-  border: 1px solid #2563eb;
-  color: #2563eb;
-  background: #f8fafc;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
+	padding: 6px 14px; /* 8px 16px → 6px 14px */
+	border: 1px solid #2563eb;
+	color: #2563eb;
+	background: white;
+	border-radius: 6px;
+	cursor: pointer;
+	font-size: 13px; /* 14px → 13px */
+	font-weight: 500;
+	transition: all 0.2s;
 }
-.rec-openBtn:hover { background: #eff6ff; }
 
-.rec-empty, .rec-error {
-  width: 100%;
-  text-align: center;
-  padding: 16px;
-  font-size: 14px;
+.rec-openBtn:hover {
+	background: #2563eb;
+	color: white;
 }
-.rec-error { color: #b91c1c; }
+
+.lecture-title {
+	width: 95%;
+	height: 50px;
+	overflow: hidden;
+	display: flex;
+	align-items: center;
+	padding: 0 10px;
+}
+
+/* 빈 결과 / 에러 */
+.rec-empty, .rec-error {
+	width: 100%;
+	text-align: center;
+	padding: 60px 16px;
+	font-size: 15px;
+	color: #999;
+}
+
+.rec-error {
+	color: #b91c1c;
+}
+/* 기존 CSS는 그대로 유지하고 아래 추가 */
+
+/* 페이징 컨테이너 */
+.pagination-container {
+	width: 100%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 16px;
+	margin-top: 32px;
+	margin-bottom: 32px;
+}
+
+.page-btn {
+	padding: 10px 20px;
+	background: #2563eb;
+	color: white;
+	border: none;
+	border-radius: 6px;
+	font-size: 14px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.2s;
+}
+
+.page-btn:hover:not(:disabled) {
+	background: #1d4ed8;
+	transform: translateY(-1px);
+}
+
+.page-btn:disabled {
+	background: #d1d5db;
+	cursor: not-allowed;
+}
+
+.page-info {
+	font-size: 15px;
+	font-weight: 500;
+	color: #374151;
+	min-width: 80px;
+	text-align: center;
+}

@@ -10,14 +10,25 @@ import java.util.List;
 
 public interface LectureTagRepository extends JpaRepository<LectureTag, LectureTagKey> {
 
-    @Query("""
-        select lt.lecture.lecIdx as lecIdx,
-               lower(lt.tag.name) as tagName
-        from LectureTag lt
-        where lt.lecture.lecIdx in :ids
-        """)
+    /**
+     * 강의 ID 목록으로 태그 이름 조회 (Projection)
+     */
+    @Query("SELECT lt.lecture.lecIdx as lecIdx, lt.tag.name as tagName " +
+            "FROM LectureTag lt " +
+            "WHERE lt.lecture.lecIdx IN :ids")
     List<LectureIdTagName> findTagNamesByLectureIds(@Param("ids") List<Long> lectureIds);
 
+    /**
+     * 강의 ID 목록으로 태그 정보 조회 (Object[] 반환)
+     */
+    @Query("SELECT lt.lecture.lecIdx, lt.tag.name " +
+            "FROM LectureTag lt " +
+            "WHERE lt.lecture.lecIdx IN :ids")
+    List<Object[]> findTagsByLectureIds(@Param("ids") List<Long> lecIds);
+
+    /**
+     * Projection 인터페이스
+     */
     interface LectureIdTagName {
         Long getLecIdx();
         String getTagName();
