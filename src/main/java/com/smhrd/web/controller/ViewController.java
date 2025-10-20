@@ -135,5 +135,18 @@ public class ViewController {
     }
 
     // 추가 API 필요 시 @PostMapping 구현...
+   // 임시용
+    @GetMapping("/lecture")
+    public String lecturePage() {
+        // templates/recomLecture.html
+        return "recomLecture";
+    }
+
+    // 기존 링크 호환 (있다면): 더러운 주소로 보이지 않도록 /lecture 로 리다이렉트
+    @GetMapping("/recomLecture")
+    public String alias() {
+        return "redirect:/lecture";
+    }
+
 }
 
