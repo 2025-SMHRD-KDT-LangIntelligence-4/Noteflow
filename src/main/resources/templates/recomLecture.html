@@ -6,37 +6,47 @@
  <link rel="stylesheet" th:href="@{/css/header.css}" />
  <link rel="stylesheet" th:href="@{/css/footer.css}" />
  <link rel="stylesheet" th:href="@{/css/recomLecture.css}">
+ <meta name="_csrf" th:content="${_csrf?.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf?.headerName}"/>
+ 
 </head>
 <body>
 <div th:replace="fragments/header :: siteHeader"></div>
 	<div class="full-container">
-		<div class="full-location-container">
-			<div class="searchBar-container">
-				<input id ="lr-q" class="search-bar" type="text"  placeholder="태그 또는 제목 키워드"/>
-			</div>
-			<div class="tag-container">
-				<label style="width:100px;">🏷️ 태그</label>
-	                 <div class="tag-input-wrapper">
-	                      <div id="tagDisplay" class="tag-display"></div>
-	                      <input type="text" id="tagInput" placeholder="Enter 키로 태그 추가 | 클릭으로 제거">
-	                 </div>
-			</div>
-			<div class="lecture-list-container">
-				<div class="lecture-list">
-					<div class="lecture-img">강의썸네일</div>
-					<div class="lecture-title">강의제목</div>
-				</div>
-				<div class="lecture-list">
-					<div class="lecture-img">강의썸네일</div>
-					<div class="lecture-title">강의제목</div>
-				</div>
-				<div class="lecture-list">
-					<div class="lecture-img">강의썸네일</div>
-					<div class="lecture-title">강의제목</div>
-				</div>
-			</div>
-		</div>
-	</div>
+    <div class="full-location-container">
+
+      <!-- 상단 검색 바 (기존 클래스 재사용) -->
+      <div class="searchBar-container" role="search" style="margin-bottom:16px;">
+        <input id="rec-search" class="search-bar" type="text"
+               placeholder="강의 제목 또는 태그 입력 (예: #자바, 스프링, JPA)"/>
+        <button id="rec-search-btn" class="rec-openBtn" style="margin-right:8px;">검색</button>
+      </div>
+
+      <!-- 추천 강의 섹션 -->
+      <section id="rec-lecture-section" class="rec-section" aria-label="추천 강의 목록" style="width:100%;">
+        <!-- 기존 리스트 컨테이너 사용 -->
+        <div id="rec-lecture-list" class="lecture-list-container" aria-live="polite"></div>
+        <div id="rec-empty" class="rec-empty" style="display:none;">추천 강의가 없습니다.</div>
+        <div id="rec-error" class="rec-error" style="display:none;">강의 목록을 불러오는 중 오류가 발생했습니다.</div>
+      </section>
+
+      <!-- 카드 템플릿: 기존 카드 골격에 텍스트 박스만 덧씌움 -->
+      <template id="rec-lecture-card-tpl">
+        <div class="lecture-list">
+          <div class="lecture-img rec-textbox">
+            <div class="lecture-title rec-title" aria-label="강의 제목"></div>
+            <div class="rec-tags" aria-label="강의 태그"></div>
+          </div>
+          <div class="rec-row">
+            <button type="button" class="rec-openBtn">강의 열기</button>
+          </div>
+        </div>
+      </template>
+
+    </div>
+  </div>
+
 <div th:replace="~{fragments/footer :: footer}"></div>
 </body>
+<script th:src="@{/js/recomLecture.js}"></script>
 </html>

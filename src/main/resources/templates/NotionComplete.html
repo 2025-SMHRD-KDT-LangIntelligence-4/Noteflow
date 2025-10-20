@@ -8,69 +8,111 @@
 <link rel="stylesheet" th:href="@{/css/footer.css}" />
 </head>
 <body>
-	<!-- 헤더 -->
-	<div th:replace="~{fragments/header :: siteHeader}"></div>
+<!-- 헤더 -->
+<div th:replace="~{fragments/header :: siteHeader}"></div>
 
-	<div class="message-container">
-		<div class="message-box">
-			<!-- 메시지 -->
-			<div class="message">저장이 완료되었습니다.</div>
+<div class="message-container">
+<div class="message-box">
+<!-- 메시지 -->
+<div class="message">저장이 완료되었습니다.</div>
 
-			<div class="AI-model-box-location-container">
-				<!-- AI 이미지 -->
-				<div class="AI-model-box">
-					<img th:src="@{/images/AI.png}" class="AI-image">
-				</div>
+<div class="AI-model-box-location-container">
+<!-- AI 이미지 -->
+<div class="AI-model-box">
+<img th:src="@{/images/AI.png}" class="AI-image">
+</div>
 
-				<!-- 제목 -->
-				<div class="title">
-					<span th:text="${title != null ? title : '노선 제목'}">노선 제목</span>
-				</div>
+<!-- 제목 -->
+<div class="title">
+<span th:text="${title != null ? title : '노선 제목'}">노선 제목</span>
+</div>
 
-				<!-- 작성일 -->
-				<div class="date">
-					<span th:text="${createdAt != null ? createdAt : '노선 작성일'}">노선
-						작성일</span>
-				</div>
+<!-- 작성일 -->
+<div class="date">
+<span th:text="${createdAt != null ? createdAt : '노선 작성일'}">노선 작성일</span>
+</div>
 
-				<!-- 키워드 -->
-				<div class="info-line">
-					<strong>키워드:</strong> <span
-						th:text="${keywords != null ? keywords : '없음'}">키워드</span>
-				</div>
+<!-- 키워드 (id 추가) -->
+<div class="info-line">
+<strong>키워드:</strong> 
+<span id="nc-keywords" th:text="${keywords != null ? keywords : '없음'}">키워드</span>
+</div>
 
-				<!--            &lt;!&ndash; 노트 ID &ndash;&gt;-->
-				<!--            <div class="info-line">-->
-				<!--                <strong>노트 ID:</strong>-->
-				<!--                <span th:text="${noteId != null ? noteId : 'N/A'}">N/A</span>-->
-				<!--            </div>-->
+<!-- 폴더 경로 (id 추가) -->
+<div class="info-line">
+<strong>폴더 경로:</strong> 
+<span id="nc-folder" th:text="${categoryPath != null ? categoryPath : '없음'}">없음</span>
+</div>
 
-				<!-- 폴더 경로 -->
-				<div class="info-line">
-					<strong>폴더 경로:</strong> <span
-						th:text="${categoryPath != null ? categoryPath : '없음'}">없음</span>
-				</div>
+<!-- 버튼들 (가로 배치) -->
+<div class="button-location-container">
+<!-- href="#" 으로 변경하고 id 추가 -->
+<a href="#" id="nc-go-lecture">강의페이지</a>
+<a th:href="@{/notion/create}" class="action-btn">작성페이지로</a>
+<a th:href="@{/notion/manage}" class="action-btn">노션 관리</a>
+<a th:href="@{/quiz/create}" class="action-btn">퀴즈 생성</a>
+<a th:href="@{/main}" class="action-btn">메인으로</a>
+</div>
+</div>
+</div>
+</div>
 
-				<!--            &lt;!&ndash; 폴더 ID &ndash;&gt;-->
-				<!--            <div class="info-line">-->
-				<!--                <strong>폴더 ID:</strong>-->
-				<!--                <span th:text="${folderId != null ? folderId : 'N/A'}">N/A</span>-->
-				<!--            </div>-->
+<!-- 푸터 -->
+<div th:replace="~{fragments/footer :: siteFooter}"></div>
 
-				<!-- 버튼들 (가로 배치) -->
-				<div class="button-location-container">
-				<a th:href="@{'/lecture/recommend'(keywords=${keywords}, categoryPath=${categoryPath}, noteId=${noteId})}">강의페이지</a>
-					<a th:href="@{/notion/create}" class="action-btn">작성페이지로</a> <a
-						th:href="@{/notion/manage}" class="action-btn">노션 관리</a> <a
-						th:href="@{/quiz/create}" class="action-btn">퀴즈 생성</a> <a
-						th:href="@{/main}" class="action-btn">메인으로</a>
-				</div>
-			</div>
-		</div>
-	</div>
+<!-- JavaScript 코드 추가 -->
+<script>
+document.getElementById('nc-go-lecture')?.addEventListener('click', (ev) => {
+  ev.preventDefault();
 
-	<!-- 푸터 -->
-	<div th:replace="~{fragments/footer :: siteFooter}"></div>
+  // 키워드/폴더에서 상태 수집
+  const kwText = (document.getElementById('nc-keywords')?.textContent || '').trim();
+  const folder = (document.getElementById('nc-folder')?.textContent || '').trim();
+
+  // "없음" 텍스트는 제외
+  const keyword = (kwText === '없음') ? '' : kwText;
+  const folderPath = (folder === '없음') ? '' : folder;
+
+  // 폴더 "대 > 중 > 소" 형태 인식
+  const cat = folderPath.split('>').map(s => s.trim()).filter(Boolean);
+
+  let payload = null;
+  
+  // 키워드가 있으면 키워드 기반 검색
+  if (keyword) {
+    // # 으로 시작하는 태그 형식인지 확인
+    if (/#\S/.test(keyword)) {
+      const tags = keyword.split(/[,\s]+/).map(s => s.replace(/^#/, '').trim()).filter(Boolean);
+      payload = { tags, like: false, size: 30 };
+    } else {
+      payload = { keyword: keyword, size: 30 };
+    }
+  } 
+  // 키워드가 없으면 폴더 기반 검색
+  else if (cat.length) {
+    payload = { 
+      category: { 
+        large: cat[0] || null, 
+        medium: cat[1] || null, 
+        small: cat[2] || null 
+      }, 
+      size: 30 
+    };
+  }
+
+  // sessionStorage에 저장
+  try {
+    if (payload) {
+      sessionStorage.setItem('lectureRecommendPayload', JSON.stringify(payload));
+    }
+  } catch(e) {
+    console.error('sessionStorage 저장 실패:', e);
+  }
+
+  // /lecture 페이지로 이동
+  window.location.href = '/lecture';
+});
+</script>
+
 </body>
-
 </html>

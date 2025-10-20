@@ -73,3 +73,65 @@ body{
 	align-items:center;
 	padding: 0 10px;
 }
+
+
+/* ====== 추천 강의 (추가 클래스) ====== */
+.rec-section { width: 100%; display: flex; flex-wrap: wrap; gap: 16px; }
+
+/* 기존 .lecture-img를 텍스트 박스로 재활용 */
+.lecture-list .lecture-img.rec-textbox {
+  height: auto;          /* 기존 240px override */
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 10px 12px;
+}
+
+.rec-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+  line-height: 1.35;
+  margin-bottom: 4px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+}
+
+.rec-tags {
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.35;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+}
+
+.rec-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 8px 4px 0 4px;
+}
+
+.rec-openBtn {
+  padding: 6px 10px;
+  border: 1px solid #2563eb;
+  color: #2563eb;
+  background: #f8fafc;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.rec-openBtn:hover { background: #eff6ff; }
+
+.rec-empty, .rec-error {
+  width: 100%;
+  text-align: center;
+  padding: 16px;
+  font-size: 14px;
+}
+.rec-error { color: #b91c1c; }
