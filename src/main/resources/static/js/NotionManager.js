@@ -1119,7 +1119,7 @@ function showNoteContent(note) {
                 // ✅ Viewer 모드로 생성
                 toastEditor = toastui.Editor.factory({
                     el: editorArea,
-                    height: '490px',
+                    height: '510px',
                     viewer: true,
                     initialValue: originalContent
                 });
@@ -1275,7 +1275,7 @@ async function showFileContent(file) {
 
             toastEditor = toastui.Editor.factory({
                 el: editorArea,
-                height: '490px',
+                height: '510px',
                 viewer: true,
                 initialValue: text
             });
@@ -1317,7 +1317,7 @@ function enterEditModeForFile() {
 
         toastEditor = new toastui.Editor({
             el: editorArea,
-            height: '490px',
+            height: '510px',
             initialEditType: 'wysiwyg',
             initialValue: content,
             previewStyle: 'vertical',
@@ -1596,7 +1596,7 @@ function enterEditMode() {
         toastEditor.destroy();
         toastEditor = new toastui.Editor({
             el: editorArea,
-            height: '490px',
+            height: '510px',
             initialEditType: 'wysiwyg',
             initialValue: content,
             previewStyle: 'vertical',
@@ -1710,7 +1710,7 @@ function cancelEdit() {
         toastEditor.destroy();
         toastEditor = toastui.Editor.factory({
             el: editorArea,
-            height: '490px',
+            height: '510px',
             viewer: true,
             initialValue: originalContent
         });
@@ -1777,7 +1777,7 @@ async function saveNote() {
                 toastEditor.destroy();
                 toastEditor = toastui.Editor.factory({
                     el: editorArea,
-                    height: '490px',
+                    height: '510px',
                     viewer: true,
                     initialValue: originalContent
                 });
@@ -1837,7 +1837,7 @@ async function saveFile() {
 
                 toastEditor = toastui.Editor.factory({
                     el: editorArea,
-                    height: '490px',
+                    height: '510px',
                     viewer: true,
                     initialValue: originalContent
                 });
@@ -1867,7 +1867,7 @@ function cancelFileEdit() {
 
         toastEditor = toastui.Editor.factory({
             el: editorArea,
-            height: '490px',
+            height: '510px',
             viewer: true,
             initialValue: originalContent
         });
