@@ -374,7 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const allowedExtensions = [
       // 문서 (간단한 것만)
       '.txt', '.md', '.markdown',
-      '.pdf',  // PDF는 pdfbox로 처리
+      '.pdf','.hwp',  // PDF는 pdfbox로 처리
 
       // 코드
       '.java', '.js', '.py', '.cpp', '.c', '.cs', '.php', '.rb', '.go',

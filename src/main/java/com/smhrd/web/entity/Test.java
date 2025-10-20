@@ -2,7 +2,9 @@ package com.smhrd.web.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -12,22 +14,23 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class Test {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "test_idx")
     private Long testIdx;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_idx", nullable = false)
-    private User user;
+    @Column(name = "test_title", nullable = false)
+    private String testTitle;
 
-    @Column(nullable = false)
-    private String title;
+    @Column(name = "test_desc", columnDefinition = "TEXT")
+    private String testDesc;
 
-    private String description;
-
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false, insertable = false,
+            columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "test", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<TestItem> items;
+    @Builder.Default
+    private List<TestItem> testItems = new ArrayList<>();
 }

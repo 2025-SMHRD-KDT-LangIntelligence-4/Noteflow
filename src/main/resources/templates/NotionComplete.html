@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <title>Insert title here</title>
+    <meta name="csrf" th:content="${_csrf?.token}">
+    <meta name="csrf-header" th:content="${_csrf?.headerName}">
 <link rel="stylesheet" th:href="@{/css/header.css}" />
 <link rel="stylesheet" th:href="@{/css/notioncomplete.css}" />
 <link rel="stylesheet" th:href="@{/css/footer.css}" />
@@ -50,7 +52,8 @@
 <a href="#" id="nc-go-lecture">강의페이지</a>
 <a th:href="@{/notion/create}" class="action-btn">작성페이지로</a>
 <a th:href="@{/notion/manage}" class="action-btn">노션 관리</a>
-<a th:href="@{/quiz/create}" class="action-btn">퀴즈 생성</a>
+    <a href="#" id="nc-go-exam">📝 문제은행 가기</a>
+    <input type="hidden" id="nc-note-id" th:value="${noteId}">
 <a th:href="@{/main}" class="action-btn">메인으로</a>
 </div>
 </div>
@@ -62,57 +65,134 @@
 
 <!-- JavaScript 코드 추가 -->
 <script>
-document.getElementById('nc-go-lecture')?.addEventListener('click', (ev) => {
-  ev.preventDefault();
-
-  // 키워드/폴더에서 상태 수집
-  const kwText = (document.getElementById('nc-keywords')?.textContent || '').trim();
-  const folder = (document.getElementById('nc-folder')?.textContent || '').trim();
-
-  // "없음" 텍스트는 제외
-  const keyword = (kwText === '없음') ? '' : kwText;
-  const folderPath = (folder === '없음') ? '' : folder;
-
-  // 폴더 "대 > 중 > 소" 형태 인식
-  const cat = folderPath.split('>').map(s => s.trim()).filter(Boolean);
-
-  let payload = null;
-  
-  // 키워드가 있으면 키워드 기반 검색
-  if (keyword) {
-    // # 으로 시작하는 태그 형식인지 확인
-    if (/#\S/.test(keyword)) {
-      const tags = keyword.split(/[,\s]+/).map(s => s.replace(/^#/, '').trim()).filter(Boolean);
-      payload = { tags, like: false, size: 30 };
-    } else {
-      payload = { keyword: keyword, size: 30 };
+    // CSRF 토큰 함수
+    function getCsrfToken() {
+        return document.querySelector('meta[name="csrf"]')?.content || '';
     }
-  } 
-  // 키워드가 없으면 폴더 기반 검색
-  else if (cat.length) {
-    payload = { 
-      category: { 
-        large: cat[0] || null, 
-        medium: cat[1] || null, 
-        small: cat[2] || null 
-      }, 
-      size: 30 
-    };
-  }
 
-  // sessionStorage에 저장
-  try {
-    if (payload) {
-      sessionStorage.setItem('lectureRecommendPayload', JSON.stringify(payload));
+    function getCsrfHeader() {
+        return document.querySelector('meta[name="csrf-header"]')?.content || 'X-CSRF-TOKEN';
     }
-  } catch(e) {
-    console.error('sessionStorage 저장 실패:', e);
-  }
 
-  // /lecture 페이지로 이동
-  window.location.href = '/lecture';
-});
+    console.log('CSRF 정보:', {
+        token: getCsrfToken() ? '있음' : '없음',
+        header: getCsrfHeader()
+    });
+
+    // 강의 추천 기능
+    document.getElementById('nc-go-lecture')?.addEventListener('click', function(ev) {
+        ev.preventDefault();
+
+        const kwText = document.getElementById('nc-keywords')?.textContent?.trim();
+        const folder = document.getElementById('nc-folder')?.textContent?.trim();
+        const keyword = kwText ? kwText : '';
+        const folderPath = folder ? folder : '';
+        const cat = folderPath.split('/').map(s => s.trim()).filter(Boolean);
+
+        let payload = null;
+        if (keyword) {
+            if (/,/.test(keyword)) {
+                const tags = keyword.split(',').map(s => s.replace(/[#]/g, '').trim()).filter(Boolean);
+                payload = { tags, like: false, size: 30 };
+            } else {
+                payload = { keyword: keyword, size: 30 };
+            }
+        } else if (cat.length) {
+            payload = {
+                category: { large: cat[0] || null, medium: cat[1] || null, small: cat[2] || null },
+                size: 30
+            };
+        }
+
+        try {
+            if (payload) {
+                sessionStorage.setItem('lectureRecommendPayload', JSON.stringify(payload));
+            }
+        } catch (e) {
+            console.error('sessionStorage 오류:', e);
+        }
+
+        window.location.href = '/lecture';
+    });
+
+    // 문제은행 가기 (POST 방식)
+    document.getElementById('nc-go-exam')?.addEventListener('click', async function(ev) {
+        ev.preventDefault();
+
+        const noteIdElement = document.getElementById('nc-note-id');
+        const noteId = noteIdElement?.value;
+
+        const title = document.querySelector('.title span')?.textContent?.trim() || '새 노트';
+        const kwText = document.getElementById('nc-keywords')?.textContent?.trim() || '';
+
+        // 키워드 파싱
+        let keywords = [];
+        if (kwText) {
+            if (/,/.test(kwText)) {
+                keywords = kwText.split(',').map(s => s.replace(/[#]/g, '').trim()).filter(Boolean);
+            } else {
+                keywords = [kwText.replace(/[#]/g, '').trim()];
+            }
+        }
+
+        // noteIdx 변환 (안전하게)
+        let noteIdx = null;
+        if (noteId && noteId !== '' && noteId !== 'null' && noteId !== 'undefined') {
+            const parsed = parseInt(noteId, 10);
+            if (!isNaN(parsed)) {
+                noteIdx = parsed;
+            }
+        }
+
+        try {
+            const csrfToken = getCsrfToken();
+            const csrfHeader = getCsrfHeader();
+
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+
+            if (csrfToken) {
+                headers[csrfHeader] = csrfToken;
+            }
+
+            const requestBody = {
+                noteIdx: noteIdx,
+                noteTitle: title,
+                keywords: keywords
+            };
+
+            const response = await fetch('/exam/prepare-from-note', {
+                method: 'POST',
+                headers: headers,
+                credentials: 'include',
+                body: JSON.stringify(requestBody)
+            });
+
+            console.log('응답 상태:', response.status);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('응답 에러:', errorText);
+                throw new Error('HTTP ' + response.status);
+            }
+
+            const result = await response.json();
+            console.log('응답 결과:', result);
+
+            if (result.success) {
+                window.location.href = '/exam/create';
+            } else {
+                alert('오류: ' + result.message);
+            }
+
+        } catch (error) {
+            console.error('문제은행 이동 실패:', error);
+            alert('문제은행으로 이동하는 중 오류가 발생했습니다: ' + error.message);
+        }
+    });
 </script>
+
 
 </body>
 </html>

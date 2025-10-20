@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>시험 생성</title>
+    <link rel="stylesheet" th:href="@{/css/header.css}">
+    <link rel="stylesheet" th:href="@{/css/examCreate.css}">
+    <link rel="stylesheet" th:href="@{/css/footer.css}">
+    <meta name="csrf" th:content="${_csrf?.token}">
+    <meta name="csrf-header" th:content="${_csrf?.headerName}">
+</head>
+<body>
+<div th:replace="~{fragments/header :: siteHeader}"></div>
+
+<div class="page-wrapper">
+    <!-- 랭킹 영역 -->
+    <div class="ranking-container">
+        <h2>🏆 이번 주 시험 랭킹</h2>
+        <div class="ranking-box1">
+            <div class="profile-img"><img src="https://via.placeholder.com/150" alt="1등"></div>
+            <div class="nickname"><span>🥇 1등 닉네임</span></div>
+        </div>
+        <div class="ranking-box">
+            <div class="profile-img"><img src="https://via.placeholder.com/150" alt="2등"></div>
+            <div class="nickname"><span>🥈 2등 닉네임</span></div>
+        </div>
+        <div class="ranking-box">
+            <div class="profile-img"><img src="https://via.placeholder.com/150" alt="3등"></div>
+            <div class="nickname"><span>🥉 3등 닉네임</span></div>
+        </div>
+        <div class="ranking-box">
+            <div class="profile-img"><img src="https://via.placeholder.com/150" alt="4등"></div>
+            <div class="nickname"><span>4등 닉네임</span></div>
+        </div>
+        <div class="ranking-box">
+            <div class="profile-img"><img src="https://via.placeholder.com/150" alt="5등"></div>
+            <div class="nickname"><span>5등 닉네임</span></div>
+        </div>
+    </div>
+
+    <div class="location-container">
+        <!-- 좌측: 노트 목록 -->
+        <div class="notion-list-container">
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="노트 검색...">
+                <button id="clearSearchBtn" class="clear-search-btn">✕</button>
+            </div>
+
+            <div id="itemList" class="notion-list tree-container">
+                <!-- JavaScript로 동적 렌더링됨 -->
+            </div>
+        </div>
+
+        <!-- 우측: 설정 영역 -->
+        <div class="notion-content-container">
+            <h2 class="section-title">⚙️ 시험 설정</h2>
+
+            <!-- 선택된 키워드 -->
+            <div class="keyword-section">
+                <h3 class="subsection-title">✨ 선택된 키워드</h3>
+                <div class="keyword-hint" style="margin-bottom: 10px; font-size: 12px; color: #666;">
+                    💡 <strong>Tip:</strong> 노트를 클릭하면 키워드 교체, <kbd>Ctrl</kbd>+클릭하면 추가됩니다
+                </div>
+                <div class="keyword-input-group">
+                    <input type="text" id="keywordInput" placeholder="키워드 입력 후 Enter">
+                    <button id="addKeywordBtn" class="add-keyword-btn">➕</button>
+                    <button id="clearAllKeywordsBtn" class="clear-all-keywords-btn">🗑️ 전체삭제</button>
+                </div>
+                <div id="selectedTagsContainer" class="tag-display">
+                    <p class="empty-text">노트 선택 또는 직접 키워드 입력</p>
+                </div>
+            </div>
+
+            <!-- 시험 설정 폼 -->
+            <div class="config-form">
+                <div class="config-row">
+                    <label>시험 제목</label>
+                    <input type="text" id="examTitle" placeholder="자동 생성됩니다 (수정 가능)">
+                </div>
+
+                <div class="config-row">
+                    <label>문제 개수</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="questionMode" value="auto" checked>
+                            자동 (키워드당 20개)
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="questionMode" value="manual">
+                            직접 지정
+                        </label>
+                    </div>
+                    <input type="number" id="questionCount" min="5" max="100" value="20" disabled>
+                    <small id="questionHint">키워드 선택 시 자동으로 계산됩니다</small>
+                </div>
+
+                <div class="config-row">
+                    <label>난이도</label>
+                    <select id="difficulty">
+                        <option value="">자동 조절 (추천)</option>
+                        <option value="1">Level 1 (쉬움)</option>
+                        <option value="2">Level 2</option>
+                        <option value="3">Level 3</option>
+                        <option value="4">Level 4</option>
+                        <option value="5">Level 5 (어려움)</option>
+                    </select>
+                    <small>자동 조절 선택 시 이전 결과에 따라 난이도가 조정됩니다</small>
+                </div>
+
+                <div class="config-row">
+                    <label>문제당 배점</label>
+                    <input type="number" id="scorePerQuestion" min="1" max="10" value="1">
+                </div>
+
+                <button id="createExamBtn" class="btn-primary" disabled>
+                    🎯 시험 생성하기
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:replace="~{fragments/footer :: siteFooter}"></div>
+
+<!-- 데이터 전달 -->
+<script th:inline="javascript">
+    const FOLDER_TREE = [[${folderTreeJson}]];
+    const ROOT_NOTES = [[${rootNotesJson}]];
+    const PRESELECTED_NOTE_IDX = [[${preselectedNoteIdx}]];
+    const PRESELECTED_NOTE_TITLE = [[${preselectedNoteTitle}]];
+    const PRESELECTED_KEYWORDS = [[${preselectedKeywords}]];
+</script>
+
+<script th:src="@{/js/examCreate.js}"></script>
+</body>
+</html>

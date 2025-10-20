@@ -959,3 +959,15 @@ body {
 .toastui-editor-main-container{
 	height:400px !important;
 }
+
+/* 문제은행 버튼 */
+.btn-exam {
+    background-color: #ff9800;
+    color: white;
+}
+
+.btn-exam:hover {
+    background-color: #f57c00;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(255, 152, 0, 0.3);
+}

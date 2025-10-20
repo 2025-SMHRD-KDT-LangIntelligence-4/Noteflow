@@ -1414,29 +1414,23 @@ function updateButtons(type) {
 
     if (type === 'note') {
         container.innerHTML = `
-            <button class="btn-edit" id="editBtn">✏️ 편집</button>
-            <button class="btn-download" id="downloadBtn">⬇️ 다운로드</button>
+            <button class="btn-edit" id="editBtn">✏️ 수정</button>
+            <button class="btn-exam" id="goToExamBtn">📝 문제은행 가기</button>
+            <button class="btn-download" id="downloadBtn">💾 다운로드</button>
             <button class="btn-delete" id="deleteBtn">🗑️ 삭제</button>
         `;
 
-        // ✅ 이벤트 리스너로 연결 (더 안정적)
         setTimeout(() => {
             const editBtn = document.getElementById('editBtn');
+            const examBtn = document.getElementById('goToExamBtn');
             const downloadBtn = document.getElementById('downloadBtn');
             const deleteBtn = document.getElementById('deleteBtn');
 
-            if (editBtn) {
-                editBtn.addEventListener('click', enterEditMode);
-                console.log('편집 버튼 이벤트 리스너 연결됨');
-            }
-            if (downloadBtn) {
-                downloadBtn.addEventListener('click', downloadNote);
-            }
-            if (deleteBtn) {
-                deleteBtn.addEventListener('click', deleteNotePrompt);
-            }
+            if (editBtn) editBtn.addEventListener('click', enterEditMode);
+            if (examBtn) examBtn.addEventListener('click', goToExamCreate);
+            if (downloadBtn) downloadBtn.addEventListener('click', downloadNote);
+            if (deleteBtn) deleteBtn.addEventListener('click', deleteNotePrompt);
         }, 0);
-
     } else if (type === 'file') {
         const fileName = selectedItem?.originalName || '';
         const isEditable = fileName.endsWith('.md') || fileName.endsWith('.txt');
@@ -1488,6 +1482,89 @@ function updateButtons(type) {
             if (downloadBtn) downloadBtn.addEventListener('click', downloadSelectedAsZip);
             if (clearBtn) clearBtn.addEventListener('click', clearMultiSelection);
         }, 0);
+    }
+}
+async function goToExamCreate() {
+    if (!selectedItem || selectedItemType !== 'note') {
+        showMessage('노트를 선택해주세요.');
+        return;
+    }
+
+    const noteIdx = selectedItem.noteIdx;
+    const noteTitle = selectedItem.title;
+    const keywords = currentTags || [];
+
+    console.log('📝 문제은행으로 이동 시작:', {
+        noteIdx,
+        noteTitle,
+        keywords,
+        csrfToken: csrfToken ? '있음' : '없음',
+        csrfHeader: csrfHeader
+    });
+
+    try {
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+
+        if (csrfToken && csrfHeader) {
+            headers[csrfHeader] = csrfToken;
+        }
+
+        console.log('📤 요청 헤더:', headers);
+        console.log('📤 요청 바디:', {
+            noteIdx,
+            noteTitle,
+            keywords
+        });
+
+        const response = await fetch('/exam/prepare-from-note', {
+            method: 'POST',
+            headers: headers,
+            credentials: 'include',
+            body: JSON.stringify({
+                noteIdx: noteIdx,
+                noteTitle: noteTitle,
+                keywords: keywords
+            })
+        });
+
+        console.log('📥 응답 상태:', response.status);
+        console.log('📥 응답 OK:', response.ok);
+
+        const contentType = response.headers.get('content-type');
+        console.log('📥 Content-Type:', contentType);
+
+        if (!response.ok) {
+            console.error('❌ HTTP 오류:', response.status, response.statusText);
+            showMessage(`서버 오류 (${response.status}): ${response.statusText}`);
+            return;
+        }
+
+        // Content-Type 체크
+        if (!contentType || !contentType.includes('application/json')) {
+            console.error('❌ JSON이 아닌 응답:', contentType);
+            const text = await response.text();
+            console.error('응답 내용:', text);
+            showMessage('서버가 잘못된 응답을 반환했습니다.');
+            return;
+        }
+
+        const result = await response.json();
+        console.log('📥 응답 데이터:', result);
+
+        if (result.success) {
+            console.log('✅ 성공! 페이지 이동 중...');
+            window.location.href = '/exam/create';
+        } else {
+            console.error('❌ 실패:', result.message);
+            showMessage('오류: ' + result.message);
+        }
+
+    } catch (error) {
+        console.error('❌ 요청 실패:', error);
+        console.error('에러 스택:', error.stack);
+        showMessage('문제은행으로 이동하는 중 오류가 발생했습니다: ' + error.message);
     }
 }
 // ========== 21. 편집 모드 ==========
@@ -3317,4 +3394,8 @@ if (bulkDeleteBtn) {
             alert('삭제 중 오류가 발생했습니다.');
         }
     });
+
+
+
 }
+
