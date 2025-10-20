@@ -25,30 +25,37 @@ public class KeywordExtractionService {
     /**
      * 이미 요약된 텍스트에서 키워드 추출 + 카테고리 매칭 (LLM + RAG)
      */
-    public CategoryResult extractAndClassifyWithRAG(String title, String summary) {
-        try {
-            // 1. 키워드 추출 (LLM → fallback)
-            Set<String> keywords = extractKeywords(summary);
-            if (keywords.isEmpty()) {
-                keywords = extractBasicKeywords(title, summary);
-            }
+    public CategoryResult extractAndClassifyWithRAG(String title, String content, Long userIdx) {
+        // ✅ 제목 + 내용 결합
+        String combined = (title + "\n" + content).trim();
 
-            // 2. DB 후보 검색
-            List<CategoryHierarchy> candidates = categoryHierarchyRepository.findCandidatesByKeywords(keywords);
+        // 1) 키워드 추출
+        Set<String> keywords = extractKeywords(combined);
 
-            // 3. LLM으로 후보 랭킹 + confidence 점수 반영
-            CategoryHierarchy bestMatch = rankCategories(summary, candidates);
+        // 2) 카테고리 매칭 (공개 + 본인 것만)
+        List<CategoryHierarchy> candidates = categoryHierarchyRepository
+                .findCandidatesByKeywordsForUser(keywords, userIdx);
 
+        if (candidates.isEmpty()) {
             return CategoryResult.builder()
                     .extractedKeywords(keywords)
-                    .matchedCategory(bestMatch)
-                    .confidence(bestMatch.getConfidenceScore())
-                    .suggestedFolderPath(generateFolderPath(bestMatch))
+                    .confidence(0.0)
                     .build();
-        } catch (Exception e) {
-            return getDefaultCategory();
         }
+
+        // 3) 가장 적합한 카테고리 선택
+        CategoryHierarchy best = candidates.get(0);
+
+        return CategoryResult.builder()
+                .extractedKeywords(keywords)
+                .matchedCategory(best)
+                .largeCategory(best.getLargeCategory())
+                .mediumCategory(best.getMediumCategory())
+                .smallCategory(best.getSmallCategory())
+                .confidence(0.8)
+                .build();
     }
+
 
     /**
      * LLM 호출: 키워드 추출
@@ -175,7 +182,6 @@ public class KeywordExtractionService {
                 .largeCategory("기타")
                 .mediumCategory("미분류")
                 .smallCategory("일반")
-                .exampleTag("[기타][미분류][일반]")
                 .build();
     }
 }

@@ -34,8 +34,11 @@
             </div>
 
             <div class="management-buttons">
+                <button id="selectAllBtn">🔲 전체선택</button>
                 <button id="createFolderBtn">📁 폴더</button>
                 <button id="uploadBtn">📤 업로드</button>
+                <button id="bulkDeleteBtn" style="background-color: #dc3545; color: white; display: none;">🗑️ 선택 삭제</button>
+
             </div>
 
             <div id="rootDropZone" class="root-drop-zone">
@@ -57,6 +60,27 @@
                 <div id="welcomeMessage" class="welcome-message">
                     <h2>환영합니다!</h2>
                     <p>왼쪽에서 파일이나 정리본을 선택하시면<br>내용을 확인하고 편집할 수 있습니다</p>
+                </div>
+                <div id="categorySelectArea" style="display: none; margin: 10px 0;">
+                    <label>📂 카테고리</label>
+                    <select id="largeCategorySelect">
+                        <option value="">대분류 선택</option>
+                    </select>
+                    <select id="mediumCategorySelect" disabled>
+                        <option value="">중분류 선택</option>
+                    </select>
+                    <select id="smallCategorySelect" disabled>
+                        <option value="">소분류 선택</option>
+                    </select>
+                    <button id="addCategoryBtn">➕ 새 카테고리 추가</button>
+                </div>
+                <!-- 태그 입력 영역 추가 -->
+                <div id="tagInputArea" style="display: none; margin-top: 15px;">
+                    <label>🏷️ 태그 (키워드)</label>
+                    <div class="tag-input-wrapper">
+                        <div id="tagDisplay" class="tag-display"></div>
+                        <input type="text" id="tagInput" placeholder="Enter 키로 태그 추가 | 클릭으로 제거">
+                    </div>
                 </div>
 
                 <!-- ✅ 텍스트 편집기 (기본) -->

@@ -1,12 +1,12 @@
-// src/main/java/com/smhrd/web/entity/NoteFolder.java
 package com.smhrd.web.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(
@@ -20,6 +20,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})  // ✅ 추가
+
 public class NoteFolder {
 
     @Id
@@ -37,11 +39,11 @@ public class NoteFolder {
     private String folderName;
 
     @Column(name = "sort_order")
-    @Builder.Default  // ✅ 추가
+    @Builder.Default
     private Integer sortOrder = 0;
 
     @Column(name = "status", length = 20)
-    @Builder.Default  // ✅ 추가
+    @Builder.Default
     private String status = "ACTIVE";
 
     @Column(name = "created_at")
@@ -54,8 +56,8 @@ public class NoteFolder {
     protected void onCreate() {
         if (createdAt == null) createdAt = LocalDateTime.now();
         if (updatedAt == null) updatedAt = LocalDateTime.now();
-        if (sortOrder == null) sortOrder = 0;  // ✅ 안전장치
-        if (status == null) status = "ACTIVE";  // ✅ 안전장치
+        if (sortOrder == null) sortOrder = 0;
+        if (status == null) status = "ACTIVE";
     }
 
     @PreUpdate
@@ -63,11 +65,20 @@ public class NoteFolder {
         updatedAt = LocalDateTime.now();
     }
 
+    // ✅ @Transient: DB 저장 안 됨, JSON 직렬화 가능
     @Transient
     private List<NoteFolder> subfolders = new ArrayList<>();
+
     @Transient
     private List<Note> notes = new ArrayList<>();
 
-    public void addSubfolder(NoteFolder f) { this.subfolders.add(f); }
-    public void addNote(Note n) { this.notes.add(n); }
+    public void addSubfolder(NoteFolder f) {
+        if (subfolders == null) subfolders = new ArrayList<>();
+        this.subfolders.add(f);
+    }
+
+    public void addNote(Note n) {
+        if (notes == null) notes = new ArrayList<>();
+        this.notes.add(n);
+    }
 }

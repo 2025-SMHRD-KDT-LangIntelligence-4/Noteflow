@@ -32,8 +32,8 @@ public class FileMetadata {
     @Field("mime_type")
     private String mimeType;
 
-    @Field("user_idx") // 변경: user_id → user_idx
-    private Long userIdx;  // 변경: String → Long
+    @Field("user_idx")
+    private Long userIdx;
 
     @Field("folder_id")
     private String folderId; // null이면 루트 레벨
@@ -43,6 +43,15 @@ public class FileMetadata {
 
     @Field("gridfs_id")
     private String gridfsId; // GridFS ObjectId
+
+    // ✅ 추가: 파일 상태 필드
+    @Field("status")
+    @Builder.Default
+    private String status = "ACTIVE";  // ACTIVE, EXPIRED, DELETED
+
+    // ✅ 추가: 삭제 시점 기록
+    @Field("deleted_at")
+    private LocalDateTime deletedAt;
 
     // 파일 타입별 아이콘
     public String getFileIcon() {
@@ -55,5 +64,10 @@ public class FileMetadata {
         if (ext.endsWith(".md")) return "📝";
         if (ext.endsWith(".jpg") || ext.endsWith(".png") || ext.endsWith(".gif")) return "🖼️";
         return "📄";
+    }
+
+    // ✅ 파일 만료 여부 확인
+    public boolean isExpired() {
+        return "EXPIRED".equals(this.status);
     }
 }

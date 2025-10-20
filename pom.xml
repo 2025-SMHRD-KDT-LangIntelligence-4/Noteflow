@@ -136,6 +136,12 @@
 	        <artifactId>poi-ooxml</artifactId>
 	        <version>5.4.0</version>
 	    </dependency>
+
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi-ooxml-schemas</artifactId>
+			<version>4.1.2</version>
+		</dependency>
 	    <!-- Apache POI - Scratchpad -->
 	    <dependency>
 	        <groupId>org.apache.poi</groupId>
@@ -169,7 +175,11 @@
 	      <version>1.0.5</version>
 	    </dependency>
 
-	    
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-api</artifactId>
+			<version>2.20.0</version>
+		</dependency>
 	
 	    <!-- MIME/확장자 탐지 -->
 	    <dependency>

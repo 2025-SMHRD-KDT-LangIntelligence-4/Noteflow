@@ -18,7 +18,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const $titleInput      = document.getElementById('nc-ResultTitle');
   const $fileInput       = document.getElementById('nc-fileInput');
   const $fileUploadBtn   = document.getElementById('nc-file-upload');
-  const $filePreview     = document.getElementById('nc-filePreview');
   const $preMsg          = document.getElementById('nc-preMsg');
   const $temsetBtn       = document.getElementById('nc-temsetBtn');
   const $saveBtn         = document.getElementById('nc-saveBtn');
@@ -29,11 +28,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ==== 상태/상수 ====
   const CARD_WIDTH = 240;
-  const MAX_LEN    = 5000;
+  const MAX_TOKENS = 7000; // ✅ 추가
   const prompts    = window.prompts || [];
 
   const state = {
-    editor: null, viewer: null,
+    editor: null, editor2: null,viewer: null,
+    isSummaryShown: false,
     isPaused: false,
     currentPosition: 0,
     cloneCount: 0,
@@ -42,7 +42,10 @@ document.addEventListener('DOMContentLoaded', () => {
     truncated: false, blocked: false, sizeBytes: 0,
     mode: 'text', fileId: null, fileName: null,
     hasProcessedOnce: false,
-    inputCache: ''               // 뒤로가기 캐시
+    inputCache: ''  ,             // 뒤로가기 캐시
+    lastSummary: null,  // ✅ 마지막 요약 결과 저장
+    lastWarn: null,      // ✅ 경고 메시지 저장
+    isSaving: false
   };
 
   // ==== Toast UI: Editor & Viewer ====
@@ -53,10 +56,14 @@ document.addEventListener('DOMContentLoaded', () => {
     previewStyle: 'vertical',
     usageStatistics: false
   });
+  state.editor.on('change', () => {
+    updateCounters();
+  });
   state.viewer = new toastui.Editor({
     el: $promptViewerEl,
     viewer: true,
     height: 'auto',
+    initialEditType: 'wysiwyg',  // ✅ 추가
     usageStatistics: false
   });
   state.viewer.setMarkdown('**프롬프트가 여기에 표시됩니다.**\n\n카드 하단의 체크박스를 켜면 해당 프롬프트의 예시만 표시되고 슬라이드가 멈춥니다.');
@@ -65,27 +72,50 @@ document.addEventListener('DOMContentLoaded', () => {
   const setMsg = (text, type='info') => { if (!$preMsg) return; $preMsg.textContent = text; $preMsg.style.color = type === 'error' ? 'red' : (type === 'success' ? 'green' : '#666'); };
   const fmtDate = () => { const d=new Date(); return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`; };
   const safeJson = async (res) => { const ct=res.headers.get('content-type')||''; if (!ct.includes('application/json')) { const body=await res.text(); throw new Error(`JSON이 아닌 응답입니다 (status=${res.status}, ct=${ct})\n${body.slice(0,200)}`); } return res.json(); };
-  const estimateTokens = (s) => Math.round((s||'').length/2);
-  const escapeHtml = (s) => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const estimateTokens = (text) => {
+    if (!text) return 0;
 
+    const koreanChars = (text.match(/[\u3131-\uD79D]/g) || []).length;
+    const englishWords = (text.match(/[a-zA-Z]+/g) || []).length;
+    const otherChars = text.length - koreanChars - englishWords;
+
+    return Math.ceil(koreanChars * 2 + englishWords * 1 + otherChars * 0.5);
+  };
   // ==== 카운터/버튼 ====
   function updateCounters() {
-    const md = state.editor.getMarkdown() || '';
+    const md = state.editor.getMarkdown();
     const len = md.trim().length;
+    const tokens = estimateTokens(md); // ✅ 토큰 계산
+
     $charCount.textContent = len;
-    $tokenCount.textContent = estimateTokens(md);
+    $tokenCount.textContent = tokens; // ✅ 토큰 표시
 
     let hint = '', allowText = true;
-    if (len === 0) { hint = '입력 없음'; allowText = false; }
-    else if (len < 50) { hint = '50자 미만: 요청 불가'; allowText = false; }
-    else if (len <= 150) { hint = '150자 이하: 결과 품질이 떨어질 수 있습니다(경고)'; }
-    else if (len > MAX_LEN) { hint = '5000자 초과: 요약 요청 불가'; allowText = false; }
+
+    if (tokens === 0) {
+      hint = '내용을 입력하세요';
+      allowText = false;
+    } else if (tokens < 50) {
+      hint = '최소 50토큰 이상 입력해주세요';
+      allowText = false;
+    } else if (tokens < 150) {
+      hint = '150토큰 이상 권장';
+    } else if (tokens > MAX_TOKENS) {
+      hint = `최대 ${MAX_TOKENS}토큰 초과!`;
+      allowText = false;
+      $tokenCount.style.color = 'red'; // ✅ 빨간색으로 표시
+    } else {
+      hint = '';
+      $tokenCount.style.color = ''; // ✅ 기본 색상
+    }
+
     $lengthHint.textContent = hint;
 
     const promptSelected = state.selectedPromptIdx !== null;
-    const allowSave = len > 0 && len <= MAX_LEN;
-    $temsetBtn.disabled = !promptSelected || (!allowText && state.mode !== 'file');
-    $saveBtn.disabled   = !allowSave;
+    const allowSave = tokens > 0 && tokens <= MAX_TOKENS;
+
+    if ($temsetBtn) $temsetBtn.disabled = !promptSelected || !allowText || state.mode === 'file';
+    if ($saveBtn) $saveBtn.disabled = !allowSave;
   }
   state.editor.on('change', updateCounters);
 
@@ -304,14 +334,26 @@ document.addEventListener('DOMContentLoaded', () => {
     updateCounters();
   }
 
-  // ==== ⬅️ ‘프롬프트 선택으로 돌아가기’ → 선택 단계 복원 ====
+  // 단계 복원 ====
   $btnBack.addEventListener('click', () => {
+    // ✅ 프롬프트 선택 화면으로만 복귀
     state.inputCache = state.editor.getMarkdown();
-
-    $inputStage.style.display  = 'none';
+    $inputStage.style.display = 'none';
     $promptStage.style.display = 'block';
 
+    // 요약 결과 초기화
+    $resultBox.innerHTML = '';
+    state.isSummaryShown = false;
+
+    if (state.editor2) {
+      state.editor2.destroy();
+      state.editor2 = null;
+    }
+
+    showEditorArea();
+
     resumeSlider();
+
     if (state.selectedPromptIdx !== null) {
       const sp = prompts[state.selectedPromptIdx];
       const md = sp?.exampleOutput || sp?.content || '';
@@ -326,38 +368,117 @@ document.addEventListener('DOMContentLoaded', () => {
   $fileInput.addEventListener('change', async () => {
     const file = $fileInput.files?.[0];
     if (!file) return;
-    setMsg('업로드 중...');
-    const form = new FormData(); form.append('file', file);
+
+    // ✅ 화이트리스트: 텍스트 추출 가능한 파일만 허용
+    const allowedExtensions = [
+      // 문서 (간단한 것만)
+      '.txt', '.md', '.markdown',
+      '.pdf',  // PDF는 pdfbox로 처리
+
+      // 코드
+      '.java', '.js', '.py', '.cpp', '.c', '.cs', '.php', '.rb', '.go',
+      '.html', '.css', '.xml', '.json', '.yaml', '.yml',
+      '.sql', '.sh', '.bat', '.ps1',
+
+      // CSV만 (엑셀 제외)
+      '.csv',
+
+      // 기타
+      '.rtf', '.log'
+    ];
+
+    const fileName = file.name.toLowerCase();
+    const isAllowed = allowedExtensions.some(ext => fileName.endsWith(ext));
+
+    if (!isAllowed) {
+      const extMatch = fileName.match(/\.([^.]+)$/);
+      const currentExt = extMatch ? extMatch[0] : '(확장자 없음)';
+
+      alert(`⚠️ 지원하지 않는 파일 형식입니다: ${currentExt}\n\n지원 형식:\n• 문서: .txt, .pdf, .docx, .hwp 등\n• 코드: .java, .js, .py, .cpp 등\n`);
+      $fileInput.value = ''; // ✅ 선택 초기화
+      return;
+    }
+
+    setMsg('');
+
+    const form = new FormData();
+    form.append('file', file);
+
     try {
-      const res1 = await fetch('/api/files/upload', { method:'POST', body:form, headers:withCsrf({'Accept':'application/json'}), credentials:'same-origin' });
+      const res1 = await fetch('/api/files/upload', {
+        method: 'POST',
+        body: form,
+        headers: withCsrf({ 'Accept': 'application/json' }),
+        credentials: 'same-origin'
+      });
+
       const data1 = await safeJson(res1);
-      if (!res1.ok || !data1.success) throw new Error(data1.message || `업로드 실패 (status=${res1.status})`);
-      state.fileId = data1.gridfsId || data1.id; state.fileName = file.name;
+
+      if (!res1.ok || !data1.success) {
+        throw new Error(`${data1.message} (status=${res1.status})`);
+      }
+
+      state.fileId = data1.gridfsId || data1.id;
+      state.fileName = file.name;
 
       if (!$titleInput.value.trim()) {
-        const baseName = file.name.replace(/\.[^/.]+$/, '');
+        const baseName = file.name.replace(/\.[^.]+$/, '');
         $titleInput.value = `${fmtDate()}_${baseName}`;
       }
 
       if (state.fileId) {
         try {
           const res2 = await fetch(`/api/files/preview-meta/${encodeURIComponent(state.fileId)}`, {
-            method:'GET', headers:withCsrf({'Accept':'application/json'}), credentials:'same-origin'
+            method: 'GET',
+            headers: withCsrf({ 'Accept': 'application/json' }),
+            credentials: 'same-origin'
           });
+
           const meta = await safeJson(res2);
-          if (!res2.ok || !meta.success) throw new Error(meta.message || `미리보기 실패 (status=${res2.status})`);
+
+          if (!res2.ok || !meta.success) {
+            throw new Error(`${meta.message} (status=${res2.status})`);
+          }
+
           const { text, truncated, blocked, sizeBytes } = meta;
-          state.truncated = !!truncated; state.blocked = !!blocked; state.sizeBytes = Number(sizeBytes) || 0;
 
-          state.editor.setMarkdown(text || '');
+          state.truncated = !!truncated;
+          state.blocked = !!blocked;
+          state.sizeBytes = Number(sizeBytes || 0);
 
-          if (state.blocked) { state.mode='file'; setMsg(`파일이 너무 커서 요약을 진행할 수 없습니다. (크기: ${(state.sizeBytes/1024/1024).toFixed(1)}MB)`, 'error'); }
-          else if (state.truncated) { state.mode='file'; setMsg('파일이 큽니다. 원본 전체를 대상으로 경제/차단 정책에 따라 요약합니다.', 'info'); }
-          else { state.mode='text'; setMsg('파일 업로드 및 내용 추출 완료', 'success'); }
+          if (state.blocked) {
+            state.mode = 'file';
+            setMsg(`❌ 차단됨.`, 'error');
+            state.editor.setMarkdown('');
+
+          } else if (!text || text.trim().length === 0) {
+            state.mode = 'file';
+            setMsg(`⚠ 텍스트 추출 실패. 파일만 저장됩니다.`, 'info');
+            state.editor.setMarkdown('');
+
+          } else if (state.truncated) {
+            state.mode = 'file';
+            setMsg(`⚠ 일부만 표시. 요약은 전체 대상.`, 'info');
+            state.editor.setMarkdown(text);
+
+          } else {
+            state.mode = 'text';
+            setMsg('✅ 업로드 완료', 'success');
+            state.editor.setMarkdown(text);
+          }
+
           updateCounters();
-        } catch (e2) { console.error(e2); setMsg(`미리보기 실패: ${e2.message}`, 'error'); }
+
+        } catch (e2) {
+          console.error(e2);
+          setMsg(e2.message, 'error');
+        }
       }
-    } catch (err) { console.error(err); setMsg(`업로드 실패: ${err.message}`, 'error'); }
+
+    } catch (err) {
+      console.error(err);
+      setMsg(err.message, 'error');
+    }
   });
 
   // ==== LLM 요청 ====
@@ -386,85 +507,278 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 요약하기
   $temsetBtn.addEventListener('click', async () => {
-    if (state.selectedPromptIdx === null) { alert('프롬프트를 선택하세요.'); return; }
+    if (state.selectedPromptIdx === null) {
+      alert('프롬프트를 먼저 선택하세요.');
+      return;
+    }
+
     const prompt = prompts[state.selectedPromptIdx];
 
     try {
-      setLoading(true, '요약하는 중...');
+      setLoading(true, '요약 중...');
+
       let response;
+
+      // ==== 파일 모드 ====
       if (state.mode === 'file') {
-        if (!state.fileId) { alert('파일 정보가 없습니다.'); setLoading(false); return; }
+        if (!state.fileId) {
+          alert('파일 ID가 없습니다.');
+          setLoading(false);
+          return;
+        }
+
         response = await requestFileSummaryById(state.fileId, prompt.title);
+
         if (response.success) {
-          const warn = response.message ? `<div class="nc-warn">${response.message}</div>` : '';
-		  state.editor = new toastui.Editor({
-		      el: document.getElementById('nc-editor2'),
-		      height: '500px',
-		      initialEditType: 'markdown',
-		      previewStyle: 'vertical',
-		      usageStatistics: false
-		    });
-          $resultBox.innerHTML = `${warn}<div class="nc-editor2">${escapeHtml(response.summary || '')}</div>`;
-          state.editor.setMarkdown(response.summary || '');
+          // ✅ state에 저장
+          state.lastSummary = response.summary;
+          state.lastWarn = response.message || '';
+
+          showSummaryResult(state.lastSummary, state.lastWarn);
+
         } else {
-          const msg = response.error || response.message || '요약 불가';
+          const msg = response.error || response.message;
           $resultBox.innerHTML = `<div class="nc-error">${msg}</div>`;
         }
+
+        // ==== 텍스트 모드 ====
       } else {
         let contentToSend;
+
         if (!state.hasProcessedOnce) {
-          const promptContent = prompt.content || '';
+          const promptContent = prompt.content;
           const md = state.editor.getMarkdown().trim();
-          if (!md) { alert('요약할 내용이 없습니다.'); setLoading(false); return; }
-          contentToSend = `${md}\n\n프롬프트: ${promptContent}\n\n`;
+          if (!md) {
+            alert('입력 내용이 없습니다.');
+            setLoading(false);
+            return;
+          }
+          contentToSend = md + '\n\n' + promptContent;
         } else {
           contentToSend = state.editor.getMarkdown().trim();
-          if (!contentToSend) { alert('요약할 내용이 없습니다.'); setLoading(false); return; }
+          if (!contentToSend) {
+            alert('입력 내용이 없습니다.');
+            setLoading(false);
+            return;
+          }
         }
+
         response = await requestTextSummary(contentToSend, prompt.title);
-        const warn = response.warn ? `<div class="nc-warn">${response.warn}</div>` : '';
-        $resultBox.innerHTML = `${warn}<div class="nc-md">${escapeHtml(response.summary || '')}</div>`;
-        state.editor.setMarkdown(response.summary || '');
-        state.hasProcessedOnce = true;
-        alert('요약이 완료되었습니다!');
+
+        // ✅ state에 저장
+        state.lastSummary = response.summary;
+        state.lastWarn = response.warn || '';
+
+        showSummaryResult(state.lastSummary, state.lastWarn);
       }
+
+      state.hasProcessedOnce = true;
+      alert('요약 완료!');
       updateCounters();
+
     } catch (err) {
       console.error(err);
-      alert('요청 중 오류: ' + err.message);
+      alert('오류: ' + err.message);
     } finally {
       setLoading(false);
     }
   });
 
+// ✅ 요약 결과 표시 함수 (중복 제거)
+// ✅ 요약 결과 표시 함수 추가
+  function showSummaryResult(summary, warnMsg) {
+    hideEditorArea();
+
+    const warn = warnMsg ? `<div class="nc-warn">${warnMsg}</div>` : '';
+
+    // ✅ 별도 ID로 버튼 생성
+    const backBtn = `<div style="text-align:right; margin-bottom:10px;">
+    <button id="nc-backToInput" class="nc-btn nc-secondary">← 입력 화면으로 돌아가기</button>
+  </div>`;
+
+    $resultBox.innerHTML = backBtn + warn + `<div id="nc-editor2"></div>`;
+    state.isSummaryShown = true;
+
+    // ✅ 입력 화면으로만 복귀
+    document.getElementById('nc-backToInput').addEventListener('click', () => {
+      showEditorArea();
+
+      if (state.editor2) {
+        state.editor2.destroy();
+        state.editor2 = null;
+      }
+
+      $resultBox.innerHTML = '';
+      state.isSummaryShown = false;
+    });
+
+    // ✅ editor2 생성
+    setTimeout(() => {
+      const editor2El = document.getElementById('nc-editor2');
+      if (!editor2El) {
+        console.error('nc-editor2 요소를 찾을 수 없습니다!');
+        return;
+      }
+
+      if (state.editor2) {
+        state.editor2.destroy();
+        state.editor2 = null;
+      }
+
+      state.editor2 = new toastui.Editor({
+        el: editor2El,
+        height: '600px',
+        initialEditType: 'wysiwyg',
+        previewStyle: 'vertical',
+        usageStatistics: false
+      });
+
+      state.editor2.setMarkdown(summary);
+    }, 0);
+  }
+
+
+  // ==== hideEditorArea  ====
+  function hideEditorArea() {
+    console.log('hideEditorArea 실행됨');
+
+    // 1. label 태그 "입력/편집" 숨기기
+    const labels = document.querySelectorAll('.nc-text-input label');
+    labels.forEach(label => {
+      if (label.textContent.trim() === '입력/편집') {
+        console.log('label 숨김:', label.textContent);
+        label.style.display = 'none';
+      }
+    });
+
+    // 2. 에디터 본체 숨기기
+    const editor = document.getElementById('nc-editor');
+    if (editor) {
+      console.log('에디터 숨김');
+      editor.style.display = 'none';
+    }
+
+    // 3. 글자수/토큰
+    const counters = document.querySelector('.nc-counters');
+    if (counters) {
+      console.log('글자수 영역 숨김');
+      counters.style.display = 'none';
+    }
+
+    // 4. ✅ 파일 업로드 영역 (정확한 클래스명)
+    const fileSection = document.querySelector('.nc-file-section');
+    if (fileSection) {
+      console.log('파일 영역 숨김');
+      fileSection.style.display = 'none';
+    } else {
+      console.error('.nc-file-section 찾을 수 없음');
+    }
+  }
+
+  function showEditorArea() {
+    console.log('showEditorArea 실행됨');
+
+    const labels = document.querySelectorAll('.nc-text-input label');
+    labels.forEach(label => {
+      if (label.textContent.trim() === '입력/편집') {
+        label.style.display = 'block';
+      }
+    });
+
+    const editor = document.getElementById('nc-editor');
+    if (editor) editor.style.display = 'block';
+
+    const counters = document.querySelector('.nc-counters');
+    if (counters) counters.style.display = 'flex';
+
+    const fileSection = document.querySelector('.nc-file-section');
+    if (fileSection) fileSection.style.display = 'block';
+  }
+
   // 저장하기
   $saveBtn.addEventListener('click', async () => {
-    const title = $titleInput.value.trim();
-    if (!title) { alert('제목을 입력하세요.'); return; }
-    const summary = state.editor.getMarkdown();
-    if (!summary.trim()) { alert('저장할 내용이 없습니다.'); return; }
-    const promptId = prompts[state.selectedPromptIdx]?.promptId || 0;
-    try {
-      setLoading(true, '저장 중...');
-      const res = await fetch('/notion/save-note', {
-        method:'POST', headers:withCsrf({'Content-Type':'application/json'}),
-        body: JSON.stringify({ title, summary, promptId })
-      });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error || '저장 실패');
+    // ✅ 이미 저장 중이면 무시
+    if (state.isSaving) {
+      return;
+    }
 
-      sessionStorage.setItem('noteTitle', title);
-      sessionStorage.setItem('noteContent', summary);
+    const title = $titleInput.value.trim();
+
+    if (!title) {
+      alert('제목을 입력하세요.');
+      return;
+    }
+
+    const promptId = state.selectedPromptIdx !== null
+        ? String(state.selectedPromptIdx)
+        : '0';
+
+    let content = '';
+    let originalContent = '';
+    if (state.isSummaryShown && state.editor2) {
+      content = state.editor2.getMarkdown();
+      originalContent = state.editor.getMarkdown();
+    } else if (state.editor) {
+      originalContent = state.editor.getMarkdown();
+      content = originalContent;
+    }
+
+    if (!content.trim()) {
+      alert('저장할 내용이 없습니다.');
+      return;
+    }
+
+    // ✅ 저장 시작 - 버튼 비활성화
+    state.isSaving = true;
+    $saveBtn.disabled = true;
+    $saveBtn.textContent = '저장 중...';
+
+    try {
+      const res = await fetch('/notion/save-note', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...csrfHeader && csrfToken ? { [csrfHeader]: csrfToken } : {}
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          title: title,
+          summary: content,              // ✅ 수정: content 사용
+          originalContent: originalContent,
+          promptId: promptId,            // ✅ 수정: 위에서 정의한 promptId 사용
+          gridfsId: state.fileId || ''   // ✅ 원본 파일 ID (없으면 빈 문자열)
+        })
+      });
+
+      const data = await res.json();
+
+      if (!data.success) {
+        throw new Error(data.error || '저장 실패');
+      }
+
+      // ✅ 세션 스토리지에 저장
+      sessionStorage.setItem('noteId', data.noteId || '');
       sessionStorage.setItem('keywords', (data.keywords || []).join(', '));
       sessionStorage.setItem('categoryPath', data.categoryPath || '');
       sessionStorage.setItem('folderId', data.folderId || '');
 
+      console.log('✅ 세션 스토리지 저장 완료:', {
+        noteId: data.noteId,
+        keywords: data.keywords,
+        categoryPath: data.categoryPath,
+        folderId: data.folderId
+      });
+
       window.location.href = '/notion/complete';
+
     } catch (err) {
-      console.error(err);
-      alert('저장 중 오류: ' + err.message);
-    } finally {
-      setLoading(false);
+      console.error('❌ 저장 오류:', err);
+      alert('저장 실패: ' + err.message);
+
+      // ✅ 에러 시 버튼 다시 활성화
+      state.isSaving = false;
+      $saveBtn.disabled = false;
+      $saveBtn.textContent = '저장하기';
     }
   });
 
@@ -472,3 +786,4 @@ document.addEventListener('DOMContentLoaded', () => {
   renderSlider();
   updateCounters();
 });
+

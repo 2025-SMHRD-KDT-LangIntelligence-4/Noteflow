@@ -53,16 +53,16 @@
 	        <div id="nc-selectedPromptName" class="nc-selected-name">선택한 프롬프트: (없음)</div>
 	        <button id="nc-btnBack" class="nc-btn nc-btn-back">← 프롬프트 선택으로 돌아가기</button>
 	      </div>
-	
+
 	      <!-- 제목 -->
 	      <div style="margin-bottom:8px; width:90%; display:flex; justify-content:space-between; align-items:center;">
 	        <label for="nc-ResultTitle" style="width: 40px;">제목</label>
 	        <input id="nc-ResultTitle" type="text" class="nc-btn" placeholder="제목을 입력하세요"/>
 	      </div>
-	
+
 	      <!-- 작성용 Toast Editor -->
 	      <div class="nc-text-input">
-	        <label>입력/편집 (Toast UI Editor)</label>
+	        <label>입력/편집</label>
 	        <div id="nc-editor"></div>
 	        <div class="nc-counters">
 	          <span>글자수: <b id="nc-charCount">0</b></span>
@@ -70,16 +70,15 @@
 	          <span id="nc-lengthHint" class="nc-hint"></span>
 	        </div>
 	      </div>
-	
+
 	      <!-- 파일 업로드 -->
-	      <div class="nc-file-input">
-	        <label for="nc-fileInput">또는 파일 업로드</label>
-	        <input type="file" id="nc-fileInput"/>
-	        <div id="nc-filePreview" class="nc-preview"></div>
-	        <div id="nc-preMsg" class="nc-preview"></div>
-	        <button id="nc-file-upload" class="nc-btn">업로드</button>
-	      </div>
-	
+		<div class="nc-file-section">
+			<label>또는 파일 업로드</label>
+			<input type="file" id="nc-fileInput" style="display:none;">
+			<button id="nc-file-upload" class="nc-btn nc-secondary">📁 파일 선택 및 업로드</button>
+			<p id="nc-preMsg"></p>
+		</div>
+
 	      <!-- 액션 -->
 	      <div class="nc-actions">
 	        <label>요약하기 미실행후 저장시 입력내용만 저장됩니다.</label>
@@ -88,7 +87,7 @@
 		        <button id="nc-saveBtn" class="nc-btn nc-secondary" disabled>저장하기</button>
 	        </div>
 	      </div>
-	
+
 	      <!-- 결과 -->
 	      <label class="subs-title">요약결과</label>
 	      <div id="nc-resultBox" class="nc-result-box"></div>
