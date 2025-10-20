@@ -14,14 +14,22 @@ const qaEndTime = document.getElementById('qaEndTime');
 const qaAllDay = document.getElementById('qaAllDay');
 const qaColor = document.getElementById('qaColor');
 const qaNotify = document.getElementById('qaNotify');
+const qaEmoji = document.getElementById('qaEmoji'); // 추가
 const qaSave = document.getElementById('qaSave');
 const qaCancel = document.getElementById('qaCancel');
-const qaQuickAddCard = document.querySelector('.quick-add-card'); // 이벤트 버블링 차단용
+const qaQuickAddCard = document.querySelector('.quick-add-card'); 
 
-// 추가 옵션 관련 DOM
+// 추가 옵션 관련 DOM (temp_schedule 컬럼 매핑용)
 const qaToggleAdvanced = document.getElementById('qaToggleAdvanced');
 const qaAdvancedOptions = document.getElementById('qaAdvancedOptions');
-
+const qaAlertType = document.getElementById('qaAlertType');
+const qaCustomAlertValue = document.getElementById('qaCustomAlertValue');
+const qaLocation = document.getElementById('qaLocation');
+const qaHighlightType = document.getElementById('qaHighlightType');
+const qaCategory = document.getElementById('qaCategory');
+const qaAttachmentPath = document.getElementById('qaAttachmentPath');
+const qaAttachmentList = document.getElementById('qaAttachmentList');
+// qaMapBtn (버튼 자체는 데이터 전송에 사용되지 않으므로 참조 생략)
 
 // ------------------------------ 1. 유틸리티 및 API 호출 함수 ------------------------------
 
@@ -32,25 +40,44 @@ function toggleTimeInputs(isAllDay) {
     timeRows.style.display = isAllDay ? 'none' : 'flex';
 }
 
-// 임시 저장 데이터 수집/확인
+// [수정]: 임시 저장 데이터 수집/확인 - temp_schedule 전체 필드 전송을 위해 확장
 function collectTempData() {
-    if (!qaTitle) return null; // DOM 참조 실패 시 방어 코드
+    if (!qaTitle) return null; 
 
     const isAllDay = qaAllDay.checked;
     
     const payload = {
+        // [필수 및 기본 필드]
         title: qaTitle.value.trim(),
         description: qaDesc.value.trim(),
         colorTag: qaColor.value,
         isAllDay: isAllDay,
+        
+        // [시간/날짜 필드] (T 포맷으로 백엔드 전송)
         startTime: qaStartDate.value + 'T' + (isAllDay ? '00:00:00' : qaStartTime.value + ':00'),
         endTime: qaEndDate.value + 'T' + (isAllDay ? '23:59:59' : qaEndTime.value + ':00'),
-        notifyMinutesBefore: qaNotify.value === 'custom' ? null : parseInt(qaNotify.value, 10),
-        // ... 기타 필드 추가
+
+        // [알림 필드] (notifyMinutesBefore는 alarm_time 필드에 매핑될 값)
+        alarmTime: qaNotify.value === 'custom' ? null : parseInt(qaNotify.value, 10), // alarm_time 컬럼 대응
+        
+        // [추가 옵션 필드] (temp_schedule 컬럼에 대응)
+        emoji: qaEmoji ? qaEmoji.value.trim() : null, 
+        alertType: qaAlertType ? qaAlertType.value.trim() : null,
+        customAlertValue: qaCustomAlertValue ? (qaCustomAlertValue.value || null) : null,
+        customAlertUnit: null, // HTML에 없는 필드. 백엔드에서 처리하거나, 필요 시 HTML/JS에 추가해야 함
+        
+        location: qaLocation ? qaLocation.value.trim() : null,
+        mapLat: null, // 지도 연동 로직 부재로 null
+        mapLng: null, // 지도 연동 로직 부재로 null
+        
+        highlightType: qaHighlightType ? qaHighlightType.value.trim() : null,
+        category: qaCategory ? qaCategory.value.trim() : null,
+        attachmentPath: qaAttachmentPath ? qaAttachmentPath.value.trim() : null,
+        attachmentList: qaAttachmentList ? qaAttachmentList.value.trim() : null,
     };
     
-    // 제목, 설명 중 하나라도 데이터가 있으면 '작성 중'으로 간주합니다.
-    const hasContent = payload.title || payload.description;
+    // 제목, 설명, 위치 중 하나라도 데이터가 있으면 '작성 중'으로 간주
+    const hasContent = payload.title || payload.description || payload.location; 
     
     return hasContent ? payload : null;
 }
@@ -68,17 +95,17 @@ async function saveTemporarySchedule(payload) {
             throw new Error(`임시 저장 API 오류: ${res.status} - ${errorText}`);
         }
         
-        // 임시 저장 성공 시 임시 일정 UI 목록 갱신 (manager.js에서 import)
+        // 임시 저장 성공 시 임시 일정 UI 목록 갱신
         if (typeof loadTempSchedules === 'function') {
             loadTempSchedules();
         }
 
     } catch (err) {
-        throw err; // 상위 로직에서 catch하도록 다시 throw
+        throw err; 
     }
 }
 
-// ------------------------------ 2. Modal/UI Export 함수 (최상위 레벨) ------------------------------
+// ------------------------------ 2. Modal/UI Export 함수 ------------------------------
 
 // + 버튼 주입
 export function injectPlusButtons() {
@@ -99,7 +126,7 @@ export function injectPlusButtons() {
 
 		btn.addEventListener('click', (e) => {
 			e.stopPropagation();
-			openQuickAddModal(btn.dataset.date); // export 함수 호출
+			openQuickAddModal(btn.dataset.date); 
 		});
 
 		dayTop.appendChild(btn);
@@ -116,8 +143,11 @@ export function openQuickAddModal(dateStr) {
     qaColor.value = '#3788d8';
     qaAllDay.checked = false;
     qaNotify.value = '0';
+    if (qaEmoji) qaEmoji.value = '';
+    
     if (qaAdvancedOptions) qaAdvancedOptions.classList.add('hidden');
     if (qaToggleAdvanced) qaToggleAdvanced.textContent = '추가 옵션 보기';
+    // 추가 옵션 필드 초기화 (필요하다면)
 
     const today = dateStr ? new Date(dateStr) : new Date();
     const dateISO = today.toISOString().slice(0, 10);
@@ -155,16 +185,15 @@ export function closeQuickAddModal() {
             quickModal.setAttribute('aria-hidden', 'true');
             quickModal.removeEventListener('transitionend', handler);
         }
-    }, { once: true }); // 한번만 실행되도록 { once: true } 사용
+    }, { once: true }); 
 };
 
 
-// ------------------------------ 3. 이벤트 핸들러 (최상위 레벨) ------------------------------
+// ------------------------------ 3. 이벤트 핸들러 ------------------------------
 
 // ESC 키 핸들러
 function handleEscClose(e) {
     if (e.key === 'Escape' && quickModal && !quickModal.classList.contains('hidden')) {
-        // [수정]: Esc 키는 임시 저장 없이 즉시 닫기
         closeQuickAddModal();
     }
 }
@@ -173,7 +202,6 @@ function handleEscClose(e) {
 function handleOutsideClick(e) {
     if (quickModal.classList.contains('hidden')) return; 
 
-    // 클릭된 요소가 모달 컨테이너 자체가 아니며, 모달 컨테이너의 자식 요소도 아닐 때 (모달 외부 클릭)
     const isClickOutside = !quickModal.contains(e.target);
     
     if (isClickOutside) {
@@ -229,28 +257,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 5. 저장/취소 버튼 이벤트
     qaSave.addEventListener('click', async () => {
-        // ... (qaSave 로직 유지: Full Save 로직)
-        const payload = {
-            title: qaTitle.value.trim() || '(제목 없음)',
-            description: qaDesc.value.trim(),
-            colorTag: qaColor.value,
-            isAllDay: qaAllDay.checked,
-            startTime: qaStartDate.value + 'T' + (qaAllDay.checked ? '00:00:00' : qaStartTime.value + ':00'),
-            endTime: qaEndDate.value + 'T' + (qaAllDay.checked ? '23:59:59' : qaEndTime.value + ':00'),
-            notifyMinutesBefore: qaNotify.value === 'custom' ? null : parseInt(qaNotify.value, 10)
+        // [수정]: 전체 필드를 가져오도록 collectTempData 재활용
+        const payload = collectTempData(); 
+
+        // 유효성 검사 (제목 필수 등)
+        if (!payload || !payload.title) {
+            alertError('제목은 필수로 입력해야 합니다.');
+            return;
+        }
+
+        // is_all_day가 체크되었어도 시간 필드가 전송되는 문제를 해결하기 위해 payload를 조정
+        const finalPayload = {
+            ...payload,
+            // Full Save 시에는 알림 시간 필드를 alarmTime 대신 notifyMinutesBefore로 전달하거나,
+            // 백엔드에서 alarmTime 필드에 notifyMinutesBefore를 매핑하도록 해야 합니다.
+            notifyMinutesBefore: payload.alarmTime // 임시 저장 필드를 최종 저장 필드로 재활용
         };
+        delete finalPayload.alarmTime; // 중복 필드 삭제
 
         try {
             const res = await fetchWithCsrf('/api/schedule/create', {
                 method: 'POST',
-                body: JSON.stringify(payload)
+                body: JSON.stringify(finalPayload)
             });
 
             if (!res.ok) throw new Error('일정 생성 실패');
 
             alertSuccess('일정이 성공적으로 생성되었습니다.');
             
-            // 임시 저장 목록에 해당 내용이 남아 있다면, 임시 저장 UI 갱신 (삭제는 백엔드에서 처리 가정)
+            // 캘린더 이벤트 갱신
             if (window.refreshEvents && typeof window.refreshEvents === 'function') {
                 await window.refreshEvents();
             } else if (window.calendar && typeof window.calendar.refetchEvents === 'function') {
