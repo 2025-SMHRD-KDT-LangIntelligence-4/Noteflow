@@ -29,7 +29,7 @@ body {
 
 /* 2. 노션 선택 메인 박스 */
 .notion-selection-box {
-    width: 900px;
+    width: 1000px;
     height: 700px; 
     background-color: white;
     border-radius: 20px;

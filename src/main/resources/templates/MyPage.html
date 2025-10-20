@@ -47,6 +47,27 @@
                 <div class="user-interesting" th:text="${user.interestArea != null ? user.interestArea : '관심 분야 없음'}">관심 분야</div>
             </div>
         </div>
+        <div class="path-container">
+        	<div class="path-location-container">
+        		<div class="path-title">SAEGIM.PATH</div>
+        		<div class="path-progress-level">패스레벨</div>
+        		<div class="path-progress-bar">
+        			<div class="circular-progress" data-percent="75">
+    					<span class="progress-value">75%</span>
+					</div>
+        		</div>
+        		<div class="path-reward-container">
+        			<div class="reward-title">보상목록</div>
+        			<div class="reward-info-container">        			
+	        			<div class="path-reward-list">
+							<div class="reward-img"></div>	        			
+		        			<div class="reward-name"></div>
+	        			</div>
+		        		<img class="next-sign" th:src="@{/images/arrowVector.svg}"/>
+        			</div>
+        		</div>
+        	</div>
+        </div>
     </div>
 
     <!-- JS 블록: editMypage URL로 안전하게 이동 -->
@@ -61,7 +82,24 @@
         }
         /*]]>*/
     </script>
-
+	<script>
+		let progressStartValue = 0;
+		let progressEndValue = 75; // 원하는 진척도 퍼센트
+		let speed = 20; // 애니메이션 속도
+	
+		let progress = setInterval(() => {
+		    progressStartValue++;
+		    let angle = progressStartValue * 3.6; // 360도 / 100% = 3.6도/퍼센트
+	
+		    document.querySelector(".progress-value").textContent = `${progressStartValue}%`;
+		    document.querySelector(".circular-progress").style.background = 
+		        `conic-gradient(#389DEF ${angle}deg, #ededed 0deg)`;
+	
+		    if(progressStartValue == progressEndValue){
+		        clearInterval(progress);
+		    }
+		}, speed);
+	</script>
     <div th:replace="~{fragments/footer :: siteFooter}"></div>
 </body>
 </html>
