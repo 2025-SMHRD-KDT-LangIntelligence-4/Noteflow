@@ -593,7 +593,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const warn = warnMsg ? `<div class="nc-warn">${warnMsg}</div>` : '';
 
     // ✅ 별도 ID로 버튼 생성
-    const backBtn = `<div style="text-align:right; margin-bottom:10px;">
+    const backBtn = `<div style="text-align:right; margin-bottom:10px; margin-top:10px;">
     <button id="nc-backToInput" class="nc-btn nc-secondary">← 입력 화면으로 돌아가기</button>
   </div>`;
 

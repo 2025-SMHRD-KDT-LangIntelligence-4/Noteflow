@@ -135,7 +135,8 @@ body{
 }
 .nc-viewer-title { 
 	font-weight:600;
-	font-size:20px; 
+	font-size:20px;
+	padding: 0 20px;
 }
 .nc-badge { 
 	display:inline-flex; 
@@ -250,9 +251,9 @@ body{
 	justify-content:space-between;
 	align-items:center;
 }
-.nc-primary { background:#96D0FF; color:#fff; border-color:#96D0FF; }
-.nc-secondary { background:#10b981; color:#fff; border-color:#10b981; }
-.nc-btn:hover { background-color:#2FA1FF; color:#fff; }
+.nc-primary { background:#96D0FF; color:#fff; border-color:#96D0FF; height:40px;}
+.nc-secondary { background:#10b981; color:#fff; border-color:#10b981;}
+.nc-btn:hover { background-color:#2FA1FF; color:#fff }
 .nc-btn:disabled { opacity:.5; cursor:not-allowed; }
 .nc-actions {
 	background-color:white;
@@ -268,6 +269,7 @@ body{
 	display:flex;
 	justify-content:center;
 	gap:20px;
+	align-items:center;
 }
 .subs-title{
 	display:flex;
@@ -311,3 +313,19 @@ body{
 /* 반응형 */
 @media (max-width: 1024px) { .nc-slide-item { width: 200px; } }
 @media (max-width: 768px)  { .nc-slide-item { width: 180px; } }
+
+.nc-file-section{
+	display: flex;
+    gap: 20px;
+    align-items: center;
+    height: 70px;
+}
+.title{
+	border:1px solid #e5e7eb; 
+	background:#fff; 
+	color:#111; 
+	padding:8px 12px; 
+	border-radius:8px; 
+	cursor:pointer;
+	outline:none;
+}
