@@ -75,6 +75,40 @@ $(document).ready(function() {
 			}
 		});
 	});
+	// -------------------------------------------------------------------
+	// [3] 닉네임 중복 확인
+	// -------------------------------------------------------------------
+	$("#nickCheckBtn").click(function() {
+		let nickname = $("#userNick").val();
+
+		if (nickname === "") {
+			$("#nickCheckResult").attr("class", "error-message").text("닉네임을 입력하세요.");
+			return;
+		}
+
+		$.ajax({
+			url: "/check-nickname",
+			type: "GET",
+			data: { nickname: nickname },
+			success: function(response) {
+				if (response === true) {
+					$("#nickCheckResult")
+						.attr("class", "error-message")
+						.text("이미 사용중인 닉네임입니다. 다른 닉네임을 사용해주세요.");
+				} else {
+					$("#nickCheckResult")
+						.attr("class", "success-message")
+						.text("사용 가능한 닉네임입니다.");
+				}
+			},
+			error: function() {
+				$("#nickCheckResult")
+					.attr("class", "error-message")
+					.text("서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+			}
+		});
+	});
+
 });
 
 // -------------------------------------------------------------------

@@ -17,7 +17,7 @@ body {
 
 /* 랭킹 컨테이너 */
 .ranking-container {
-    max-width: 1400px;
+    max-width: 1100px;
     margin: 0 auto 30px;
     padding: 20px;
     display: flex;
@@ -75,7 +75,7 @@ body {
 .notion-list-container {
     background-color: white;
     width: 360px;
-    min-height: 820px;
+    min-height: 850px;
     border-radius: 20px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     display: flex;

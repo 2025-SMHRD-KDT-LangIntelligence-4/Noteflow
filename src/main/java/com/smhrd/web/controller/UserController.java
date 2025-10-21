@@ -77,7 +77,17 @@ public class UserController {
         result.put("available", available);
         return result;
     }
-
+    // --------------------------
+    // 닉네임 중복 체크 (AJAX)
+    // --------------------------
+    @GetMapping("/check-nickname")
+    @ResponseBody
+    public Map<String, Boolean> checkNick(@RequestParam("nickname") String nickname) {
+        boolean available = !userService.isNickNameDuplicate(nickname);
+        Map<String, Boolean> result = new HashMap<>();
+        result.put("available", available);
+        return result;
+    }
     // --------------------------
     // 현재 비밀번호 확인 (AJAX)
     // --------------------------

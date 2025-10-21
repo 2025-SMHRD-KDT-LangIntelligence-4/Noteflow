@@ -30,7 +30,9 @@ public class UserService {
         if (userRepo.findByEmail(user.getEmail()).isPresent()) {
             throw new IllegalArgumentException("이미 등록된 이메일입니다.");
         }
-
+        if (userRepo.findByNickname(user.getNickname()).isPresent()) {
+            throw new IllegalArgumentException("이미 등록된 닉네임입니다.");
+        }
         user.setUserPw(passwordEncoder.encode(user.getUserPw()));
         user.setUserRole("USER");
         user.setCreatedAt(LocalDateTime.now());
@@ -53,6 +55,11 @@ public class UserService {
     public boolean isEmailDuplicate(String email) {
         return userRepo.existsByEmail(email);
     }
+    
+    public boolean isNickNameDuplicate(String nickname) {
+		// TODO Auto-generated method stub
+		return userRepo.findByNickname(nickname).isPresent();
+	}
 
     // ✅ 비밀번호 검증도 user_idx 기반으로 변경
     public boolean verifyPassword(Long userIdx, String rawPassword) { // [수정]
@@ -111,4 +118,6 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
         userRepo.delete(user);
     }
+
+	
 }

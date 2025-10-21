@@ -12,12 +12,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByUserId(String userId);
     Optional<User> findByEmail(String email);
-
+    Optional<User> findByNickname(String nickname);
     Optional<User> findByUserIdAndIsSuspendedFalse(String userId);
 
     boolean existsByNickname(String nickname);
     boolean existsByEmail(String email);
-
     @Modifying
     @Query("UPDATE User u SET u.lastLogin = CURRENT_TIMESTAMP WHERE u.userId = :userId")
     void updateLastLogin(@Param("userId") String userId);
