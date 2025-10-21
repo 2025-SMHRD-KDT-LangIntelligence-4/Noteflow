@@ -46,8 +46,8 @@
 								  		<img th:src="@{/images/default-profile.png}" alt="프로필 이미지" class="profile-image" />
 						  			</div>
 							  		<div class="user-name" th:text="${nickname} + '님 환영합니다.'">OOO님 환영합니다.</div>
-							  		<div class="user-credit" th:text="${credit} + P"></div>
-							  		<div class="user-gold" th:text="${golden} + GP"></div>
+							  		<div class="user-credit" th:text="credit "></div><div>🪙</div>
+							  		<div class="user-gold" th:text="golden "></div><div>💎</div>
 							  		<div class="user-btn-container">
 								    	<a th:href="@{/mypage}" class="dropdown-item1">마이페이지</a>
 								    	<a th:href="@{/logout}" class="dropdown-item2">로그아웃</a>

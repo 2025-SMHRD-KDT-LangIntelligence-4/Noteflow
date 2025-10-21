@@ -148,7 +148,16 @@ public class ViewController {
     // 추가 API 필요 시 @PostMapping 구현...
    // 임시용
     @GetMapping("/lecture")
-    public String lecturePage() {
+    public String lecturePage(Model model, @AuthenticationPrincipal UserDetails userDetails) {
+        model.addAttribute("pageTitle", "강의목록"); 
+        model.addAttribute("activeMenu", "lecture");
+        if (userDetails != null) {
+            // userDetails에서 닉네임 가져오기 (예: CustomUserDetails 사용)
+        	String nickname = ((CustomUserDetails) userDetails).getNickname();
+            model.addAttribute("nickname", nickname);
+            String email = ((CustomUserDetails) userDetails).getEmail();
+            model.addAttribute("email", email);
+        }
         // templates/recomLecture.html
         return "recomLecture";
     }

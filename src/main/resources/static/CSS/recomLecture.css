@@ -231,6 +231,7 @@ body {
 	justify-content: flex-end;
 	align-items: center;
 	padding: 8px 12px; /* 12px 16px → 8px 12px */
+	gap:10px;
 }
 
 .rec-openBtn {
@@ -246,6 +247,22 @@ body {
 }
 
 .rec-openBtn:hover {
+	background: #2563eb;
+	color: white;
+}
+.rec-openBtn2 {
+	padding: 6px 14px; /* 8px 16px → 6px 14px */
+	border: 1px solid #2563eb;
+	color: #2563eb;
+	background: white;
+	border-radius: 6px;
+	cursor: pointer;
+	font-size: 13px; /* 14px → 13px */
+	font-weight: 500;
+	transition: all 0.2s;
+}
+
+.rec-openBtn2:hover {
 	background: #2563eb;
 	color: white;
 }
