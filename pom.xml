@@ -236,43 +236,6 @@
 					</excludes>
 				</configuration>
 			</plugin>
-
-			<!-- ⭐ 새로 추가: frontend-maven-plugin ⭐ -->
-			<plugin>
-				<groupId>com.github.eirslett</groupId>
-				<artifactId>frontend-maven-plugin</artifactId>
-				<version>1.15.0</version>
-
-				<configuration>
-					<workingDirectory>src/main/resources/static</workingDirectory>
-					<installDirectory>target</installDirectory>
-				</configuration>
-
-				<executions>
-					<!-- Node.js & npm 설치 -->
-					<execution>
-						<id>install node and npm</id>
-						<goals>
-							<goal>install-node-and-npm</goal>
-						</goals>
-						<configuration>
-							<nodeVersion>v18.18.0</nodeVersion>
-							<npmVersion>9.8.1</npmVersion>
-						</configuration>
-					</execution>
-
-					<!-- npm install 실행 -->
-					<execution>
-						<id>npm install</id>
-						<goals>
-							<goal>npm</goal>
-						</goals>
-						<configuration>
-							<arguments>install</arguments>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
 		</plugins>
 	</build>
 

@@ -1,9 +1,14 @@
 package com.smhrd.web.entity;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
 
 @Entity
 @Table(name = "test_sources")
@@ -43,8 +48,37 @@ public class TestSource {
     @Column(name = "question_type")
     private QuestionType questionType;
 
-    @Column(columnDefinition = "TEXT")
-    private String options;  // JSON 형태의 선택지
+    @Column(name = "options", columnDefinition = "TEXT")
+    private String optionsJson;  // DB 원본 문자열
+
+    // ⭐ Getter에서 JSON 파싱 ⭐
+    @Transient
+    public List<String> getOptions() {
+        if (optionsJson == null || optionsJson.isEmpty() || "[]".equals(optionsJson)) {
+            return Collections.emptyList();
+        }
+
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            return mapper.readValue(optionsJson, new TypeReference<List<String>>(){});
+        } catch (JsonProcessingException e) {
+            return Collections.emptyList();
+        }
+    }
+
+    public void setOptions(List<String> options) {
+        if (options == null || options.isEmpty()) {
+            this.optionsJson = "[]";
+        } else {
+            try {
+                ObjectMapper mapper = new ObjectMapper();
+                this.optionsJson = mapper.writeValueAsString(options);
+            } catch (JsonProcessingException e) {
+                this.optionsJson = "[]";
+            }
+        }
+    }
+
 
     @Column(name = "created_at", nullable = false, updatable = false, insertable = false,
             columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")

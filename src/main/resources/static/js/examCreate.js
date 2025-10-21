@@ -310,9 +310,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateAutoQuestionCount() {
         const mode = document.querySelector('input[name="questionMode"]:checked').value;
         if (mode === 'auto') {
-            const count = selectedTags.size * 20;
-            questionCount.value = count > 0 ? count : 20;
-            questionHint.textContent = `키워드 ${selectedTags.size}개 × 20문제 = ${questionCount.value}문제`;
+            const count = selectedTags.size * 10;
+            questionCount.value = count > 0 ? count : 10;
+            questionHint.textContent = `키워드 ${selectedTags.size}개 × 10문제 = ${questionCount.value}문제`;
         }
     }
 
