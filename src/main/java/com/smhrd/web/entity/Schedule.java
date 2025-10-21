@@ -119,5 +119,5 @@ public class Schedule {
 
     @Column(name = "attachment_list")
     @JsonProperty("attachmentList")
-    private String attachmentList;
+    private String attachmentList = "[]";
 }

@@ -4,6 +4,8 @@ import com.smhrd.web.entity.Schedule;
 import com.smhrd.web.dto.ScheduleEventDto;
 import com.smhrd.web.service.ScheduleService;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -28,8 +30,8 @@ public class ScheduleController {
     public ResponseEntity<Schedule> createSchedule(@RequestBody Schedule schedule,
                                                    Authentication authentication) {
         Long userIdx = ((com.smhrd.web.security.CustomUserDetails) authentication.getPrincipal()).getUserIdx();
-        Schedule saved = scheduleService.createSchedule(userIdx, schedule);
-        return ResponseEntity.ok(saved);
+        Schedule savedSchedule = scheduleService.createSchedule(userIdx, schedule);
+        return new ResponseEntity<>(savedSchedule, HttpStatus.CREATED);
     }
 
     // 2. 페이지 진입 시 일정 자동 조회

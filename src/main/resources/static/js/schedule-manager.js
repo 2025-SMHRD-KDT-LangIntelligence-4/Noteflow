@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 	initColorDropdown(); // schedule-ui-dropdown.js의 함수 호출
 	await loadCalendar();
 	// [추가]: 임시 저장 목록 초기 로드
-	await loadTempSchedules(); 
+	// [에러때문에 잠시 주석] await loadTempSchedules(); 
 	window.calendar = calendar;
 	window.refreshEvents = refreshEvents; // quick-add.js에서 사용하므로 유지
 	const searchInput = document.getElementById('scheduleSearchInput');
@@ -95,6 +95,7 @@ const loadCalendar = async () => {
 const tempContainer = document.getElementById('tempScheduleContainer');
 // [추가]: 임시 저장 목록을 UI에 표시
 // [수정]: 임시 저장 목록을 UI에 표시
+/*
 export const loadTempSchedules = async () => {
     if (!tempContainer) return;
 
@@ -138,6 +139,7 @@ export const loadTempSchedules = async () => {
     }
 };
 
+
 // [추가]: 임시 일정 삭제 API 호출 (UI에서도 사용 가능)
 const deleteTempSchedule = async (tempId) => {
     try {
@@ -150,10 +152,13 @@ const deleteTempSchedule = async (tempId) => {
         alertError('임시 일정 삭제에 실패했습니다.');
     }
 };
+*/
     
 export const refreshEvents = async () => {
 	try {
 		const schedules = await fetchWithCsrf('/api/schedule');
+		if (!schedules) return;
+		
 		const events = schedules.map(s => ({
 			id: s.schedule_id,
 			title: s.title,
