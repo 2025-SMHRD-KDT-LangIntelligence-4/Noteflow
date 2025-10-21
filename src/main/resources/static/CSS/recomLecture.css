@@ -330,3 +330,30 @@ body {
 	min-width: 80px;
 	text-align: center;
 }
+.search-mode-toggle {
+	background-color: #f8f9fa;
+	border-radius: 8px;
+	padding: 12px 20px;
+}
+
+.search-mode-toggle label {
+	font-size: 14px;
+	font-weight: 500;
+	color: #333;
+	transition: color 0.2s;
+}
+
+.search-mode-toggle label:hover {
+	color: #007bff;
+}
+
+.search-mode-toggle input[type="radio"] {
+	width: 16px;
+	height: 16px;
+	cursor: pointer;
+}
+
+.search-mode-toggle input[type="radio"]:checked + span {
+	color: #007bff;
+	font-weight: 600;
+}

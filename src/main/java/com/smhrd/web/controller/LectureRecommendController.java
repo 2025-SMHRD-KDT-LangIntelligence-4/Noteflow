@@ -60,17 +60,23 @@ public class LectureRecommendController {
     @PostMapping("/api/recommend")
     @ResponseBody
     public Map<String, Object> recommend(@RequestBody RecommendRequest req) {
-        log.info("🔍 강의 추천 요청: tags={}, keyword={}, category={}",
-                req.tags, req.keyword, req.category);
+        log.info("🔍 강의 추천 요청: tags={}, keyword={}, category={}, searchMode={}",
+                req.tags, req.keyword, req.category, req.searchMode);  // ⭐ 로그에 추가
 
         int size = Math.max(1, Optional.ofNullable(req.size).orElse(30));
         List<Lecture> list = new ArrayList<>();
 
         try {
-            // 2-1: 태그 배열 검색
+            // 2-1: 태그 배열 검색 (OR/AND 모드 적용)
             if (req.tags != null && !req.tags.isEmpty()) {
-                log.info("📌 태그 배열 검색: {}", req.tags);
-                list = searchByTags(req.tags, size);
+                String mode = (req.searchMode != null) ? req.searchMode.toUpperCase() : "OR";
+                log.info("📌 태그 배열 검색: {} (모드: {})", req.tags, mode);
+
+                if ("AND".equals(mode)) {
+                    list = searchByTagsAnd(req.tags, size);  // ⭐ AND 검색
+                } else {
+                    list = searchByTags(req.tags, size);     // OR 검색 (기존)
+                }
             }
             // 2-2: 카테고리 검색
             else if (req.category != null && req.category.getLarge() != null) {
@@ -160,6 +166,51 @@ public class LectureRecommendController {
                 .map(si -> si.lecture)
                 .limit(size)
                 .collect(Collectors.toList());
+    }
+    // 모든태그로 검색
+    private List<Lecture> searchByTagsAnd(List<String> tags, int size) {
+        List<String> cleanTags = tags.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .distinct()
+                .collect(Collectors.toList());
+
+        log.info("🔗 AND 검색 시작: {}", cleanTags);
+
+        if (cleanTags.isEmpty()) {
+            return List.of();
+        }
+
+        // 모든 태그에 대해 강의를 검색
+        Map<Long, Lecture> lectureMap = new HashMap<>();
+        Map<Long, Set<String>> lectureMatchedTags = new HashMap<>();
+
+        for (String tag : cleanTags) {
+            List<Lecture> matches = lectureSearchRepository
+                    .findByTagNameExact(tag, PageRequest.of(0, 1000));
+
+            for (Lecture lec : matches) {
+                lectureMap.put(lec.getLecIdx(), lec);
+                lectureMatchedTags.computeIfAbsent(lec.getLecIdx(), k -> new HashSet<>())
+                        .add(tag);
+            }
+
+            log.info("📌 태그 '{}': {}개 강의 매칭", tag, matches.size());
+        }
+
+        // 모든 태그가 매칭된 강의만 필터링
+        List<Lecture> results = lectureMap.values().stream()
+                .filter(lec -> {
+                    Set<String> matched = lectureMatchedTags.get(lec.getLecIdx());
+                    return matched != null && matched.size() == cleanTags.size();
+                })
+                .limit(size)
+                .collect(Collectors.toList());
+
+        log.info("✅ AND 검색 완료: {}개 강의 (모든 태그 포함)", results.size());
+
+        return results;
     }
 
     /**
@@ -334,6 +385,7 @@ public class LectureRecommendController {
         public String keyword;
         public Integer size;
         public Boolean like;
+        public String searchMode;  // 추가: "OR" 또는 "AND"
 
         @Override
         public String toString() {
@@ -343,6 +395,7 @@ public class LectureRecommendController {
                     ", keyword='" + keyword + '\'' +
                     ", size=" + size +
                     ", like=" + like +
+                    ", searchMode='" + searchMode + '\'' +  // ⭐ 추가
                     '}';
         }
     }
