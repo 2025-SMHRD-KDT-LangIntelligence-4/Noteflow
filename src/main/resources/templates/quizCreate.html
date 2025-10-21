@@ -115,8 +115,7 @@
                 </div>
             </div>
             
-            <button id="selectCompleteBtn" class="complete-button">선택 완료 및 퀴즈 생성</button>
-            
+            <a th:href="@{/quiz/test}" th:classappend="${activeMenu == 'quizTest'} ? ' active' : ''" class="complete-button">선택 완료 및 퀴즈 생성</a>
         </div>
         
 	</div>

@@ -2,98 +2,76 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>회원가입</title>
+    <title th:text="${pageTitle}">시험 보기</title>
     <link rel="stylesheet" th:href="@{/css/header.css}" />
-    <link rel="stylesheet" th:href="@{/css/signUp.css}" />
+    <link rel="stylesheet" th:href="@{/css/quizTest.css}" />
     <link rel="stylesheet" th:href="@{/css/footer.css}" />
 </head>
 <body>
+    <!-- 헤더 -->
     <div th:replace="fragments/header :: siteHeader"></div>
 
-    <div class="signup-location-container">
-    	<div class="logo-container">
-    		<img th:src="@{/images/logo3.png}" class="logo-ad"/>
-    	</div>
-    	
-    	<div class="full-container">
-	        <form th:action="@{/signup}" method="post" th:object="${user}" 
-	              onsubmit="return validateForm()" class="signup-container">
-	            <h2>회원가입</h2>
-	
-	            <!-- 아이디 -->
-	            <label for="userId">아이디</label>
-	            <div class="id-check">
-	                <input type="text" id="userId" th:field="*{userId}" required>
-		            <button type="button" id="checkBtn">중복확인</button>
-		            <span id="checkResult" style="margin-left:10px;"></span>
-	            </div>
-	            <!-- 닉네임 -->
-	            <label for="userNick">닉네임</label>
-				<div class="userNick-check">
-	                <input type="text" id="userNick" th:field="*{nickname}" required>
-	                <button type="button" id="nickCheckBtn" class="nick-check-btn">중복확인</button>
-	                <span id="nickCheckResult" style="margin-left:10px;"></span>
-	            </div>
-				
-	            <!-- 비밀번호 -->
-	            <label for="userPw">비밀번호</label>
-	            <div style="width:100%;">
-		            <input type="password" id="userPw" th:field="*{userPw}" required>
-	            </div>
-	
-	            <label for="confirmPw">비밀번호 확인</label>
-	            <div style="width:100%;">
-		            <input type="password" id="confirmPw" th:field="*{userPwConfirm}" required>
-	            </div>
-	
-	            <!-- 이메일 -->
-	            <label for="userEmail">이메일</label>
-	            <div class="email-block">
-	                <div class="email-check">
-	                    <input type="email" id="userEmail" th:field="*{email}" required>
-	                    <button type="button" id="emailCheckBtn">중복확인</button>
-	                </div>
-	                <span id="emailCheckResult" style="margin-top:5px; display:block;"></span>
-	
-	                <!-- 메일 수신 동의 -->
-	                <div class="mailing-agree">
-	                    <input type="checkbox" id="mailingAgreed" th:field="*{mailingAgreed}">
-	                    <label for="mailingAgreed">메일 수신 동의</label>
-	                </div>
-	            </div>
-	
-	            <!-- 관심 분야 -->
-	            <label for="interestArea">관심 분야</label>
-	            <div style="width:100%;">
-		            <input type="text" id="interestArea" th:field="*{interestArea}">
-	            </div>
-	
-	            <!-- 학습 분야 -->
-	            <label for="learningArea">학습 분야</label>
-				<div style="width:100%;">
-		            <input type="text" id="learningArea" th:field="*{learningArea}">
-				</div>
-	
-	            <!-- 숨김 필드 -->
-	            <input type="hidden" id="attachmentCount" th:field="*{attachmentCount}" value="0">
-	
-	            <!-- 약관 동의 -->
-	            <label class="terms">
-	                <input type="checkbox" id="terms" required> 서비스 이용약관에 동의합니다.
-	            </label>
-	
-	            <button type="submit">회원가입</button>
-	
-	            <div class="link">
-	                <a href="/login">로그인으로 돌아가기</a>
-	            </div>
-	        </form>
-    	</div>
+    <div class="full-location-container">
+        <div class="full-container">
+            <!-- 문제 헤더 -->
+            <div class="quiz-header">
+                <div class="left-arrow"><img id="prevBtn" th:src="@{/images/arrowVector.svg}" class="arrow1"/></div>
+                <div id="quizNumber" class="quiz-number">1/20</div>
+                <div id="quizTitle" class="quiz-title">문제</div>
+                <div class="right-arrow"><img id="nextBtn" th:src="@{/images/arrowVector.svg}" class="arrow2"/></div>
+            </div>
+
+            <!-- 문제 텍스트 -->
+            <div class="quiz-text-container">
+                <div id="quizText" class="quiz-text">문제가 표시됩니다.</div>
+            </div>
+
+            <!-- 답안 영역 -->
+            <div id="quizAnswerContainer" class="quiz-answer-container"></div>
+
+            <!-- 제출 버튼 -->
+            <div class="submit-container">
+                <button id="submitBtn" class="submit-btn">제출</button>
+            </div>
+        </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script th:src="@{/js/signup.js}"></script>
-
+    <!-- footer -->
     <div th:replace="fragments/footer :: siteFooter"></div>
+
+    <!-- JS 변수 전달 -->
+   <script th:inline="javascript">
+		/*<![CDATA[*/
+		let questions = /*[[${questionsJson}]]*/ '[]';
+		try {
+		    questions = JSON.parse(questions);
+		    if(!Array.isArray(questions)) questions = [];
+		} catch(e) {
+		    console.error("questionsJson parsing error:", e);
+		    questions = [];
+		}
+		
+		// 시험 인덱스
+		let testIdx = /*[[${test.testIdx}]]*/ 0;
+		let startTime = new Date().toISOString();
+		
+		// 최대 20문제만 랜덤 선택
+		function shuffleArray(arr) {
+		    if(!Array.isArray(arr)) return [];
+		    let copy = [...arr];
+		    for(let i = copy.length - 1; i > 0; i--){
+		        const j = Math.floor(Math.random() * (i + 1));
+		        [copy[i], copy[j]] = [copy[j], copy[i]];
+		    }
+		    return copy;
+		}
+		
+		questions = shuffleArray(questions).slice(0, 20);
+		/*]]>*/
+	</script>
+
+
+    <!-- quizTest JS -->
+    <script th:src="@{/js/quizTest.js}"></script>
 </body>
 </html>

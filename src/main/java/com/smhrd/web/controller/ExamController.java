@@ -306,7 +306,7 @@ public class ExamController {
         Test test = (Test) examData.get("test");
         List<TestItem> items = (List<TestItem>) examData.get("items");
 
-        // 문제 데이터 변환 (정답 제외)
+     // 🔹 여기가 문제 데이터를 가공하는 부분
         List<Map<String, Object>> questions = items.stream()
                 .map(item -> {
                     Map<String, Object> q = new HashMap<>();
@@ -323,14 +323,27 @@ public class ExamController {
                 })
                 .collect(Collectors.toList());
 
-        model.addAttribute("pageTitle", test.getTestTitle());
-        model.addAttribute("activeMenu", "exam");
-        model.addAttribute("test", test);
-        model.addAttribute("questions", questions);
-        model.addAttribute("totalScore", examData.get("totalScore"));
-        model.addAttribute("questionCount", examData.get("questionCount"));
+        // ✅ 여기서 랜덤 20문제 선택
+        Collections.shuffle(questions);
+        if (questions.size() > 20) {
+            questions = questions.subList(0, 20);
+        }
 
-        return "examSolve";
+        // JSON 변환 후 Thymeleaf에 담기
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            String questionsJson = mapper.writeValueAsString(questions);
+            model.addAttribute("questionsJson", questionsJson);
+        } catch (Exception e) {
+            e.printStackTrace();
+            model.addAttribute("questionsJson", "[]"); // 실패 시 빈 배열
+        }
+
+        model.addAttribute("pageTitle", test.getTestTitle());
+        model.addAttribute("test", test);
+        model.addAttribute("questions", questions); // 참고용
+        
+        return "quizTest";
     }
 
     /**

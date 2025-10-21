@@ -115,6 +115,17 @@ public class ViewController {
         }
         return "quizCreate";
     }
+    @GetMapping("/quiz/test")
+    public String quizTest(Model model,@AuthenticationPrincipal UserDetails userDetails) {
+        model.addAttribute("pageTitle", "문제풀기"); 
+        model.addAttribute("activeMenu", "quizTest");
+        if (userDetails != null) {
+            // userDetails에서 닉네임 가져오기 (예: CustomUserDetails 사용)
+        	String nickname = ((CustomUserDetails) userDetails).getNickname();
+            model.addAttribute("nickname", nickname);
+        }
+        return "quizTest";
+    }
 
     @GetMapping("/quiz/result")
     public String quizResult(Model model,@AuthenticationPrincipal UserDetails userDetails) {
