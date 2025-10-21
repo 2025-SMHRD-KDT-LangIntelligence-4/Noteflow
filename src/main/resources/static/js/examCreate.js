@@ -65,9 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
         folderItem.className = 'folder-item';
         folderItem.dataset.folderId = folder.folderId;
 
-        const maxDepth = 5;
-        const limitedDepth = Math.min(depth, maxDepth);
-        folderItem.style.paddingLeft = (limitedDepth * 15 + 10) + 'px';
+        
 
         const hasChildren = folder.subfolders.length > 0 || folder.notes.length > 0;
 
@@ -108,9 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
         noteEl.dataset.noteIdx = note.noteIdx;
         noteEl.dataset.tags = note.tags.join(',');
 
-        const maxDepth = 5;
-        const limitedDepth = Math.min(depth, maxDepth);
-        noteEl.style.paddingLeft = (limitedDepth * 15 + 30) + 'px';
+        
 
         noteEl.innerHTML = `
         <span class="item-icon">📝</span>

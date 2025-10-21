@@ -57,14 +57,16 @@
 
             <!-- 선택된 키워드 -->
             <div class="keyword-section">
-                <h3 class="subsection-title">✨ 선택된 키워드</h3>
+                <h3 class="subsection-title">선택된 키워드</h3>
                 <div class="keyword-hint" style="margin-bottom: 10px; font-size: 12px; color: #666;">
                     💡 <strong>Tip:</strong> 노트를 클릭하면 키워드 교체, <kbd>Ctrl</kbd>+클릭하면 추가됩니다
                 </div>
                 <div class="keyword-input-group">
                     <input type="text" id="keywordInput" placeholder="키워드 입력 후 Enter">
-                    <button id="addKeywordBtn" class="add-keyword-btn">➕</button>
-                    <button id="clearAllKeywordsBtn" class="clear-all-keywords-btn">🗑️ 전체삭제</button>
+                    <button id="addKeywordBtn" class="add-keyword-btn">
+  						<img th:src="@{/images/plus.svg}" alt="추가" class="icon">
+					</button>
+                    <button id="clearAllKeywordsBtn" class="clear-all-keywords-btn">전체삭제</button>
                 </div>
                 <div id="selectedTagsContainer" class="tag-display">
                     <p class="empty-text">노트 선택 또는 직접 키워드 입력</p>
@@ -113,7 +115,7 @@
                 </div>
 
                 <button id="createExamBtn" class="btn-primary" disabled>
-                    🎯 시험 생성하기
+                    시험 생성하기
                 </button>
             </div>
         </div>

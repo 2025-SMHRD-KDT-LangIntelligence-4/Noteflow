@@ -376,7 +376,7 @@ body {
 .notion-content-container {
     background-color: white;
     width: 700px;
-    min-height: 700px;
+    height: 790px;
     border-radius: 20px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     padding: 30px;
@@ -417,9 +417,9 @@ body {
 }
 
 .add-keyword-btn {
-    width: 44px;
-    height: 44px;
-    background: #96D0FF;
+    width: 40px;
+    height: 40px;
+    background: white;
     border: none;
     border-radius: 10px;
     color: white;
@@ -427,12 +427,23 @@ body {
     cursor: pointer;
     transition: background 0.2s;
     flex-shrink: 0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border:2px solid #c7c7c7;
+}
+.add-keyword-btn img {
+  filter: brightness(0) saturate(100%) invert(0); /* 검정색 */
+  transition: filter 0.2s ease;
 }
 
+/* 버튼 hover 시 아이콘 색상 변경 */
+.add-keyword-btn:hover img {
+  filter: brightness(0) invert(1); /* 기본 색: 흰색 아이콘을 보이게 */
+}
 .add-keyword-btn:hover {
-    background: #2FA1FF;
+  background-color: #96d0ff;
 }
-
 /* 전체 삭제 버튼 */
 .clear-all-keywords-btn {
     padding: 10px 15px;
@@ -564,9 +575,6 @@ body {
     cursor: pointer;
 }
 
-.radio-label input[type="radio"] {
-    accent-color: #96D0FF;
-}
 
 .btn-primary {
     width: 100%;
@@ -612,7 +620,6 @@ body {
     padding: 8px 12px;
     background: #f0f8ff;
     border-radius: 8px;
-    border-left: 3px solid #2196F3;
 }
 
 .keyword-hint kbd {
