@@ -82,3 +82,91 @@
         </div>
     </div>
 </div>
+
+
+<div th:fragment="editModal" id="editModal" class="quick-add-modal hidden" role="dialog" aria-hidden="true">
+    <div class="quick-add-card">
+    
+        <input type="hidden" id="editScheduleId" /> <div class="quick-add-row title-row">
+            <input id="editTitle" type="text" placeholder="일정 제목 입력 (달력에 보일 타이틀)" />
+        </div>
+
+        <div class="quick-add-row">
+            <select id="editColor" title="색상">
+                <option value="#3788d8" class="color-opt-blue">파랑</option>
+                <option value="#FF5722" class="color-opt-orange">주황</option>
+                <option value="#4CAF50" class="color-opt-green">초록</option>
+                <option value="#FFC107" class="color-opt-yellow">노랑</option>
+                <option value="#9C27B0" class="color-opt-purple">보라</option>
+            </select>
+            <input id="editEmoji" type="text" placeholder="이모지 입력" />
+        </div>
+
+        <div class="quick-add-row">
+            <textarea id="editDesc" placeholder="설명/내용 (선택)"></textarea>
+        </div>
+
+        <div class="quick-add-row small-row">
+            <label>
+                <span class="icon-clock">🕒</span>
+                <input id="editAllDay" type="checkbox" /> 하루종일
+            </label>
+        </div>
+
+        <div class="quick-add-row time-rows">
+            <div class="time-col">
+                <label>시작 날짜</label>
+                <input id="editStartDate" type="date" />
+                <input id="editStartTime" type="time" step="600" />
+            </div>
+            <div class="time-col">
+                <label>종료 날짜</label>
+                <input id="editEndDate" type="date" />
+                <input id="editEndTime" type="time" step="600" />
+            </div>
+        </div>
+
+        <div class="quick-add-row notify-row">
+            <label>알림</label>
+            <select id="editNotify">
+                <option value="0">일정 시작</option>
+                <option value="10">10분 전</option>
+                <option value="60">1시간 전</option>
+                <option value="1440">1일 전</option>
+                <option value="custom">직접 설정...</option>
+            </select>
+        </div>
+        
+        <div class="quick-add-row justify-end">
+        	<button id="editToggleAdvanced" class="btn secondary small">추가 옵션 보기</button>
+        </div>
+        
+        <div id="editAdvancedOptions" class="advanced-options hidden">
+	        <div class="quick-add-row">
+	            <input id="editAlertType" type="text" placeholder="알림 타입(alert_type)" />
+	            <input id="editCustomAlertValue" type="number" placeholder="알림 값(custom_alert_value)" />
+	        </div>
+	
+	        <div class="quick-add-row">
+	            <span class="icon-location">📍</span>
+	            <input id="editLocation" type="text" placeholder="장소 입력" />
+	            <button id="editMapBtn" class="btn secondary small">지도</button>
+	        </div>
+	
+	        <div class="quick-add-row">
+	            <input id="editHighlightType" type="text" placeholder="하이라이트 타입(highlight_type)" />
+	            <input id="editCategory" type="text" placeholder="카테고리(category)" />
+	        </div>
+	        <div class="quick-add-row">
+	            <input id="editAttachmentPath" type="text" placeholder="첨부 파일 경로(attachment_path)" />
+	            <input id="editAttachmentList" type="text" placeholder="첨부 파일 목록(attachment_list)" />
+	        </div>
+        </div>
+
+        <div class="quick-add-actions edit-actions">
+            <button id="editDelete" class="btn delete">삭제</button>
+            <button id="editCancel" class="btn secondary">취소</button>
+            <button id="editSave" class="btn primary">수정</button>
+        </div>
+    </div>
+</div>

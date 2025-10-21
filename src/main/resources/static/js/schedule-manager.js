@@ -2,7 +2,7 @@ import { fetchWithCsrf, alertError } from './schedule-utils.js';
 import { initDropdowns, initColorDropdown } from './schedule-ui-dropdown.js';
 // [개선]: schedule-quick-add.js에서 export한 함수들을 import하여 사용
 import { injectPlusButtons, openQuickAddModal, closeQuickAddModal } from './schedule-quick-add.js';
-
+import { openEditModal } from './schedule-edit.js';
 let calendar;
 
 // schedule-quick-add.js에 정의된 함수를 사용하기 위해 전역 함수로 노출
@@ -72,8 +72,11 @@ const loadCalendar = async () => {
 			injectPlusButtons();
 		},
 
-		eventClick: async (info) => openEditModal(info.event), // '편집 모달'은 구현 전이라 가정
-		
+		eventClick: async (info) => { // ✅ 수정: FullCalendar 이벤트 클릭 시 openEditModal 호출
+				    info.jsEvent.preventDefault(); // 기본 동작 방지
+				    // info.event는 FullCalendar Event Object입니다. ID를 전달합니다.
+				    openEditModal(info.event.id); 
+				},
 		// [개선]: select 콜백에서 import한 함수 직접 호출
 		select: (selectionInfo) => { 
 			// select: 드래그 선택 시 호출
@@ -81,7 +84,7 @@ const loadCalendar = async () => {
 		}, 
 		
 		events: {
-			url: '/api/schedule/period',
+			url: '/api/schedule',
 			method: 'GET',
 			failure: () => alertError('일정 데이터를 불러오지 못했습니다.'),
 		},
