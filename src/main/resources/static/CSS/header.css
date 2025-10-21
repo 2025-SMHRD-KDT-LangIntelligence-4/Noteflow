@@ -388,13 +388,21 @@ body {
             padding: 10px 14px;
             cursor: pointer;
         }
- .user-credit{
- 	width:80%;
- 	display:flex;;
- 	justify-content:center;
- }
- .user-gold{
- 	width:80%;
+ .point-container{
+ 	width:100%;
+ 	height:auto;
  	display:flex;
  	justify-content:center;
+ }
+ .user-credit{
+ 	width:30%;
+ 	display:flex;;
+ 	justify-content:center;
+ 	overflow:hidden;
+ }
+ .user-gold{
+ 	width:30%;
+ 	display:flex;
+ 	justify-content:center;
+ 	overflow:hidden;
  }
