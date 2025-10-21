@@ -183,11 +183,15 @@ public class FileController {
 				}
 			}
 
-			// ========== HWP 파일 (안내 메시지) ==========
-			if ("hwp".equals(ext)) {
+			// ⭐⭐⭐ HWP/HWPX 파일 (바이너리 그대로 반환) ⭐⭐⭐
+			if (Arrays.asList("hwp", "hwpx").contains(ext)) {
+				HttpHeaders headers = new HttpHeaders();
+				headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+				headers.setContentLength(data.length);
+
 				return ResponseEntity.ok()
-						.contentType(new MediaType("text", "plain", StandardCharsets.UTF_8))
-						.body("HWP 파일은 미리보기를 지원하지 않습니다.\n다운로드하여 확인해주세요.");
+						.headers(headers)
+						.body(data);
 			}
 
 			// ========== 텍스트 파일 (txt, md, log, json, xml, html, css, js, java, py 등) ==========

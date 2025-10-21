@@ -971,3 +971,28 @@ body {
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(255, 152, 0, 0.3);
 }
+
+/* HWP 프리뷰 스타일 */
+.hwp-preview {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background: white;
+}
+
+.hwp-container {
+    width: 100%;
+    min-height: 600px;
+    padding: 20px;
+    background: #fff;
+    overflow-y: auto;
+}
+
+/* hwp.js가 생성하는 요소 스타일 */
+.hwp-container .hwp-page {
+    background: white;
+    margin: 0 auto 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    padding: 40px;
+    max-width: 800px;
+}

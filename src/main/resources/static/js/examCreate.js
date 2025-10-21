@@ -24,8 +24,6 @@ document.addEventListener('DOMContentLoaded', () => {
         rootNotes = [];
     }
 
-    console.log('folderTree:', folderTree);
-    console.log('rootNotes:', rootNotes);
     // 초기 렌더링
     renderTree();
     if (PRESELECTED_NOTE_IDX) {
@@ -414,7 +412,6 @@ document.addEventListener('DOMContentLoaded', () => {
             adaptiveDifficulty: document.getElementById('difficulty').value === ''
         };
 
-        console.log('시험 생성 요청:', requestData);
 
         createBtn.disabled = true;
         createBtn.textContent = '🔄 생성 중...';

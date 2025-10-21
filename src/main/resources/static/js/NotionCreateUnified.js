@@ -641,13 +641,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ==== hideEditorArea  ====
   function hideEditorArea() {
-    console.log('hideEditorArea 실행됨');
 
     // 1. label 태그 "입력/편집" 숨기기
     const labels = document.querySelectorAll('.nc-text-input label');
     labels.forEach(label => {
       if (label.textContent.trim() === '입력/편집') {
-        console.log('label 숨김:', label.textContent);
         label.style.display = 'none';
       }
     });
@@ -655,21 +653,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // 2. 에디터 본체 숨기기
     const editor = document.getElementById('nc-editor');
     if (editor) {
-      console.log('에디터 숨김');
       editor.style.display = 'none';
     }
 
     // 3. 글자수/토큰
     const counters = document.querySelector('.nc-counters');
     if (counters) {
-      console.log('글자수 영역 숨김');
       counters.style.display = 'none';
     }
 
     // 4. ✅ 파일 업로드 영역 (정확한 클래스명)
     const fileSection = document.querySelector('.nc-file-section');
     if (fileSection) {
-      console.log('파일 영역 숨김');
       fileSection.style.display = 'none';
     } else {
       console.error('.nc-file-section 찾을 수 없음');
@@ -677,7 +672,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function showEditorArea() {
-    console.log('showEditorArea 실행됨');
 
     const labels = document.querySelectorAll('.nc-text-input label');
     labels.forEach(label => {
@@ -762,13 +756,6 @@ document.addEventListener('DOMContentLoaded', () => {
       sessionStorage.setItem('keywords', (data.keywords || []).join(', '));
       sessionStorage.setItem('categoryPath', data.categoryPath || '');
       sessionStorage.setItem('folderId', data.folderId || '');
-
-      console.log('✅ 세션 스토리지 저장 완료:', {
-        noteId: data.noteId,
-        keywords: data.keywords,
-        categoryPath: data.categoryPath,
-        folderId: data.folderId
-      });
 
       window.location.href = '/notion/complete';
 
