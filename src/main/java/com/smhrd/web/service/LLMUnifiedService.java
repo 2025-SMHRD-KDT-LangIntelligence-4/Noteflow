@@ -5,8 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smhrd.web.entity.*;
 import com.smhrd.web.repository.*;
 import lombok.Data;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -17,23 +17,15 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * LLM 통합 서비스
- *
- * 1) RAW 마크다운 실행: DB 프롬프트(제목) + 원문을 그대로 LLM에 먹여 마크다운 전문(String)을 반환 2) 요약 JSON
- * 모드: summary + keywords(5) + category(대/중/소) + tags JSON을 받아 자동 분류/태깅에 활용 3)
- * 챗봇 간단 응답: 컨텍스트 프롬프트를 그대로 전달해 짧은 답 생성 4) 로컬 카테고리 매칭/폴더 생성 보조 메서드 제공
- */
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class LLMUnifiedService {
 
-	// ====== Infra ======
+	// ====== 필드 ======
 	private final WebClient vllmWebClient;
+	private final WebClient embeddingClient;
 	private final ObjectMapper objectMapper = new ObjectMapper();
 
-	// ====== Domain Repositories ======
 	private final PromptRepository promptRepository;
 	private final UserRepository userRepository;
 	private final NoteRepository noteRepository;
@@ -44,7 +36,6 @@ public class LLMUnifiedService {
 	private final TestSummaryRepository testSummaryRepository;
 	private final FileParseService fileParseService;
 
-	// ====== LLM Settings ======
 	@Value("${vllm.api.model}")
 	private String modelName;
 
@@ -57,381 +48,357 @@ public class LLMUnifiedService {
 	@Value("${vllm.api.context-limit:30000}")
 	private int contextLimit;
 
-	// ====== 파싱 ======
-	private static final int TOKENS_MAX = 20000; // 모델 컨텍스트 상한(대략)
-	private static final int TOKENS_ECONOMY_START = 12000; // 경제 모드 시작
-	private static final int TOKENS_BLOCK = 18000; // 차단 모드 상한
+	private static final int NORMAL_MAX_BYTES = 50 * 1024;
+	private static final int MEDIUM_MAX_BYTES = 200 * 1024;
 
-	private static final int NORMAL_MAX_BYTES = 50 * 1024; // 50KB
-	private static final int ECONOMY_MAX_BYTES = 500 * 1024; // 500KB
-
-	// ====== 길이차이 지정 ======
-
-	private enum Tier {
-		MICRO, SHORT, FULL
+	// ====== 생성자 ======
+	public LLMUnifiedService(
+			@Qualifier("vllmApiClient") WebClient vllmWebClient,
+			@Qualifier("embeddingClient") WebClient embeddingClient,
+			PromptRepository promptRepository,
+			UserRepository userRepository,
+			NoteRepository noteRepository,
+			NoteFolderRepository noteFolderRepository,
+			TagRepository tagRepository,
+			NoteTagRepository noteTagRepository,
+			CategoryHierarchyRepository categoryHierarchyRepository,
+			TestSummaryRepository testSummaryRepository,
+			FileParseService fileParseService) {
+		this.vllmWebClient = vllmWebClient;
+		this.embeddingClient = embeddingClient;
+		this.promptRepository = promptRepository;
+		this.userRepository = userRepository;
+		this.noteRepository = noteRepository;
+		this.noteFolderRepository = noteFolderRepository;
+		this.tagRepository = tagRepository;
+		this.noteTagRepository = noteTagRepository;
+		this.categoryHierarchyRepository = categoryHierarchyRepository;
+		this.testSummaryRepository = testSummaryRepository;
+		this.fileParseService = fileParseService;
 	}
 
-	// 입력 길이로 티어 자동 결정
-	private Tier chooseTier(String original) {
-		int len = (original == null) ? 0 : original.strip().length();
-		if (len <= 40)
-			return Tier.MICRO; // 한두 문장
-		if (len <= 150)
-			return Tier.SHORT; // 짧은 단락
-		return Tier.FULL; // 충분한 본문
-	}
+	// ====== 고급 요약 메서드 ======
 
-	// 티어별 max_tokens 정책
-	private int tierMaxTokens(Tier tier, String fullPromptForBudgeting) {
-		return switch (tier) {
-		case MICRO -> 200; // 안전 기본치: 과도한 생성 방지
-		case SHORT -> 600; // 요청사항: 600 토큰 고정
-		case FULL -> computeSafeMaxTokens(fullPromptForBudgeting); // 사실상 제한 없음(컨텍스트 한도만 반영)
-		};
-	}
+	public SummaryResult summarizeLongDocument(long userIdx, String promptTitle, String original) throws Exception {
+		String compact = compactText(original);
+		int bytes = byteLen(compact);
+		int estimatedTokens = estimateTokens(compact);
 
-	private String fixFences(String md) {
-		if (md == null)
-			return "";
-		String s = md.trim();
-		int count = 0;
-		int idx = 0;
-		while ((idx = s.indexOf("```", idx)) != -1) {
-			count++;
-			idx += 3;
+		log.info("문서 크기: {} bytes, 예상 토큰: {}", bytes, estimatedTokens);
+
+		// ✅ 토큰이 3500 이하면 SIMPLE (context limit 8192의 절반 이하)
+		if (estimatedTokens < 3500) {
+			log.info("전략: SIMPLE (토큰: {})", estimatedTokens);
+			try {
+				String md = runPromptMarkdown(userIdx, promptTitle, compact);
+				SummaryResult result = SummaryResult.normal(md);
+				result.setMode("simple");
+				return result;
+			} catch (Exception e) {
+				log.warn("SIMPLE 실패, RECURSIVE로 전환");
+				return summarizeWithRecursiveChunking(userIdx, promptTitle, compact);
+			}
 		}
-		if ((count % 2) != 0) {
-			s += "\n```";
+
+		// 중간 크기: Recursive Chunking
+		if (estimatedTokens < 15000) {
+			log.info("전략: RECURSIVE (토큰: {})", estimatedTokens);
+			return summarizeWithRecursiveChunking(userIdx, promptTitle, compact);
 		}
-		return s;
+
+		// 대용량: Semantic Chunking
+		log.info("전략: SEMANTIC (토큰: {})", estimatedTokens);
+		return summarizeWithSemanticChunking(userIdx, promptTitle, compact);
 	}
 
-	// =====================================================================
-	// 0. 프롬프트 공통규칙 추가
-	// =====================================================================
+	private SummaryResult summarizeWithRecursiveChunking(long userIdx, String promptTitle, String text) throws Exception {
+		int chunkSize = 4000;
+		int overlap = 500;
 
-	private String buildCommonSystem(String instruction, Tier tier) {
-		String lengthHint = switch (tier) {
-		case MICRO -> "출력은 아주 간결하게(3문장 이내).";
-		case SHORT -> "출력은 간결하게(6문장, 600토큰 내).";
-		case FULL -> "필요 시 섹션을 채우되, 입력에 근거해 작성.";
-		};
-		return """
-				너는 입력 텍스트를 가공하는 도우미다.
+		List<String> chunks = splitWithOverlap(text, chunkSize, overlap);
+		log.info("Recursive: {} 청크", chunks.size());
 
-				[공통 규칙]
-				- 오직 <CONTENT> 태그 사이의 텍스트만 사용한다.
-				- 입력에 없는 사건/코드/결론/감정/팀 활동 등은 상상·추가하지 않는다(창작 금지).
-				- 프롬프트가 요구하는 섹션이 있어도, 근거가 없으면 '없음' 또는 생략한다.
-				- 과도한 수사는 피하고, 사실/근거 기반으로만 작성한다.
-				- %s
+		List<String> summaries = new ArrayList<>();
+		for (int i = 0; i < chunks.size(); i++) {
+			String prompt = String.format("[%d/%d]\n\n%s", i + 1, chunks.size(), chunks.get(i));
+			String summary = runPromptMarkdown(userIdx, promptTitle, prompt, null, 600, 0.3);
+			summaries.add(summary);
+		}
 
-				[참고 지시문]
-				%s
-				""".formatted(lengthHint, instruction == null ? "" : instruction);
-	}
-	
-	// 전체 정책 결정
-	public SummaryResult summarizeWithGlobalPolicy(long userIdx, String promptTitle, String original) throws Exception {
-	    // 1) 티어 결정
-	    Tier tier = chooseTier(original);
+		String combined = String.join("\n\n", summaries);
+		String finalSummary = runPromptMarkdown(userIdx, promptTitle, "통합:\n\n" + combined, null, 2000, 0.3);
 
-	    // 2) 공통 system 메시지 + 예산 산정
-	    String instruction = promptRepository.findByTitle(promptTitle)
-	            .orElseThrow(() -> new IllegalArgumentException("프롬프트 없음: " + promptTitle))
-	            .getContent();
-
-	    String systemMsg = buildCommonSystem(instruction, tier);
-	    String userMsgForBudget = "<CONTENT>\n" + (original == null ? "" : original.strip()) + "\n</CONTENT>";
-	    int budget = tierMaxTokens(tier, systemMsg + "\n" + userMsgForBudget);
-
-	    // 3) 오버로드 호출 (온도 낮춰 창작 억제)
-	    String md = runPromptMarkdown(userIdx, promptTitle, original, systemMsg, budget, 0.2);
-
-	    // 4) 사후 트림(선택)
-	    if (tier == Tier.MICRO && md.length() > 400) {
-	        md = md.substring(0, 400) + "\n\n...(truncated by micro policy)";
-	    }
-	    if (tier == Tier.SHORT && md.length() > 1200) {
-	        md = md.substring(0, 1200) + "\n\n...(truncated by short policy)";
-	    }
-
-	    SummaryResult r = SummaryResult.normal(md);
-	    r.setMode("global-" + tier.name().toLowerCase()); // global-micro|short|full
-	    return r;
+		SummaryResult result = SummaryResult.normal(finalSummary);
+		result.setMode("recursive");
+		result.setMessage(chunks.size() + "개 청크 분할");
+		return result;
 	}
 
-	// =====================================================================
-	// A. RAW 마크다운 실행
-	// =====================================================================
+	private SummaryResult summarizeWithSemanticChunking(long userIdx, String promptTitle, String text) throws Exception {
+		List<String> paragraphs = splitIntoParagraphs(text);
+		log.info("문단: {} 개", paragraphs.size());
+
+		List<List<Float>> embeddings = getParagraphEmbeddings(paragraphs);
+		List<SemanticChunk> chunks = mergeSemanticChunks(paragraphs, embeddings, 0.75);
+		log.info("의미 청크: {} 개", chunks.size());
+
+		List<String> summaries = new ArrayList<>();
+		for (int i = 0; i < chunks.size(); i++) {
+			String prompt = String.format("[섹션 %d/%d]\n\n%s", i + 1, chunks.size(), chunks.get(i).getText());
+			String summary = runPromptMarkdown(userIdx, promptTitle, prompt, null, 800, 0.3);
+			summaries.add(summary);
+		}
+
+		String finalSummary = hierarchicalReduce(userIdx, promptTitle, summaries);
+
+		SummaryResult result = SummaryResult.economy(finalSummary, extractTopKeywords(text, 50));
+		result.setMode("semantic");
+		result.setMessage(chunks.size() + " 섹션 분석");
+		return result;
+	}
+
+	// ====== 보조 메서드 ======
+
+	private List<String> splitWithOverlap(String text, int chunkSize, int overlap) {
+		List<String> chunks = new ArrayList<>();
+		int start = 0;
+		while (start < text.length()) {
+			int end = Math.min(start + chunkSize, text.length());
+			chunks.add(text.substring(start, end));
+			start += (chunkSize - overlap);
+		}
+		return chunks;
+	}
+
+	private List<String> splitIntoParagraphs(String text) {
+		String[] paras = text.split("\n\n+");
+		List<String> result = new ArrayList<>();
+
+		for (String para : paras) {
+			para = para.trim();
+			if (para.length() < 50) continue;
+
+			if (para.length() > 2000) {
+				String[] sentences = para.split("\\. ");
+				StringBuilder sb = new StringBuilder();
+				for (String sent : sentences) {
+					sb.append(sent).append(". ");
+					if (sb.length() > 1500) {
+						result.add(sb.toString().trim());
+						sb = new StringBuilder();
+					}
+				}
+				if (sb.length() > 0) result.add(sb.toString().trim());
+			} else {
+				result.add(para);
+			}
+		}
+		return result;
+	}
+
+	private List<List<Float>> getParagraphEmbeddings(List<String> paragraphs) {
+		try {
+			Map<String, Object> response = embeddingClient.post()
+					.uri("/embed")
+					.bodyValue(Map.of("texts", paragraphs))
+					.retrieve()
+					.bodyToMono(Map.class)
+					.block();
+
+			List<List<Double>> embeddings = (List<List<Double>>) response.get("embeddings");
+			return embeddings.stream()
+					.map(emb -> emb.stream().map(Double::floatValue).collect(Collectors.toList()))
+					.collect(Collectors.toList());
+		} catch (Exception e) {
+			log.error("임베딩 실패: {}", e.getMessage());
+			return Collections.nCopies(paragraphs.size(), Collections.emptyList());
+		}
+	}
+
+	private double cosineSimilarity(List<Float> vec1, List<Float> vec2) {
+		if (vec1.isEmpty() || vec2.isEmpty()) return 0.0;
+		double dotProduct = 0.0, norm1 = 0.0, norm2 = 0.0;
+		for (int i = 0; i < Math.min(vec1.size(), vec2.size()); i++) {
+			dotProduct += vec1.get(i) * vec2.get(i);
+			norm1 += vec1.get(i) * vec1.get(i);
+			norm2 += vec2.get(i) * vec2.get(i);
+		}
+		return dotProduct / (Math.sqrt(norm1) * Math.sqrt(norm2));
+	}
+
+	private List<SemanticChunk> mergeSemanticChunks(List<String> paragraphs, List<List<Float>> embeddings, double threshold) {
+		List<SemanticChunk> chunks = new ArrayList<>();
+		StringBuilder current = new StringBuilder();
+		List<Integer> indices = new ArrayList<>();
+
+		for (int i = 0; i < paragraphs.size(); i++) {
+			if (current.length() == 0) {
+				current.append(paragraphs.get(i));
+				indices.add(i);
+			} else {
+				int prevIdx = indices.get(indices.size() - 1);
+				double sim = cosineSimilarity(embeddings.get(prevIdx), embeddings.get(i));
+
+				if (sim >= threshold && current.length() < 5000) {
+					current.append("\n\n").append(paragraphs.get(i));
+					indices.add(i);
+				} else {
+					chunks.add(new SemanticChunk(current.toString(), new ArrayList<>(indices)));
+					current = new StringBuilder(paragraphs.get(i));
+					indices.clear();
+					indices.add(i);
+				}
+			}
+		}
+
+		if (current.length() > 0) {
+			chunks.add(new SemanticChunk(current.toString(), indices));
+		}
+		return chunks;
+	}
+
+	private String hierarchicalReduce(long userIdx, String promptTitle, List<String> summaries) throws Exception {
+		if (summaries.size() <= 3) {
+			String combined = String.join("\n\n", summaries);
+			return runPromptMarkdown(userIdx, promptTitle, "통합:\n\n" + combined, null, 2000, 0.3);
+		}
+
+		List<String> intermediate = new ArrayList<>();
+		for (int i = 0; i < summaries.size(); i += 3) {
+			List<String> batch = summaries.subList(i, Math.min(i + 3, summaries.size()));
+			String combined = String.join("\n\n", batch);
+			String summary = runPromptMarkdown(userIdx, promptTitle, "통합:\n\n" + combined, null, 1000, 0.3);
+			intermediate.add(summary);
+		}
+		return hierarchicalReduce(userIdx, promptTitle, intermediate);
+	}
+
+	@Data
+	private static class SemanticChunk {
+		private final String text;
+		private final List<Integer> paragraphIndices;
+	}
+
+	// ====== 기본 요약 메서드 ======
 
 	public String runPromptMarkdown(long userIdx, String promptTitle, String original) throws Exception {
-		// 1) 사용자 존재 확인
 		userRepository.findByUserIdx(userIdx)
-				.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자: " + userIdx));
+				.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자"));
 
-		// 2) 프롬프트 텍스트 로딩(지시문)
 		String instruction = promptRepository.findByTitle(promptTitle)
-				.orElseThrow(() -> new IllegalArgumentException("프롬프트 없음: " + promptTitle)).getContent();
+				.orElseThrow(() -> new IllegalArgumentException("프롬프트 없음"))
+				.getContent();
 
-		// 3) 요약 범위 고정 규칙(system)
-		String systemMsg = """
-				너는 아래 규칙을 엄격히 따른다.
-				- 오직 <CONTENT> 태그 사이의 텍스트만 요약 대상이다.
-				- 그 외의 텍스트(이 지시문 포함)는 요약 대상이 아니다.
-				- 출력은 Markdown으로 하되, 원문에 없는 정보/추정은 금지한다.
-				--------
-				지시문:
-				%s
-				""".formatted(instruction);
+		String systemMsg = "규칙: <요약대상> 태그 사이 텍스트만 요약. 창작 금지.\n" + instruction;
+		String userMsg = "<요약대상>\n" + (original == null ? "" : original) + "\n</요약대상>";
 
-		// 4) 사용자 원문을 콘텐츠 태그로 감싸서 user 메시지로
-		String userMsg = "<CONTENT>\n" + (original == null ? "" : original) + "\n</CONTENT>";
-
-		// 5) vLLM 요청
+		// ✅ vLLM 요청 포맷 수정
 		Map<String, Object> req = new HashMap<>();
 		req.put("model", modelName);
-		req.put("max_tokens", computeSafeMaxTokens(userMsg)); // 사용자 원문 기준으로 안전 토큰
+		req.put("max_tokens", computeSafeMaxTokens(userMsg));
 		req.put("temperature", temperature);
-		req.put("stream", false);
-		req.put("messages",
-				List.of(Map.of("role", "system", "content", systemMsg), Map.of("role", "user", "content", userMsg)));
+		req.put("stream", false);  // 중요!
 
-		String resp = vllmWebClient.post().uri("/v1/chat/completions").bodyValue(req).retrieve()
-				.bodyToMono(String.class).block();
+		List<Map<String, String>> messages = new ArrayList<>();
+		messages.add(Map.of("role", "system", "content", systemMsg));
+		messages.add(Map.of("role", "user", "content", userMsg));
+		req.put("messages", messages);
 
-		String md = extractAnyContent(resp); // choices[0].message.content || text || output_text
-		return fixFences(md);
+		try {
+			String resp = vllmWebClient.post()
+					.uri("/v1/chat/completions")
+					.bodyValue(req)
+					.retrieve()
+					.bodyToMono(String.class)
+					.block();
+
+			return fixFences(extractAnyContent(resp));
+
+		} catch (Exception e) {
+			log.error("vLLM 호출 실패: {}", e.getMessage());
+			throw new RuntimeException("AI 요약 실패: " + e.getMessage(), e);
+		}
 	}
 
-	// =====================================================================
-	// A-1. 마크다운 오버라이드 실행
-	// =====================================================================
-
-	public String runPromptMarkdown(long userIdx, String promptTitle, String original, String systemMsgOverride, // null이면
-																													// 기존
-																													// system
-																													// 로직
-																													// 사용
-			Integer maxTokensOverride, // null이면 기존 computeSafeMaxTokens(userMsg)
-			Double temperatureOverride // null이면 기존 temperature 필드
-	) throws Exception {
-
-		// 1) 사용자 검사
-		userRepository.findByUserIdx(userIdx)
-				.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자: " + userIdx));
-
-		// 2) 프롬프트 로딩
+	public String runPromptMarkdown(long userIdx, String promptTitle, String original,
+									String systemOverride, Integer maxTok, Double temp) throws Exception {
 		String instruction = promptRepository.findByTitle(promptTitle)
-				.orElseThrow(() -> new IllegalArgumentException("프롬프트 없음: " + promptTitle)).getContent();
+				.orElseThrow(() -> new IllegalArgumentException("프롬프트 없음"))
+				.getContent();
 
-		// 3) system 메시지: override가 있으면 사용, 없으면 기존 규칙 사용
-		String defaultSystem = """
-				너는 아래 규칙을 엄격히 따른다.
-				- 오직 <CONTENT> 태그 사이의 텍스트만 요약 대상이다.
-				- 그 외의 텍스트(이 지시문 포함)는 요약 대상이 아니다.
-				- 출력은 Markdown으로 하되, 원문에 없는 정보/추정은 금지한다.
-				--------
-				지시문:
-				%s
-				""".formatted(instruction);
-		String systemMsg = (systemMsgOverride != null && !systemMsgOverride.isBlank()) ? systemMsgOverride
-				: defaultSystem;
+		String systemMsg = (systemOverride != null) ? systemOverride : instruction;
+		String userMsg = original;
 
-		// 4) user 메시지(요약 대상 고정)
-		String userMsg = "<CONTENT>\n" + (original == null ? "" : original) + "\n</CONTENT>";
+		int maxTokensVal = (maxTok != null) ? maxTok : computeSafeMaxTokens(userMsg);
+		double temperatureVal = (temp != null) ? temp : this.temperature;
 
-		// 5) 토큰/온도: override 우선
-		int maxTok = (maxTokensOverride != null) ? maxTokensOverride : computeSafeMaxTokens(userMsg);
-		double temp = (temperatureOverride != null) ? temperatureOverride : this.temperature;
-
+		// ✅ vLLM 요청 포맷 수정
 		Map<String, Object> req = new HashMap<>();
 		req.put("model", modelName);
-		req.put("max_tokens", maxTok);
-		req.put("temperature", temp);
+		req.put("max_tokens", maxTokensVal);
+		req.put("temperature", temperatureVal);
 		req.put("stream", false);
-		req.put("messages",
-				List.of(Map.of("role", "system", "content", systemMsg), Map.of("role", "user", "content", userMsg)));
 
-		String resp = vllmWebClient.post().uri("/v1/chat/completions").bodyValue(req).retrieve()
-				.bodyToMono(String.class).block();
+		List<Map<String, String>> messages = new ArrayList<>();
+		messages.add(Map.of("role", "system", "content", systemMsg));
+		messages.add(Map.of("role", "user", "content", userMsg));
+		req.put("messages", messages);
 
-		String md = extractAnyContent(resp);
-		return fixFences(md);
+		try {
+			String resp = vllmWebClient.post()
+					.uri("/v1/chat/completions")
+					.bodyValue(req)
+					.retrieve()
+					.bodyToMono(String.class)
+					.block();
+
+			return fixFences(extractAnyContent(resp));
+
+		} catch (Exception e) {
+			log.error("vLLM 호출 실패: {}", e.getMessage());
+			throw new RuntimeException("AI 요약 실패: " + e.getMessage(), e);
+		}
 	}
 
-	// =====================================================================
-	// B. 요약 JSON 모드
-	// =====================================================================
+	// ====== NotionContentService용 메서드 ======
+
 	public UnifiedResult summarizeText(long userIdx, String content, String promptTitle) {
-		userRepository.findByUserIdx(userIdx)
-				.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자: " + userIdx));
+		try {
+			userRepository.findByUserIdx(userIdx)
+					.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자"));
 
-		String promptText = promptRepository.findByTitle(promptTitle)
-				.orElseThrow(() -> new IllegalArgumentException("프롬프트 없음: " + promptTitle)).getContent();
+			String promptText = promptRepository.findByTitle(promptTitle)
+					.orElseThrow(() -> new IllegalArgumentException("프롬프트 없음"))
+					.getContent();
 
-		return callUnifiedLLM(promptText, trimForTokens(content));
+			return callUnifiedLLM(promptText, trimForTokens(content));
+		} catch (Exception e) {
+			throw new RuntimeException("텍스트 요약 실패: " + e.getMessage(), e);
+		}
 	}
 
 	public UnifiedResult summarizeFile(long userIdx, MultipartFile file, String promptTitle) {
-		userRepository.findByUserIdx(userIdx)
-				.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자: " + userIdx));
-		String promptText = promptRepository.findByTitle(promptTitle)
-				.orElseThrow(() -> new IllegalArgumentException("프롬프트 없음: " + promptTitle)).getContent();
 		try {
-			// ✅ 파일은 반드시 포맷별 파서를 통해 텍스트 추출
+			userRepository.findByUserIdx(userIdx)
+					.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자"));
+
+			String promptText = promptRepository.findByTitle(promptTitle)
+					.orElseThrow(() -> new IllegalArgumentException("프롬프트 없음"))
+					.getContent();
+
 			String text = fileParseService.extractText(file);
 			return callUnifiedLLM(promptText, trimForTokens(text));
 		} catch (Exception e) {
-			throw new RuntimeException("파일 텍스트 변환 실패: " + e.getMessage(), e);
+			throw new RuntimeException("파일 요약 실패: " + e.getMessage(), e);
 		}
 	}
 
-	// =====================================================================
-	// C. Chat 전용
-	// =====================================================================
-	public String generateResponse(String contextualPrompt) {
-		try {
-			Map<String, Object> req = new HashMap<>();
-			req.put("model", modelName);
-			req.put("max_tokens", Math.min(maxTokens, 800));
-			req.put("temperature", 1.0);
-			req.put("stream", false);
-
-			String system = "You are a helpful assistant. 무조건 한국어로 대답하세요. 변수나 이름 제외하고 무조건 한국어.";
-			List<Map<String, String>> messages = List.of(Map.of("role", "system", "content", system),
-					Map.of("role", "user", "content", contextualPrompt));
-			req.put("messages", messages);
-
-			String response = vllmWebClient.post().uri("/v1/chat/completions").bodyValue(req).retrieve()
-					.bodyToMono(String.class).block();
-
-			return extractAnyContent(response);
-		} catch (Exception e) {
-			return "잠시 후 다시 시도해주세요. (" + e.getMessage() + ")";
-		}
-	}
-
-	// =====================================================================
-	// D. LLM 호출 (Unified JSON)
-	// =====================================================================
-	private UnifiedResult callUnifiedLLM(String promptText, String original) {
-		try {
-			String fullPrompt = promptText + "\n\n" + original + "\n\n" + "아래 JSON 스키마로만 출력하세요. 추가 텍스트/설명은 절대 금지.\n"
-					+ "{\n" + "  \"summary\": string,\n" + "  \"keywords\": string[5],\n"
-					+ "  \"category\": { \"large\": string, \"medium\": string, \"small\": string },\n"
-					+ "  \"tags\": string[]\n" + "}\n";
-
-			int safeMax = computeSafeMaxTokens(fullPrompt);
-
-			Map<String, Object> chatReq = new HashMap<>();
-			chatReq.put("model", modelName);
-			chatReq.put("max_tokens", safeMax);
-			chatReq.put("temperature", temperature);
-			chatReq.put("messages", List.of(Map.of("role", "user", "content", fullPrompt)));
-
-			String response;
-			String jsonText;
-
-			try {
-				response = vllmWebClient.post().uri("/v1/chat/completions").bodyValue(chatReq).retrieve()
-						.bodyToMono(String.class).block();
-				jsonText = extractAnyContent(response);
-			} catch (RuntimeException chatErr) {
-				log.warn("chat.completions 실패: {}", chatErr.getMessage());
-
-				Map<String, Object> textReq = new HashMap<>();
-				textReq.put("model", modelName);
-				textReq.put("max_tokens", safeMax);
-				textReq.put("temperature", temperature);
-				textReq.put("prompt", fullPrompt);
-
-				response = vllmWebClient.post().uri("/v1/completions").bodyValue(textReq).retrieve()
-						.bodyToMono(String.class).block();
-				jsonText = extractAnyContent(response);
-			}
-
-			jsonText = stripFence(jsonText);
-
-			JsonNode root = objectMapper.readTree(jsonText);
-			UnifiedResult r = new UnifiedResult();
-			r.setSummary(root.path("summary").asText(""));
-			r.setKeywords(readArray(root.path("keywords")));
-
-			JsonNode cat = root.path("category");
-			r.setCategory(new CategoryPath(cat.path("large").asText("기타"), cat.path("medium").asText("미분류"),
-					cat.path("small").asText("일반")));
-			r.setTags(readArray(root.path("tags")));
-			return r;
-
-		} catch (Exception e) {
-			throw new RuntimeException("LLM 통합 호출 실패: " + e.getMessage(), e);
-		}
-	}
-
-	private String extractAnyContent(String response) throws Exception {
-		JsonNode root = objectMapper.readTree(response);
-		JsonNode choices = root.path("choices");
-		if (choices.isArray() && choices.size() > 0) {
-			String c = choices.get(0).path("message").path("content").asText(null);
-			if (c != null && !c.isBlank())
-				return c;
-
-			c = choices.get(0).path("text").asText(null);
-			if (c != null && !c.isBlank())
-				return c;
-		}
-		String out = root.path("output_text").asText(null);
-		if (out != null && !out.isBlank())
-			return out;
-		return response;
-	}
-
-	private String stripFence(String s) {
-		if (s == null)
-			return "";
-		s = s.trim();
-		if (s.startsWith("```")) {
-			int first = s.indexOf('\n');
-			int last = s.lastIndexOf("```");
-			if (first > 0 && last > first) {
-				return s.substring(first + 1, last).trim();
-			}
-		}
-		return s;
-	}
-
-	private List<String> readArray(JsonNode arr) {
-		List<String> list = new ArrayList<>();
-		if (arr != null && arr.isArray()) {
-			arr.forEach(n -> list.add(n.asText("")));
-		}
-		return list;
-	}
-
-	private int computeSafeMaxTokens(String fullPrompt) {
-		int inputTok = estimateTokens(fullPrompt);
-		int buffer = Math.max(256, (int) (contextLimit * 0.1));
-		int avail = Math.max(0, contextLimit - inputTok - buffer);
-		int safe = Math.max(256, Math.min(maxTokens, avail));
-		log.info("[LLM] ctxLimit={}, input≈{}, buffer={}, safeMax={}", contextLimit, inputTok, buffer, safe);
-		return safe;
-	}
-
-	private String trimForTokens(String content) {
-		if (content == null)
-			return "";
-		int MAX_CHARS = 4000;
-		return content.length() > MAX_CHARS ? content.substring(0, MAX_CHARS) + "\n\n...(truncated)" : content;
-	}
-
-	// =====================================================================
-	// F. Category 매칭 & 폴더 경로
-	// =====================================================================
 	public CategoryPath matchCategory(List<String> keywords, CategoryPath llmCategory) {
-		if (keywords == null)
-			keywords = List.of();
-		Set<String> keyset = keywords.stream().filter(k -> k != null && !k.isBlank()).map(String::toLowerCase)
+		if (keywords == null) keywords = List.of();
+
+		Set<String> keyset = keywords.stream()
+				.filter(k -> k != null && !k.isBlank())
+				.map(String::toLowerCase)
 				.collect(Collectors.toSet());
 
 		List<CategoryHierarchy> all = categoryHierarchyRepository.findAll();
@@ -449,12 +416,13 @@ public class LLMUnifiedService {
 		if (best != null && bestScore >= 20) {
 			return new CategoryPath(best.getLargeCategory(), best.getMediumCategory(), best.getSmallCategory());
 		}
+
 		return llmCategory != null ? llmCategory : new CategoryPath("기타", "미분류", "일반");
 	}
 
 	public Long ensureNoteFolderPath(long userIdx, CategoryPath path) {
-		if (path == null)
-			return null;
+		if (path == null) return null;
+
 		Long parentId = null;
 		parentId = findOrCreate(userIdx, parentId, path.getLarge());
 		parentId = findOrCreate(userIdx, parentId, path.getMedium());
@@ -463,328 +431,286 @@ public class LLMUnifiedService {
 	}
 
 	private Long findOrCreate(long userIdx, Long parentId, String name) {
-		if (name == null || name.isBlank())
-			return parentId;
+		if (name == null || name.isBlank()) return parentId;
 
 		List<NoteFolder> siblings = (parentId == null)
 				? noteFolderRepository.findByUserIdxAndParentFolderIdIsNullOrderByFolderNameAsc(userIdx)
 				: noteFolderRepository.findByUserIdxAndParentFolderIdOrderByFolderNameAsc(userIdx, parentId);
 
-		Optional<NoteFolder> found = siblings.stream().filter(f -> f.getFolderName().equals(name)).findFirst();
-		if (found.isPresent())
-			return found.get().getFolderId();
+		Optional<NoteFolder> found = siblings.stream()
+				.filter(f -> f.getFolderName().equals(name))
+				.findFirst();
 
-		NoteFolder folder = NoteFolder.builder().userIdx(userIdx).folderName(name).parentFolderId(parentId)
-				.createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
+		if (found.isPresent()) return found.get().getFolderId();
+
+		NoteFolder folder = NoteFolder.builder()
+				.userIdx(userIdx)
+				.folderName(name)
+				.parentFolderId(parentId)
+				.createdAt(LocalDateTime.now())
+				.updatedAt(LocalDateTime.now())
+				.build();
 
 		return noteFolderRepository.save(folder).getFolderId();
 	}
 
-	private int scoreCategory(Set<String> keys, String categoryKeywordsCsv) {
-		if (categoryKeywordsCsv == null || categoryKeywordsCsv.isBlank())
-			return 0;
-		Set<String> cat = Arrays.stream(categoryKeywordsCsv.toLowerCase().split(",")).map(String::trim)
-				.filter(s -> !s.isBlank()).collect(Collectors.toSet());
-		int score = 0;
-		for (String k : keys) {
-			for (String ck : cat) {
-				if (k.contains(ck) || ck.contains(k))
-					score += 10;
-				else if (isSimilar(k, ck))
-					score += 5;
-			}
-		}
-		return score;
-	}
+	private UnifiedResult callUnifiedLLM(String promptText, String original) {
+		try {
+			String fullPrompt = promptText + "\n\n" + original + "\n\n" +
+					"JSON 스키마로 출력:\n" +
+					"{\n" +
+					"  \"summary\": string,\n" +
+					"  \"keywords\": string[5],\n" +
+					"  \"category\": { \"large\": string, \"medium\": string, \"small\": string },\n" +
+					"  \"tags\": string[]\n" +
+					"}\n";
 
-	private boolean isSimilar(String a, String b) {
-		if (a.length() < 3 || b.length() < 3)
-			return false;
-		int d = editDistance(a, b);
-		int m = Math.max(a.length(), b.length());
-		return (double) d / m < 0.3;
-	}
+			int safeMax = computeSafeMaxTokens(fullPrompt);
+			Map<String, Object> req = Map.of(
+					"model", modelName,
+					"max_tokens", safeMax,
+					"temperature", temperature,
+					"messages", List.of(Map.of("role", "user", "content", fullPrompt))
+			);
 
-	private int editDistance(String a, String b) {
-		int[][] dp = new int[a.length() + 1][b.length() + 1];
-		for (int i = 0; i <= a.length(); i++) {
-			for (int j = 0; j <= b.length(); j++) {
-				if (i == 0)
-					dp[i][j] = j;
-				else if (j == 0)
-					dp[i][j] = i;
-				else if (a.charAt(i - 1) == b.charAt(j - 1))
-					dp[i][j] = dp[i - 1][j - 1];
-				else
-					dp[i][j] = 1 + Math.min(dp[i - 1][j], Math.min(dp[i][j - 1], dp[i - 1][j - 1]));
-			}
-		}
-		return dp[a.length()][b.length()];
-	}
+			String response = vllmWebClient.post()
+					.uri("/v1/chat/completions")
+					.bodyValue(req)
+					.retrieve()
+					.bodyToMono(String.class)
+					.block();
 
-	private int byteLen(String s) {
-		return (s == null) ? 0 : s.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
-	}
+			String jsonText = stripFence(extractAnyContent(response));
+			JsonNode root = objectMapper.readTree(jsonText);
 
-	// 정책 지정형 summarize (모드 힌트 normal/economy)
+			UnifiedResult r = new UnifiedResult();
+			r.setSummary(root.path("summary").asText(""));
+			r.setKeywords(readArray(root.path("keywords")));
 
-	public SummaryResult summarizeWithPolicy(long userIdx, String promptTitle, String original,
-			boolean forcePromptSummary) throws Exception {
+			JsonNode cat = root.path("category");
+			r.setCategory(new CategoryPath(
+					cat.path("large").asText("기타"),
+					cat.path("medium").asText("미분류"),
+					cat.path("small").asText("일반")
+			));
+			r.setTags(readArray(root.path("tags")));
 
-		String target; // 실제 요약 대상 텍스트
-		String modeNote; // "user-priority" | "prompt-priority"
-
-		if (!forcePromptSummary) {
-			target = original == null ? "" : original;
-			modeNote = "user-priority";
-		} else {
-			// 프롬프트 텍스트 자체를 ‘콘텐츠’로 요약하고 싶은 특별 케이스
-			String instruction = promptRepository.findByTitle(promptTitle)
-					.orElseThrow(() -> new IllegalArgumentException("프롬프트 없음: " + promptTitle)).getContent();
-			target = instruction;
-			modeNote = "prompt-priority";
-		}
-
-		String compact = compactText(target);
-		int bytes = byteLen(compact);
-
-		if (bytes > ECONOMY_MAX_BYTES) {
-			return SummaryResult.blocked("[안내] 텍스트가 너무 길어 요약을 진행하지 않습니다. 파일을 나누거나 텍스트를 줄여 주세요.");
-		}
-
-		if (bytes <= NORMAL_MAX_BYTES) {
-			String md = runPromptMarkdown(userIdx, promptTitle, compact);
-			SummaryResult r = SummaryResult.normal(md);
-			r.setMode(modeNote);
 			return r;
+		} catch (Exception e) {
+			throw new RuntimeException("LLM 호출 실패: " + e.getMessage(), e);
+		}
+	}
+
+	// ====== 유틸 메서드 ======
+
+	private String extractAnyContent(String response) throws Exception {
+		JsonNode root = objectMapper.readTree(response);
+		JsonNode choices = root.path("choices");
+		if (choices.isArray() && choices.size() > 0) {
+			String c = choices.get(0).path("message").path("content").asText(null);
+			if (c != null && !c.isBlank()) return c;
+		}
+		return response;
+	}
+
+
+
+	private String fixFences(String md) {
+		if (md == null) return "";
+		String s = md.strip(); // 양끝만 정리
+
+		// JSON 그대로 들어온 경우 안전하게 건드리지 않음
+		if (looksLikeJson(s)) return s;
+
+		boolean open = false;
+		for (String line : s.split("\\R")) {    // 모든 줄바꿈 대응
+			String t = line.strip();
+			if (t.startsWith("```")) {
+				open = !open;
+			}
+		}
+		if (open) {
+			if (!s.endsWith("\n")) s += "\n";
+			s += "```";
+		}
+		return s;
+	}
+
+	private boolean looksLikeJson(String s) {
+		String t = s.trim();
+		if (!(t.startsWith("{") && t.endsWith("}"))) return false;
+		// vLLM OpenAI 응답의 대표 키가 있으면 JSON으로 간주
+		return t.contains("\"choices\"") || t.contains("\"object\"") || t.contains("\"id\"");
+	}
+
+	private String stripFence(String s) {
+	if (s == null) return "";
+	String t = s.trim();
+	// ``` 로 시작하면 fence를 벗겨서 내부만 반환
+	if (t.startsWith("```")) {
+		int first = t.indexOf('\n');
+		int last  = t.lastIndexOf("```");
+		if (first > 0 && last > first) {
+			return t.substring(first + 1, last).trim();
+		}
+	}
+	return t;
+}
+
+
+private List<String> readArray(JsonNode arr) {
+	List<String> list = new ArrayList<>();
+	if (arr != null && arr.isArray()) {
+		arr.forEach(n -> list.add(n.asText("")));
+	}
+	return list;
+}
+
+private String trimForTokens(String content) {
+	if (content == null) return "";
+	int MAX_CHARS = 4000;
+	return content.length() > MAX_CHARS
+			? content.substring(0, MAX_CHARS) + "\n\n...(truncated)"
+			: content;
+}
+
+	private int computeSafeMaxTokens(String prompt) {
+		int input = estimateTokens(prompt);
+		int buffer = Math.max(256, contextLimit / 10);
+		int available = contextLimit - input - buffer;
+		int result = Math.max(256, Math.min(maxTokens, available));
+
+		log.info("토큰 계산 - input: {}, buffer: {}, available: {}, result: {}, contextLimit: {}",
+				input, buffer, available, result, contextLimit);
+
+		// ✅ max_tokens가 음수가 되면 안됨!
+		if (result <= 0) {
+			log.warn("max_tokens가 0 이하! 강제로 256으로 설정");
+			return 256;
 		}
 
-		// economy: 키워드 + 앞/중간/뒤 샘플
-		List<String> keywords = extractTopKeywords(compact, 80);
-		String head = sliceChars(compact, 0, 8000);
-		String mid = sliceChars(compact, Math.max(0, compact.length() / 2 - 4000), 8000);
-		String tail = sliceChars(compact, Math.max(0, compact.length() - 8000), 8000);
+		return result;
+	}
 
-		String economyPrompt = """
-				아래 키워드와 샘플 텍스트(앞/중간/뒤 일부)만 바탕으로, [요약 대상]의 핵심을 정리하세요.
-				- 키워드: %s
-				- 샘플(앞): %s
-				- 샘플(중간): %s
-				- 샘플(뒤): %s
+	public int estimateTokens(String text) {
+		if (text == null) return 0;
+		// 한국어는 토큰이 더 많이 필요
+		return (int) Math.ceil(text.length() / 2.5);  // 기존 3.5 → 2.5로 수정
+	}
 
-				출력 규칙:
-				1) 제목 1줄
-				2) 핵심 요약(불릿) 8~12개
-				3) 추가 참고 또는 누락 위험 요소 3~5개
-				""".formatted(String.join(", ", keywords), head, mid, tail);
+public String compactText(String s) {
+	if (s == null) return "";
+	return s.replaceAll("\\s+", " ").trim();
+}
 
-		String md = runPromptMarkdown(userIdx, promptTitle, economyPrompt);
-		SummaryResult r = SummaryResult.economy(md, keywords);
-		r.setMode(modeNote);
+private int byteLen(String s) {
+	return (s == null) ? 0 : s.getBytes(StandardCharsets.UTF_8).length;
+}
+
+public List<String> extractTopKeywords(String text, int topN) {
+	if (text == null) return List.of();
+	Map<String, Integer> freq = new HashMap<>();
+	String[] tokens = text.toLowerCase().split("\\s+");
+	for (String tok : tokens) {
+		if (tok.length() >= 2) freq.merge(tok, 1, Integer::sum);
+	}
+	return freq.entrySet().stream()
+			.sorted((a, b) -> b.getValue().compareTo(a.getValue()))
+			.limit(topN)
+			.map(Map.Entry::getKey)
+			.collect(Collectors.toList());
+}
+
+private int scoreCategory(Set<String> keys, String categoryKeywordsCsv) {
+	if (categoryKeywordsCsv == null || categoryKeywordsCsv.isBlank()) return 0;
+
+	Set<String> cat = Arrays.stream(categoryKeywordsCsv.toLowerCase().split(","))
+			.map(String::trim)
+			.filter(s -> !s.isBlank())
+			.collect(Collectors.toSet());
+
+	int score = 0;
+	for (String k : keys) {
+		for (String ck : cat) {
+			if (k.contains(ck) || ck.contains(k)) score += 10;
+		}
+	}
+	return score;
+}
+	// LLMUnifiedService.java 클래스 안에 추가
+	public String testVllmConnection() {
+		try {
+			log.info("vLLM 연결 테스트 시작...");
+
+			Map<String, Object> req = new HashMap<>();
+			req.put("model", modelName);
+			req.put("max_tokens", 100);
+			req.put("temperature", 0.7);
+			req.put("stream", false);
+
+			List<Map<String, String>> messages = new ArrayList<>();
+			messages.add(Map.of("role", "user", "content", "안녕하세요"));
+			req.put("messages", messages);
+
+			String resp = vllmWebClient.post()
+					.uri("/v1/chat/completions")
+					.bodyValue(req)
+					.retrieve()
+					.bodyToMono(String.class)
+					.block();
+
+			String result = extractAnyContent(resp);
+			log.info("vLLM 테스트 성공: {}", result);
+			return result;
+
+		} catch (Exception e) {
+			log.error("vLLM 테스트 실패: {}", e.getMessage(), e);
+			return "실패: " + e.getMessage();
+		}
+	}
+// ====== DTO 클래스 ======
+
+@Data
+public static class SummaryResult {
+	private boolean success;
+	private String mode;
+	private String summaryMarkdown;
+	private List<String> keywords;
+	private String message;
+
+	public static SummaryResult normal(String md) {
+		SummaryResult r = new SummaryResult();
+		r.success = true;
+		r.mode = "normal";
+		r.summaryMarkdown = md;
+		r.keywords = List.of();
+		r.message = "OK";
 		return r;
 	}
 
-	// =====================================================================
-	// G. DTOs
-	// =====================================================================
-	@Data
-	public static class UnifiedResult {
-		private String summary;
-		private List<String> keywords;
-		private CategoryPath category;
-		private List<String> tags;
+	public static SummaryResult economy(String md, List<String> keywords) {
+		SummaryResult r = new SummaryResult();
+		r.success = true;
+		r.mode = "economy";
+		r.summaryMarkdown = md;
+		r.keywords = keywords;
+		r.message = "대용량 파일 - 고급 분석 완료";
+		return r;
 	}
+}
 
-	@Data
-	public static class CategoryPath {
-		private final String large;
-		private final String medium;
-		private final String small;
-	}
+@Data
+public static class UnifiedResult {
+	private String summary;
+	private List<String> keywords;
+	private CategoryPath category;
+	private List<String> tags;
+}
 
-	// -----------------------------------------------------
-	// ✅ NotionController 호환용: 텍스트 3인자 버전
-	// -----------------------------------------------------
-	public TestSummary processText(long userIdx, String content, String promptTitle) {
-		long start = System.currentTimeMillis();
-		try {
-			String markdown = runPromptMarkdown(userIdx, promptTitle, content);
-			return TestSummary.builder().testType("TEXT").promptTitle(promptTitle).originalContent(content)
-					.aiSummary(markdown).status("SUCCESS").processingTimeMs(System.currentTimeMillis() - start).build();
-		} catch (Exception e) {
-			return TestSummary.builder().testType("TEXT").promptTitle(promptTitle).originalContent(content)
-					.status("FAILED").errorMessage(e.getMessage()).processingTimeMs(System.currentTimeMillis() - start)
-					.build();
-		}
-	}
-
-	public TestSummary processText(long userIdx, String content) {
-		return processText(userIdx, content, "심플버전");
-	}
-
-	// -----------------------------------------------------
-	// ✅ NotionController 호환용: 파일 3인자 버전
-	// -----------------------------------------------------
-
-	public TestSummary processFile(long userIdx, MultipartFile file, String promptTitle) {
-		long start = System.currentTimeMillis();
-		try {
-			// ✅ 포맷별 파서 사용
-			String text = fileParseService.extractText(file);
-			String markdown = runPromptMarkdown(userIdx, promptTitle, text);
-			return TestSummary.builder().testType("FILE").promptTitle(promptTitle).fileName(file.getOriginalFilename())
-					.fileSize(file.getSize()).aiSummary(markdown).status("SUCCESS")
-					.processingTimeMs(System.currentTimeMillis() - start).build();
-		} catch (Exception e) {
-			return TestSummary.builder().testType("FILE").promptTitle(promptTitle)
-					.fileName(file != null ? file.getOriginalFilename() : null).status("FAILED")
-					.errorMessage(e.getMessage()).processingTimeMs(System.currentTimeMillis() - start).build();
-		}
-	}
-
-	// ───── 유틸: 토큰 추정 ─────
-	public int estimateTokens(String text) {
-		if (text == null)
-			return 0;
-		// 보수적 근사: 문자수/3.5
-		int chars = text.length();
-		return (int) Math.ceil(chars / 3.5);
-	}
-
-	private String shrinkRuns(String input) {
-		if (input == null || input.isEmpty())
-			return input;
-		// ([=\\-_*#])를 1개 캡처하고, 같은 문자가 8회 이상 추가 반복되는 구간을 8개로 축약
-		java.util.regex.Pattern p = java.util.regex.Pattern.compile("([=\\-_*#])\\1{8,}");
-		java.util.regex.Matcher m = p.matcher(input);
-
-		StringBuffer sb = new StringBuffer();
-		while (m.find()) {
-			String ch = m.group(1);
-			m.appendReplacement(sb, ch.repeat(8)); // 정확히 8개로 바꿈
-		}
-		m.appendTail(sb);
-		return sb.toString();
-	}
-
-	// ───── 유틸: 텍스트 압축(공백/중복/긴 줄 축약) ─────
-	public String compactText(String s) {
-		if (s == null)
-			return "";
-		// 공백/개행 정리
-		s = s.replace("\r\n", "\n").replace("\r", "\n").replaceAll("[ \\t\\u00A0\\u200B]+", " ");
-		// 중복 라인 제거(상위 50,000 라인까지)
-		Set<String> seen = new LinkedHashSet<>();
-		for (String line : s.split("\\n")) {
-			String t = line.trim();
-			if (!t.isEmpty())
-				seen.add(t);
-			if (seen.size() > 50000)
-				break;
-		}
-		String compact = String.join("\n", seen);
-		// 너무 긴 기호/코드 줄 축약
-		compact = shrinkRuns(compact);
-		// 과도한 빈 줄 축약
-		compact = compact.replaceAll("\\n{3,}", "\n\n").trim();
-		return compact;
-	}
-
-	// ───── 유틸: 키워드 추출(가벼운 TF) ─────
-	public List<String> extractTopKeywords(String text, int topN) {
-		if (text == null || text.isBlank())
-			return List.of();
-		Map<String, Integer> freq = new HashMap<>();
-		// 간단 토큰화: 한글/영문/숫자만 추출, 2자 이상
-		String[] tokens = text.toLowerCase(Locale.ROOT).replaceAll("[^0-9a-zA-Z가-힣\\s]", " ").split("\\s+");
-		for (String tok : tokens) {
-			if (tok.length() < 2)
-				continue;
-			// 흔한 불용어 일부 제거(확장 가능)
-			if (List.of("the", "and", "for", "with", "from", "that", "이것", "저것", "그리고", "그러나").contains(tok))
-				continue;
-			freq.merge(tok, 1, Integer::sum);
-		}
-		return freq.entrySet().stream().sorted((a, b) -> Integer.compare(b.getValue(), a.getValue())).limit(topN)
-				.map(Map.Entry::getKey).toList();
-	}
-
-	// ───── 요약 엔드포인트(예: /notion/create-text)에서 분기 사용 ─────
-
-	public SummaryResult summarizeWithPolicy(long userIdx, String promptTitle, String original) throws Exception {
-		String compact = compactText(original);
-		int bytes = compact.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
-		if (bytes > ECONOMY_MAX_BYTES) {
-			return SummaryResult.blocked("[안내] 텍스트가 너무 길어 요약을 진행하지 않습니다. 파일을 나누거나 텍스트를 줄여 주세요.");
-		}
-		if (bytes <= NORMAL_MAX_BYTES) {
-			String md = runPromptMarkdown(userIdx, promptTitle, compact);
-			return SummaryResult.normal(md);
-		}
-		// economy 흐름
-		List<String> keywords = extractTopKeywords(compact, 80);
-		String head = sliceChars(compact, 0, 8000);
-		String mid = sliceChars(compact, Math.max(0, compact.length() / 2 - 4000), 8000);
-		String tail = sliceChars(compact, Math.max(0, compact.length() - 8000), 8000);
-		String economyPrompt = """
-				아래 키워드와 샘플 텍스트(앞/중간/뒤 일부)에 기반해 문서의 핵심을 체계적으로 요약하세요.
-				- 키워드: %s
-				- 샘플(앞): %s
-				- 샘플(중간): %s
-				- 샘플(뒤): %s
-				출력 규칙:
-				1) 제목 1줄
-				2) 핵심 요약(불릿) 8~12개
-				3) 추가 참고 또는 누락 위험 요소 3~5개
-				""".formatted(String.join(", ", keywords), head, mid, tail);
-		String md = runPromptMarkdown(userIdx, promptTitle, economyPrompt);
-		return SummaryResult.economy(md, keywords);
-	}
-
-	private String sliceChars(String s, int start, int maxLen) {
-		int st = Math.max(0, Math.min(start, s.length()));
-		int en = Math.min(s.length(), st + Math.max(0, maxLen));
-		return s.substring(st, en);
-	}
-
-	// ───── 응답 모델(간단 DTO) ─────
-	@Data
-	public static class SummaryResult {
-		private boolean success;
-		private String mode; // "normal" | "economy" | "blocked"
-		private String summaryMarkdown;
-		private List<String> keywords;
-		private String message;
-
-		public static SummaryResult normal(String md) {
-			SummaryResult r = new SummaryResult();
-			r.success = true;
-			r.mode = "normal";
-			r.summaryMarkdown = md;
-			r.keywords = List.of();
-			r.message = "OK";
-			return r;
-		}
-
-		public static SummaryResult economy(String md, List<String> keywords) {
-			SummaryResult r = new SummaryResult();
-			r.success = true;
-			r.mode = "economy";
-			r.summaryMarkdown = md;
-			r.keywords = keywords;
-			r.message = "파일 크기가 커서 주요 단어만 필터링하여 LLM 모델을 진행합니다.";
-			return r;
-		}
-
-		public static SummaryResult blocked(String msg) {
-			SummaryResult r = new SummaryResult();
-			r.success = false;
-			r.mode = "blocked";
-			r.summaryMarkdown = "";
-			r.keywords = List.of();
-			r.message = msg;
-			return r;
-		}
-	}
-
+@Data
+public static class CategoryPath {
+	private final String large;
+	private final String medium;
+	private final String small;
+}
 }

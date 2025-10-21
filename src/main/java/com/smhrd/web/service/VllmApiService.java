@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smhrd.web.entity.Prompt;
 import com.smhrd.web.repository.PromptRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -18,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-@RequiredArgsConstructor
 public class VllmApiService {
 
     private final WebClient vllmWebClient;
@@ -39,6 +39,14 @@ public class VllmApiService {
     @Value("${vllm.api.url}")
     private String apiUrl;
 
+    public VllmApiService(
+            @Qualifier("vllmApiClient") WebClient vllmWebClient,
+            PromptRepository promptRepository,
+            WebClient.Builder webClientBuilder) {
+        this.vllmWebClient = vllmWebClient;
+        this.promptRepository = promptRepository;
+        this.webClientBuilder = webClientBuilder;
+    }
     /**
      * 노션 생성: DB 프롬프트 + 사용자 입력을 합쳐 마크다운 전문을 반환
      */

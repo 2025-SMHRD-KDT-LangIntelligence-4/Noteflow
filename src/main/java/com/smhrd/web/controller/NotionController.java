@@ -119,41 +119,40 @@ public class NotionController {
     @ResponseBody
     public ResponseEntity<Map<String, Object>> createFromFileId(
             @RequestBody Map<String, String> req,
-            @AuthenticationPrincipal(expression = "userIdx") Long userIdx,
-            @Value("${notion.summary.economy-max-bytes:512000}") int economyMaxBytes // 500KB
+            @AuthenticationPrincipal(expression = "userIdx") Long userIdx
     ) {
         String gridfsId = req.get("fileId");
         String promptTitle = req.getOrDefault("promptTitle", "심플버전");
         Map<String, Object> out = new HashMap<>();
+
         try {
             FileStorageService.FileInfo meta = fileStorageService.previewFile(gridfsId);
             if (meta == null) {
                 return ResponseEntity.ok(Map.of("success", false, "error", "파일을 찾을 수 없습니다."));
             }
+
             if (userIdx == null || !String.valueOf(userIdx).equals(meta.getUploaderIdx())) {
                 return ResponseEntity.status(403).body(Map.of("success", false, "error", "권한이 없습니다."));
             }
-            long size = meta.getSize();
-            if (size > economyMaxBytes) {
-                out.put("success", false);
-                out.put("mode", "blocked");
-                out.put("message", "[안내] 파일이 너무 커서 요약을 진행하지 않습니다. 텍스트를 줄이거나 파일을 나눠 업로드해 주세요.");
-                return ResponseEntity.ok(out);
-            }
+
             byte[] bytes = fileStorageService.downloadFile(gridfsId);
             String filename = (meta.getOriginalName() == null) ? "file" : meta.getOriginalName();
             String fullText = fileParseService.extractText(bytes, filename);
 
+            // ✅ 고급 요약 (파일 크기 제한 없음!)
             LLMUnifiedService.SummaryResult unified =
-                    llmService.summarizeWithPolicy(userIdx, promptTitle, fullText, false);
+                    llmService.summarizeLongDocument(userIdx, promptTitle, fullText);
 
             out.put("success", unified.isSuccess());
-            out.put("mode", unified.getMode()); // "user-priority" / "economy" / "blocked"
+            out.put("mode", unified.getMode());
             out.put("summary", unified.getSummaryMarkdown());
             out.put("keywords", unified.getKeywords());
             out.put("message", unified.getMessage());
+
             return ResponseEntity.ok(out);
+
         } catch (Exception e) {
+            log.error("파일 요약 실패: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body(Map.of("success", false, "error", e.getMessage()));
         }
     }
@@ -164,19 +163,28 @@ public class NotionController {
     @PostMapping("/create-text")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> createFromText(
-            @RequestBody Map<String, String> req, Authentication auth
+            @RequestBody Map<String, String> req,
+            Authentication auth
     ) {
         Long userIdx = ((CustomUserDetails) auth.getPrincipal()).getUserIdx();
         String content = req.getOrDefault("content", "");
         String promptTitle = req.getOrDefault("promptTitle", "심플버전");
         Map<String, Object> result = new HashMap<>();
+
         try {
-            var summary = llmService.summarizeWithPolicy(userIdx, promptTitle, content, false);
+            // ✅ 새로운 고급 요약 메서드 사용
+            var summary = llmService.summarizeLongDocument(userIdx, promptTitle, content);
+
             result.put("success", summary.isSuccess());
             result.put("summary", summary.getSummaryMarkdown());
-            result.put("mode", summary.getMode()); // "user-priority" / "economy" / "blocked"
+            result.put("mode", summary.getMode());
+            result.put("keywords", summary.getKeywords());
+            result.put("message", summary.getMessage());
+
             return ResponseEntity.ok(result);
+
         } catch (Exception e) {
+            log.error("텍스트 요약 실패: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body(Map.of("success", false, "error", e.getMessage()));
         }
     }
@@ -193,16 +201,25 @@ public class NotionController {
     ) throws IOException {
         Long userIdx = ((CustomUserDetails) auth.getPrincipal()).getUserIdx();
         Map<String, Object> result = new HashMap<>();
+
         try {
             String text = fileParseService.extractText(file);
-            var summary = llmService.summarizeWithPolicy(userIdx, promptTitle, text, false);
+
+            // ✅ 새로운 고급 요약 메서드 사용
+            var summary = llmService.summarizeLongDocument(userIdx, promptTitle, text);
+
             result.put("success", summary.isSuccess());
             result.put("summary", summary.getSummaryMarkdown());
             result.put("mode", summary.getMode());
+            result.put("keywords", summary.getKeywords());
+            result.put("message", summary.getMessage());
             result.put("fileName", file.getOriginalFilename());
             result.put("fileSize", file.getSize());
+
             return ResponseEntity.ok(result);
+
         } catch (Exception e) {
+            log.error("파일 요약 실패: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body(Map.of("success", false, "error", e.getMessage()));
         }
     }
@@ -246,11 +263,10 @@ public class NotionController {
         Map<String, Object> res = new HashMap<>();
 
         try {
-            // 1. 노트 생성 (요약본은 MySQL Note 테이블에 저장)
-            Long noteId = notionContentService.saveNote(userIdx, title, summary, promptId);
-            log.info("✅ 노트 생성 완료: noteId={}", noteId);
+            // 1. ❌ promptId를 folderId로 쓰지 말고 null로
+            // Long noteId = notionContentService.saveNote(userIdx, title, summary, promptId);
 
-            // 2. 키워드 추출 및 분류
+            // 2. 키워드 추출 및 분류 먼저 실행
             CategoryResult categoryResult = keywordExtractionService
                     .extractAndClassifyWithRAG(title, summary, userIdx);
 
@@ -276,7 +292,11 @@ public class NotionController {
                 log.info("✅ 자동 분류 폴더: mysql={}, mongo={}", noteFolderId, mongoFolderId);
             }
 
-            // 4. 원본 파일 처리
+            // 4. ✅ 이제 유효한 folderId로 노트 생성
+            Long noteId = notionContentService.saveNote(userIdx, title, summary, noteFolderId);
+            log.info("✅ 노트 생성 완료: noteId={}", noteId);
+
+            // 5. 원본 파일 처리
             String originalGridId = null;
 
             if (gridfsId != null && !gridfsId.isBlank()) {
@@ -312,11 +332,6 @@ public class NotionController {
                 }
             }
 
-            // 5. 노트 폴더 연결
-            if (noteFolderId != null) {
-                noteRepository.updateNoteFolderId(noteId, noteFolderId);
-            }
-
             // 6. 노트에 원본 파일 ID 연결
             if (originalGridId != null) {
                 noteRepository.updateNoteSourceId(noteId, originalGridId);
@@ -350,6 +365,7 @@ public class NotionController {
             return ResponseEntity.status(500).body(res);
         }
     }
+
 
     // ✅ MongoDB 폴더 계층적 생성
     private String getOrCreateMongoFolder(Long userIdx, CategoryResult categoryResult) {
@@ -617,6 +633,23 @@ public class NotionController {
         response.setContentType("text/markdown;charset=UTF-8");
         response.getWriter().write(note.getContent());
         response.getWriter().flush();
+    }
+
+    @GetMapping("/test-vllm")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> testVllm() {
+        try {
+            String result = llmService.testVllmConnection();
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "result", result
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Map.of(
+                    "success", false,
+                    "error", e.getMessage()
+            ));
+        }
     }
     
 }

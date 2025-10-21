@@ -204,23 +204,24 @@ public TestSummary processTextTestCustom(String content, String customPrompt,
     }
     @PostMapping("/save-note")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> saveNote(
-            @RequestBody Map<String,String> req) {
-        String title       = req.getOrDefault("title", "자동생성 노트");
-        String summary     = req.getOrDefault("summary", "");
-        Long   promptId    = Long.parseLong(req.getOrDefault("promptId", "0"));
-        Long   userIdx     = Long.parseLong(req.getOrDefault("userIdx", "0"));
+    public ResponseEntity<Map<String, Object>> saveNote(@RequestBody Map<String, String> req) {
+        String title = req.getOrDefault("title", "자동생성 노트");
+        String summary = req.getOrDefault("summary", "");
+        String promptTitle = req.getOrDefault("promptTitle", "심플버전");  // promptId 대신
+        Long userIdx = Long.parseLong(req.getOrDefault("userIdx", "0"));
 
-        Map<String,Object> res = new HashMap<>();
+        Map<String, Object> res = new HashMap<>();
         try {
-            Long noteId = notionContentService.saveNote(userIdx, title, summary, promptId);
-
+            // ✅ createNotionFromText 사용으로 수정
+            Long noteId = notionContentService.createNotionFromText(userIdx, title, summary, promptTitle);
             res.put("success", true);
             res.put("noteId", noteId);
         } catch (Exception e) {
+            log.error("노트 저장 실패", e);
             res.put("success", false);
             res.put("error", e.getMessage());
         }
+
         return ResponseEntity.ok(res);
     }
     
