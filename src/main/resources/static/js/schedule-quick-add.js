@@ -14,10 +14,14 @@ const qaEndTime = document.getElementById('qaEndTime');
 const qaAllDay = document.getElementById('qaAllDay');
 const qaColor = document.getElementById('qaColor');
 const qaNotify = document.getElementById('qaNotify');
-const qaEmoji = document.getElementById('qaEmoji'); // 추가
+const qaEmoji = document.getElementById('qaEmoji');
 const qaSave = document.getElementById('qaSave');
 const qaCancel = document.getElementById('qaCancel');
 const qaQuickAddCard = document.querySelector('.quick-add-card');
+
+// ✅ 반복 일정 및 관련 DOM 참조 추가 (qa 접두사 통일)
+const qaRepeat = document.getElementById('qaRepeat');
+const repeatOptionLabel = document.getElementById('repeatOptionLabel');
 
 // 추가 옵션 관련 DOM (temp_schedule 컬럼 매핑용)
 const qaToggleAdvanced = document.getElementById('qaToggleAdvanced');
@@ -32,14 +36,41 @@ const qaAttachmentList = document.getElementById('qaAttachmentList');
 
 // ------------------------------ 1. 유틸리티 및 API 호출 함수 ------------------------------
 
-// 시간 입력 필드 토글을 위한 함수
+// 시간 입력 필드 토글 및 반복 옵션 표시 로직 수정
 function toggleTimeInputs(isAllDay) {
+	// [사용자 요청 반영] document.querySelector 사용
 	const timeRows = document.querySelector('.time-rows');
 	if (!timeRows) return;
+
+	// 1. 하루종일 체크박스에 따른 시간 입력 필드 표시/숨김
 	timeRows.style.display = isAllDay ? 'none' : 'flex';
+
+	// 2. 반복 옵션 표시 로직
+	if (repeatOptionLabel && qaRepeat) {
+
+		const startDateValue = qaStartDate.value;
+		const endDateValue = qaEndDate.value;
+
+		// 날짜 입력값이 모두 있어야 비교 가능
+		if (startDateValue && endDateValue) {
+			const startDate = new Date(startDateValue);
+			const endDate = new Date(endDateValue);
+
+			// '하루종일'이 아니며, 시작 날짜와 종료 날짜가 다를 때만 '반복 옵션' 표시
+			if (!isAllDay && startDate.toDateString() !== endDate.toDateString()) {
+				repeatOptionLabel.style.display = 'flex';
+			} else {
+				repeatOptionLabel.style.display = 'none';
+				qaRepeat.checked = false; // 옵션이 숨겨지면 체크 해제
+			}
+		} else {
+			repeatOptionLabel.style.display = 'none';
+			qaRepeat.checked = false;
+		}
+	}
 }
 
-// 최종 저장용 데이터 수집 함수
+// 최종 저장용 데이터 수집 함수 (isRepeat 필드 제거, 백엔드는 URL로 구분)
 function collectData() {
 	if (!qaTitle) return null;
 
@@ -72,11 +103,11 @@ function collectData() {
 
 		alarmTimeString = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
 	}
-	
+
 	// highlightType ENUM 값 처리: 빈 값이면 'none' 사용
 	const highlightValue = qaHighlightType ? qaHighlightType.value.trim() : null;
 	const safeHighlightValue = (highlightValue === "" || highlightValue === null)
-		? 'none' // 'none'은 ENUM 타입에 정의된 유효한 값
+		? 'none' // 'none'은 ENUM 타입에 정의된 유효한 값이라고 가정
 		: highlightValue;
 
 	const payload = {
@@ -86,7 +117,7 @@ function collectData() {
 		colorTag: qaColor.value,
 		isAllDay: isAllDay,
 
-		// [시간/날짜 필드]
+		// [시간/날짜 필드] - 반복 일정 등록 시 이 기간이 사용됨
 		startTime: qaStartDate.value + 'T' + (isAllDay ? '00:00:00' : qaStartTime.value + ':00'),
 		endTime: qaEndDate.value + 'T' + (isAllDay ? '23:59:59' : qaEndTime.value + ':00'),
 
@@ -104,7 +135,7 @@ function collectData() {
 		category: qaCategory ? qaCategory.value.trim() : null,
 		attachmentPath: qaAttachmentPath ? qaAttachmentPath.value.trim() : null,
 		attachmentList: qaAttachmentList ? (qaAttachmentList.value.trim() || '[]')
-			: '[]', 
+			: '[]',
 	};
 
 	return payload;
@@ -149,7 +180,7 @@ export function openQuickAddModal(dateStr) {
 	qaAllDay.checked = false;
 	qaNotify.value = '0';
 	if (qaEmoji) qaEmoji.value = '';
-
+	if (qaRepeat) qaRepeat.checked = false;
 	if (qaAdvancedOptions) qaAdvancedOptions.classList.add('hidden');
 	if (qaToggleAdvanced) qaToggleAdvanced.textContent = '추가 옵션 보기';
 
@@ -228,6 +259,13 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 	}
 
+	// ✅ 날짜 입력 필드 변경 시 반복 옵션 가시성 재평가
+	if (qaStartDate && qaEndDate && qaAllDay) {
+		const handleDateChange = () => toggleTimeInputs(qaAllDay.checked);
+		qaStartDate.addEventListener('change', handleDateChange);
+		qaEndDate.addEventListener('change', handleDateChange);
+	}
+
 	// 3. 추가 옵션 토글 이벤트 추가
 	if (qaToggleAdvanced && qaAdvancedOptions) {
 		qaToggleAdvanced.addEventListener('click', () => {
@@ -251,20 +289,25 @@ document.addEventListener('DOMContentLoaded', () => {
 			payload.title = "(제목 없음)";
 		}
 
+		// ✅ 반복 일정 API 엔드포인트 결정
+		const isRepeat = qaRepeat && qaRepeat.checked;
+		const apiUrl = isRepeat ? '/api/schedule/repeat/add' : '/api/schedule/create';
+
+		if (isRepeat) {
+			alertSuccess('반복 일정 등록을 시작합니다...'); // 반복 등록은 시간이 좀 걸릴 수 있음을 알림
+		}
 		try {
 			// [수정]: fetchWithCsrf는 이미 JSON 데이터를 반환합니다. createdSchedule은 Response 객체가 아닙니다.
-			const createdSchedule = await fetchWithCsrf('/api/schedule/create', {
+			const createdSchedule = await fetchWithCsrf(apiUrl, {
 				method: 'POST',
 				body: JSON.stringify(payload)
 			});
 
-			// fetchWithCsrf가 응답에 문제가 있으면 여기서 이미 throw를 던집니다.
-			// 따라서 !res.ok 검사 및 res.json() 호출은 불필요합니다.
-			
-			// createdSchedule이 null인 경우는 서버가 204 No Content를 보냈을 경우입니다.
 			console.log('일정 생성 성공, 응답 데이터:', createdSchedule);
-			
-			alertSuccess('일정이 성공적으로 생성되었습니다.');
+			const successMessage = isRepeat 
+							? '반복 일정이 성공적으로 등록되었습니다.' 
+							: '일정이 성공적으로 생성되었습니다.';
+			alertSuccess(successMessage);
 
 			// 캘린더 이벤트 갱신 (성공 시에만 실행)
 			if (window.refreshEvents && typeof window.refreshEvents === 'function') {
@@ -280,9 +323,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			const errorMessage = err.message || '알 수 없는 오류 (네트워크 문제 또는 응답 처리 오류)';
 			alertError(`일정 생성 중 오류가 발생했습니다. (${errorMessage})`);
 		}
-		
-		// 🚨 [제거된 부분]: 이전 코드에서 try...catch 블록 바깥에 중복으로 존재하던
-		// 이벤트 갱신 및 모달 닫기 로직을 제거했습니다.
+
 	});
 
 	qaCancel.addEventListener('click', closeQuickAddModal);

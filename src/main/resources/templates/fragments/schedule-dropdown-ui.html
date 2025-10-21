@@ -19,13 +19,6 @@
             <textarea id="qaDesc" placeholder="설명/내용 (선택)"></textarea>
         </div>
 
-        <div class="quick-add-row small-row">
-            <label>
-                <span class="icon-clock">🕒</span>
-                <input id="qaAllDay" type="checkbox" /> 하루종일
-            </label>
-        </div>
-
         <div class="quick-add-row time-rows">
             <div class="time-col">
                 <label>시작 날짜</label>
@@ -38,7 +31,18 @@
                 <input id="qaEndTime" type="time" step="600" />
             </div>
         </div>
-
+		<!-- ✅ 반복 일정 옵션 추가 -->
+        <div class="quick-add-row small-row justify-between">
+            <label>
+                <span class="icon-clock">🕒</span>
+                <input id="qaAllDay" type="checkbox" /> 하루종일
+            </label>
+            <label id="repeatOptionLabel" style="font-size: 0.9em; display: none;"> <!-- 초기에는 숨김 -->
+                <input id="qaRepeat" type="checkbox" /> 선택 기간 동안 매일 동일 시간 적용
+            </label>
+        </div>
+        
+        
         <div class="quick-add-row notify-row">
             <label>알림</label>
             <select id="qaNotify">
