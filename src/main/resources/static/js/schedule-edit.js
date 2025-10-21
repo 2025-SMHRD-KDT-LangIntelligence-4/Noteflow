@@ -31,6 +31,9 @@ const editCategory = document.getElementById('editCategory');
 const editAttachmentPath = document.getElementById('editAttachmentPath');
 const editAttachmentList = document.getElementById('editAttachmentList');
 
+// ✅ [추가] 알림 커스텀 필드 컨테이너
+const editCustomAlertContainer = document.getElementById('editCustomAlertContainer');
+
 // ------------------------------ 1. 유틸리티 ------------------------------
 
 // 시간 입력 필드 토글
@@ -40,6 +43,18 @@ function toggleTimeInputs(isAllDay) {
 	timeRows.style.display = isAllDay ? 'none' : 'flex';
 }
 
+// ✅ [추가] 알림 사용자 정의 필드 토글 로직 함수
+function toggleEditCustomAlertFields() {
+    if (!editNotify || !editCustomAlertContainer) return;
+    
+    if (editNotify.value === 'custom') {
+        editCustomAlertContainer.style.display = 'flex';
+    } else {
+        editCustomAlertContainer.style.display = 'none';
+    }
+}
+
+
 // 편집 저장용 데이터 수집 함수 (schedule-quick-add.js의 collectData와 유사)
 function collectEditData() {
 	if (!editTitle) return null;
@@ -47,6 +62,7 @@ function collectEditData() {
 	const isAllDay = editAllDay.checked;
     
     // 1. 알림 분 값 가져오기
+	// ✅ 'custom' 옵션 처리
 	const notifyMinutesBefore = editNotify.value === 'custom' ? null : parseInt(editNotify.value, 10);
     
     // 2. alarmTime 계산 로직
@@ -147,7 +163,8 @@ export async function openEditModal(scheduleId) {
         }
         
         // 알림 시간은 복잡하므로 단순 기본값 설정 (개선 필요 영역)
-        editNotify.value = '0'; 
+        // ✅ 알림 설정 로직 개선 필요: 실제 값에 따라 editNotify.value를 설정해야 함
+        editNotify.value = '-1'; // 임시로 알림 없음으로 설정
         
         // 추가 옵션 바인딩
         editAlertType.value = schedule.alertType || '';
@@ -161,7 +178,8 @@ export async function openEditModal(scheduleId) {
         // 3. UI 조정
         toggleTimeInputs(editAllDay.checked);
         if (editAdvancedOptions) editAdvancedOptions.classList.add('hidden'); // 항상 숨긴 상태로 시작
-
+        toggleEditCustomAlertFields(); // ✅ 알림 커스텀 필드 초기 상태 설정
+        
         // 4. 모달 표시
         editModal.classList.remove('hidden');
         editModal.setAttribute('aria-hidden', 'false');
@@ -198,6 +216,7 @@ export function closeEditModal() {
 
 
 // ------------------------------ 3. 이벤트 핸들러 ------------------------------
+// ... (handleEditSave, handleEditDelete 함수는 변경 없음) ...
 
 function handleEditSave(e) {
     const scheduleId = editScheduleId.value;
@@ -223,7 +242,8 @@ function handleEditSave(e) {
 
 function handleEditDelete(e) {
     const scheduleId = editScheduleId.value;
-    if (!confirm('정말로 이 일정을 삭제하시겠습니까?')) return;
+    // ✅ alert() 대신 커스텀 모달 사용 필요하지만, 현재는 confirm 유지
+    if (!confirm('정말로 이 일정을 삭제하시겠습니까?')) return; 
 
     // 🚨 [핵심] 일정 삭제 API 호출
     fetchWithCsrf(`/api/schedule/delete/${scheduleId}`, {
@@ -249,6 +269,11 @@ document.addEventListener('DOMContentLoaded', () => {
 			toggleTimeInputs(e.target.checked);
 		});
 	}
+    
+    // ✅ [추가] editNotify 드롭다운 변경 시 커스텀 알림 필드 토글
+    if (editNotify) {
+        editNotify.addEventListener('change', toggleEditCustomAlertFields);
+    }
     
     // 추가 옵션 토글 이벤트
     if (editToggleAdvanced && editAdvancedOptions) {
@@ -283,4 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isClickOutside) closeEditModal();
         }
     });
+    
+    // ✅ 초기 상태 설정
+    toggleEditCustomAlertFields();
 });

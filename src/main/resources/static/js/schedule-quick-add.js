@@ -3,7 +3,6 @@ import { fetchWithCsrf, alertSuccess, alertError } from './schedule-utils.js';
 // [에러 때문에 잠시 주석 처리] import { loadTempSchedules } from './schedule-manager.js'; 
 
 // ------------------------------ 모듈 스코프 DOM 참조 (최상위) ------------------------------
-// DOMContentLoaded 실행 전 null일 수 있지만, DOM이 로드된 후 사용됩니다.
 const quickModal = document.getElementById('quickAddModal');
 const qaTitle = document.getElementById('qaTitle');
 const qaDesc = document.getElementById('qaDesc');
@@ -19,9 +18,13 @@ const qaSave = document.getElementById('qaSave');
 const qaCancel = document.getElementById('qaCancel');
 const qaQuickAddCard = document.querySelector('.quick-add-card');
 
-// ✅ 반복 일정 및 관련 DOM 참조 추가 (qa 접두사 통일)
+// ✅ 반복 일정 및 관련 DOM 참조 추가
 const qaRepeat = document.getElementById('qaRepeat');
 const repeatOptionLabel = document.getElementById('repeatOptionLabel');
+const repeatWarningContainer = document.getElementById('repeatWarningContainer'); // ✅ 추가: 경고 멘트 컨테이너
+
+// ✅ 알림 커스텀 관련 DOM 참조 추가
+const qaCustomAlertContainer = document.getElementById('qaCustomAlertContainer'); // ✅ 추가: 커스텀 알림 컨테이너
 
 // 추가 옵션 관련 DOM (temp_schedule 컬럼 매핑용)
 const qaToggleAdvanced = document.getElementById('qaToggleAdvanced');
@@ -38,14 +41,13 @@ const qaAttachmentList = document.getElementById('qaAttachmentList');
 
 // 시간 입력 필드 토글 및 반복 옵션 표시 로직 수정
 function toggleTimeInputs(isAllDay) {
-	// [사용자 요청 반영] document.querySelector 사용
 	const timeRows = document.querySelector('.time-rows');
 	if (!timeRows) return;
 
 	// 1. 하루종일 체크박스에 따른 시간 입력 필드 표시/숨김
 	timeRows.style.display = isAllDay ? 'none' : 'flex';
 
-	// 2. 반복 옵션 표시 로직
+	// 2. 반복 옵션 표시 로직 (사용자 요청에 따라 Warning 토글 로직은 별도 함수로 분리)
 	if (repeatOptionLabel && qaRepeat) {
 
 		const startDateValue = qaStartDate.value;
@@ -68,7 +70,39 @@ function toggleTimeInputs(isAllDay) {
 			qaRepeat.checked = false;
 		}
 	}
+	
+	// 모달 열 때 반복 경고 멘트 초기화 (toggleTimeInputs이 호출되는 곳에서 같이 호출)
+	toggleRepeatWarning();
 }
+
+// ✅ [추가] 반복 경고 멘트 토글 로직 함수
+function toggleRepeatWarning() {
+    if (qaRepeat && repeatWarningContainer) {
+        // qaRepeat이 체크되었고 repeatOptionLabel이 flex 상태일 때만 표시합니다.
+        // repeatOptionLabel이 flex 상태가 아니면 (즉, 반복 옵션 자체가 보이지 않으면) 경고도 숨깁니다.
+        const isRepeatOptionVisible = repeatOptionLabel && repeatOptionLabel.style.display === 'flex';
+        
+        if (qaRepeat.checked && isRepeatOptionVisible) {
+            repeatWarningContainer.style.display = 'block';
+        } else {
+            repeatWarningContainer.style.display = 'none';
+        }
+    }
+}
+
+// ✅ [추가] 알림 사용자 정의 필드 토글 로직 함수
+function toggleCustomAlertFields() {
+    if (!qaNotify || !qaCustomAlertContainer) return;
+    
+    if (qaNotify.value === 'custom') {
+        // 'custom' 선택 시 flex를 사용하여 필드를 표시
+        qaCustomAlertContainer.style.display = 'flex';
+    } else {
+        // 다른 옵션 선택 시 숨김
+        qaCustomAlertContainer.style.display = 'none';
+    }
+}
+
 
 // 최종 저장용 데이터 수집 함수 (isRepeat 필드 제거, 백엔드는 URL로 구분)
 function collectData() {
@@ -77,6 +111,7 @@ function collectData() {
 	const isAllDay = qaAllDay.checked;
 
 	// 1. 알림 분 값 가져오기
+	// ✅ 알림 커스텀 로직 반영 (현재는 'custom'이면 null을 반환하도록 기존 로직 유지)
 	const notifyMinutesBefore = qaNotify.value === 'custom' ? null : parseInt(qaNotify.value, 10);
 
 	// 2. 시작 시간 (LocalDateTime) 계산을 위한 Date 객체 준비
@@ -127,7 +162,7 @@ function collectData() {
 		// [추가 옵션 필드]
 		emoji: qaEmoji ? qaEmoji.value.trim() : null,
 		alertType: qaAlertType ? qaAlertType.value.trim() : null,
-		customAlertValue: qaCustomAlertValue ? (qaCustomAlertValue.value || null) : null,
+		customAlertValue: qaCustomAlertValue ? (qaCustomAlertValue.value || null) : null, // 알림 값
 		location: qaLocation ? qaLocation.value.trim() : null,
 		mapLat: null,
 		mapLng: null,
@@ -184,6 +219,15 @@ export function openQuickAddModal(dateStr) {
 	if (qaAdvancedOptions) qaAdvancedOptions.classList.add('hidden');
 	if (qaToggleAdvanced) qaToggleAdvanced.textContent = '추가 옵션 보기';
 
+	// 추가 옵션 필드 초기화
+	if (qaAlertType) qaAlertType.value = '';
+	if (qaCustomAlertValue) qaCustomAlertValue.value = '';
+	if (qaLocation) qaLocation.value = '';
+	if (qaHighlightType) qaHighlightType.value = '';
+	if (qaCategory) qaCategory.value = '';
+	if (qaAttachmentPath) qaAttachmentPath.value = '';
+	if (qaAttachmentList) qaAttachmentList.value = '';
+
 	const today = dateStr ? new Date(dateStr) : new Date();
 	const dateISO = today.toISOString().slice(0, 10);
 
@@ -192,8 +236,10 @@ export function openQuickAddModal(dateStr) {
 	qaStartTime.value = '09:00';
 	qaEndTime.value = '10:00';
 
+	// UI 상태 조정
 	toggleTimeInputs(qaAllDay.checked);
-
+	toggleCustomAlertFields(); // ✅ 커스텀 알림 필드 초기 상태 설정
+	
 	quickModal.classList.remove('hidden');
 	quickModal.setAttribute('aria-hidden', 'false');
 
@@ -265,6 +311,16 @@ document.addEventListener('DOMContentLoaded', () => {
 		qaStartDate.addEventListener('change', handleDateChange);
 		qaEndDate.addEventListener('change', handleDateChange);
 	}
+	
+	// ✅ [추가] qaRepeat 체크박스 변경 시 경고 멘트 토글
+	if (qaRepeat) {
+		qaRepeat.addEventListener('change', toggleRepeatWarning);
+	}
+	
+	// ✅ [추가] qaNotify 드롭다운 변경 시 커스텀 알림 필드 토글
+	if (qaNotify) {
+		qaNotify.addEventListener('change', toggleCustomAlertFields);
+	}
 
 	// 3. 추가 옵션 토글 이벤트 추가
 	if (qaToggleAdvanced && qaAdvancedOptions) {
@@ -280,7 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			e.stopPropagation();
 		});
 	}
-
+	
 	// 5. 저장 버튼 이벤트
 	qaSave.addEventListener('click', async () => {
 		const payload = collectData();
@@ -290,7 +346,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 
 		// ✅ 반복 일정 API 엔드포인트 결정
-		const isRepeat = qaRepeat && qaRepeat.checked;
+		const isRepeat = qaRepeat && qaRepeat.checked && repeatOptionLabel.style.display === 'flex'; // 옵션이 보일 때만 반복 처리
 		const apiUrl = isRepeat ? '/api/schedule/repeat/add' : '/api/schedule/create';
 
 		if (isRepeat) {
@@ -331,4 +387,8 @@ document.addEventListener('DOMContentLoaded', () => {
 	// 6. 전역 이벤트 리스너 등록
 	document.addEventListener('keydown', handleEscClose);
 	document.addEventListener('click', handleOutsideClick);
+	
+	// ✅ 초기 상태 설정 (필요한 경우)
+	toggleCustomAlertFields();
+	toggleRepeatWarning(); // 초기화 시점에 경고 멘트 숨김 보장
 });
