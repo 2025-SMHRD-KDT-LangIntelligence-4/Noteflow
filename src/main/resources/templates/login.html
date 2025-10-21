@@ -63,6 +63,10 @@
     const popup = document.querySelector('.login-popup-overlay');
     if (popup) popup.remove();
   }
+
+  if (urlParams.has('expired')) {
+      alert('다른 곳에서 로그인하여 현재 세션이 종료되었습니다.');
+  }
 </script>
 </body>
 </html>

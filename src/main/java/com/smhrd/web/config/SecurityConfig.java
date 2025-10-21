@@ -10,6 +10,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @EnableWebSecurity
@@ -66,7 +67,12 @@ public class SecurityConfig {
                 .failureUrl("/login?error")                   // 실패 시 리다이렉트 경로
                 .permitAll()
             )
-
+            // 세션 관리
+            .sessionManagement(session -> session
+                    .maximumSessions(1)  // 동시 세션 1개로 제한
+                    .maxSessionsPreventsLogin(false)  // 새 로그인 허용, 기존 세션 무효화
+                    .expiredUrl("/login?expired")  // 기존 세션 만료 시 리다이렉트
+            )
             // 로그아웃 설정
             .logout(logout -> logout
                 .logoutRequestMatcher(new AntPathRequestMatcher("/logout", "GET"))
@@ -82,6 +88,7 @@ public class SecurityConfig {
         return http.build();
     }
 
+
     // ---------------------------------------------------
     // 정적 리소스 Security 필터 제외
     // ---------------------------------------------------
@@ -89,6 +96,10 @@ public class SecurityConfig {
     public WebSecurityCustomizer webSecurityCustomizer() {
         return web -> web.ignoring().requestMatchers(
                 "/css/**", "/js/**", "/images/**", "/fonts/**", "/webjars/**", "/favicon.ico"
-        );
+        );}
+    // 세션이벤트 관리
+    @Bean
+    public HttpSessionEventPublisher httpSessionEventPublisher() {
+        return new HttpSessionEventPublisher();
     }
 }
