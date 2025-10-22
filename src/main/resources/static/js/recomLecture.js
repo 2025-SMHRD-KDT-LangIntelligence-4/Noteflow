@@ -11,7 +11,7 @@
 	let analyser = null;
 	let source = null;
 	let isManualControl = false;  // ⭐ 수동 조절 중인지 플래그
-
+	let manualControlTimeout = null;
 	document.addEventListener('DOMContentLoaded', () => {
 
 		// 1) NotionComplete에서 넘어온 payload
