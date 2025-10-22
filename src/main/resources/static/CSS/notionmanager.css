@@ -262,9 +262,21 @@ body {
     flex: 1;
     font-size: 13px;
     color: #495057;
-    overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
+}
+.note-item-container{
+	font-size:13px;
+	align-items:center;
+	display:flex;
+	height:100%;
+}
+.note-item:hover .note-item-container{
+	animation: scroll-left 8s linear infinite;
+}
+.note-item.scroll-active .note-item-container:last-child {
+  position: absolute;
+  left: 100%;
+  animation-delay: 5s; /* 첫 번째 애니메이션보다 절반 뒤에 시작 */
 }
 
 /* 액션 버튼 (호버시만 표시) */
@@ -326,6 +338,7 @@ body {
     border: 1px solid #e9ecef;
     transition: all 0.2s ease;
     gap: 8px;
+    overflow:hidden;
 }
 
 .file-item:hover,
@@ -340,6 +353,7 @@ body {
     background: #e8f5e8;
     border-color: #4caf50;
     font-weight: 600;
+    overflow:hidden;
 }
 
 .file-item.dragging,
@@ -436,14 +450,15 @@ body {
 }
 
 .btn-edit {
-    background-color: #2196F3;
-    color: white;
+    background-color: white;
+    color: black;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .btn-edit:hover {
-    background-color: #1976D2;
+    background-color: #96d0ff;
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(33, 150, 243, 0.3);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .btn-save {
@@ -475,32 +490,35 @@ body {
     border-radius: 5px;
 }
 .btn-download {
-    background-color: #17a2b8;
-    color: white;
+    background-color: white;
+    color: black;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .btn-download:hover {
-    background-color: #138496;
+    background-color: #96d0ff;
     transform: translateY(-2px);
 }
 
 .btn-delete {
-    background-color: #dc3545;
-    color: white;
+    background-color: white;
+    color: black;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .btn-delete:hover {
-    background-color: #c82333;
+    background-color: #96d0ff;
     transform: translateY(-2px);
 }
 
 .btn-rename {
-    background-color: #ffc107;
-    color: #212529;
+    background-color: white;
+    color: black;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .btn-rename:hover {
-    background-color: #e0a800;
+    background-color: #96d0ff;
     transform: translateY(-2px);
 }
 
@@ -572,9 +590,12 @@ body {
 #editorArea {
     display: none;
     width: 100%;
-    height: 510px;;
+    height: 510px;
     margin-top: 20px;
-    overflow: hidden;
+    overflow-y: scroll;
+    justify-content: center;
+    border: 2px solid #c7c7c7;
+    min-height: 600px;
 }
 
 .toastui-editor-defaultUI {
@@ -587,7 +608,7 @@ body {
 .toastui-editor-contents {
     font-size: 16px !important;
     line-height: 1.8;
-    padding: 20px;
+    padding: 20px !important;
     background-color: white;
     word-wrap: break-word !important;
     overflow-wrap: break-word !important;
@@ -962,12 +983,44 @@ body {
 
 /* 문제은행 버튼 */
 .btn-exam {
-    background-color: #ff9800;
-    color: white;
+    background-color: white;
+    color:black;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .btn-exam:hover {
-    background-color: #f57c00;
+    background-color: #96d0ff;
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(255, 152, 0, 0.3);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* HWP 프리뷰 스타일 */
+.hwp-preview {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background: white;
+}
+
+.hwp-container {
+    width: 100%;
+    min-height: 600px;
+    padding: 20px;
+    background: #fff;
+    overflow-y: auto;
+}
+
+/* hwp.js가 생성하는 요소 스타일 */
+.hwp-container .hwp-page {
+    background: white;
+    margin: 0 auto 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    padding: 40px;
+    max-width: 800px;
+}
+
+/* 슬라이드 효과 */
+@keyframes scroll-left {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
 }

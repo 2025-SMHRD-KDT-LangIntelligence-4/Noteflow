@@ -20,8 +20,9 @@ let selectedItems = []; // 다중 선택용 [{type, item, el}, ...]
 let dragging = false;
 let categoryHierarchy = {};  // { "국어": { "문법": ["품사", "문장성분"] } }
 let currentCategory = { large: null, medium: null, small: null };
-// HandsOnTable 인스턴스
-let hotInstance = null;
+
+// 페이지이동시 취소시키기 컨트롤러
+let abortController = null;
 
 // 편집 모드 백업
 let originalContent = '';
@@ -104,8 +105,6 @@ function setupSearch() {
 function filterTree(keyword) {
     const listEl = document.getElementById('itemList');
     if (!listEl) return;
-
-    console.log('검색 키워드:', keyword);
 
     // 검색어가 없으면 전체 표시
     if (!keyword) {
@@ -229,8 +228,7 @@ function filterTree(keyword) {
         });
     }
 
-    // ✅ 검색 결과 메시지
-    console.log(`검색 결과: ${matchCount}개 발견`);
+    //  검색 결과 메시지
 
     if (matchCount === 0) {
         const listEl = document.getElementById('itemList');
@@ -344,10 +342,22 @@ function setupCreateFolder() {
 
 // ========== 8. 트리 데이터 가져오기 ==========
 async function fetchTreeData() {
+    // 이전 요청이 진행 중이면 취소 (거의 리소스 안 먹음)
+    if (abortController) {
+        abortController.abort();
+    }
+
+    // 새 AbortController 생성 (매우 가벼움)
+    abortController = new AbortController();
+
     try {
         const [notesRes, filesRes] = await Promise.all([
-            secureFetch('/api/unified/notes/tree'),
-            secureFetch('/api/unified/files/tree')
+            secureFetch('/api/unified/notes/tree', {
+                signal: abortController.signal  // ⭐ signal 추가
+            }),
+            secureFetch('/api/unified/files/tree', {
+                signal: abortController.signal  // ⭐ signal 추가
+            })
         ]);
 
         if (notesRes.ok) {
@@ -364,11 +374,19 @@ async function fetchTreeData() {
 
         renderItemList();
     } catch (e) {
-        console.error('트리 데이터 불러오기 실패:', e);
-        showMessage('데이터 로드 실패');
+        // AbortError는 정상적인 취소이므로 무시
+        if (e.name === 'AbortError') {
+
+            return;  // 에러 아님!
+        }
+        // console.error('트리 데이터 불러오기 실패:', e);
     }
 }
-
+window.addEventListener('beforeunload', () => {
+    if (abortController) {
+        abortController.abort();
+    }
+});
 // ========== 9. 리스트 렌더링 ==========
 function renderItemList() {
     const container = document.getElementById('itemList');
@@ -740,27 +758,6 @@ async function handleFileFolderDrop(e, targetFolderId) {
     }
 }
 
-// ========== 다중 선택 관리 개선 ==========
-function addToMultiSelection(item) {
-    const exists = selectedItems.find(si =>
-        si.item.gridfsId === item.item.gridfsId ||
-        si.item.noteIdx === item.item.noteIdx
-    );
-
-    if (!exists) {
-        selectedItems.push(item);
-        item.el.classList.add('multi-selected');
-    }
-}
-
-function removeFromMultiSelection(id) {
-    selectedItems = selectedItems.filter(si =>
-        si.item.gridfsId !== id && si.item.noteIdx !== id
-    );
-    document.querySelectorAll('.multi-selected').forEach(el => {
-        el.classList.remove('multi-selected');
-    });
-}
 
 function clearMultiSelection() {
     selectedItems = [];
@@ -775,12 +772,6 @@ function clearMultiSelection() {
 
     // ✅ 버튼 컨테이너 초기화
     updateMultiSelectionUI();
-}
-
-function updateMultiSelectionButtons() {
-    if (selectedItems.length > 0) {
-        updateButtons('multi');
-    }
 }
 
 // ========== 12. 노트 요소 생성 ==========
@@ -1125,7 +1116,7 @@ function showNoteContent(note) {
                 });
 
                 isViewerMode = true;  // ✅ 플래그 설정
-                console.log('Toast Editor Viewer 생성 완료');
+
                 updateButtons('note');
 
             } catch (e) {
@@ -1152,6 +1143,7 @@ async function showFileContent(file) {
     const previewArea = document.getElementById('previewArea');
     const pdfPreview = document.getElementById('pdfPreview');
     const imagePreview = document.getElementById('imagePreview');
+    const hwpPreview = document.getElementById('hwpPreview'); // 한글뷰어 추가
     const editorArea = document.getElementById('editorArea');
     const spreadsheetArea = document.getElementById('spreadsheetArea');
     const welcomeMsg = document.getElementById('welcomeMessage');
@@ -1172,7 +1164,37 @@ async function showFileContent(file) {
             previewArea.style.display = 'flex';
             pdfPreview.style.display = 'flex';
             imagePreview.style.display = 'none';
+            hwpPreview.style.display = 'none';
             pdfPreview.src = `/api/files/preview/${file.gridfsId}`;
+        }
+        // HWP/HWPX 미리보기  추가
+        else if (['hwp', 'hwpx'].includes(ext)) {
+            previewArea.style.display = 'flex';
+            pdfPreview.style.display = 'none';
+            imagePreview.style.display = 'none';
+            hwpPreview.style.display = 'block';
+
+            const hwpContainer = document.getElementById('hwpContainer');
+
+            // ⭐ HWP 로딩 대기 ⭐
+            if (typeof window.HWP === 'undefined') {
+                hwpContainer.innerHTML = '<div style="text-align:center;padding:40px;">HWP 라이브러리 로딩 중...</div>';
+
+                // 최대 3초 대기
+                let attempts = 0;
+                const checkInterval = setInterval(() => {
+                    attempts++;
+                    if (typeof window.HWP !== 'undefined') {
+                        clearInterval(checkInterval);
+                        renderHWPFile(hwpContainer, file);
+                    } else if (attempts > 30) {
+                        clearInterval(checkInterval);
+                        hwpContainer.innerHTML = '<div style="padding:40px;color:red;">HWP 라이브러리를 불러올 수 없습니다.</div>';
+                    }
+                }, 100);
+            } else {
+                await renderHWPFile(hwpContainer, file);
+            }
         }
 
         // 이미지
@@ -1251,7 +1273,7 @@ async function showFileContent(file) {
                             const sheetContent = spreadsheetArea.querySelector('.sheet-content');
                             sheetContent.innerHTML = XLSX.utils.sheet_to_html(sheet);
 
-                            console.log(`Sheet 전환: ${sheetName}`);
+
                         });
                     });
                 }, 0);
@@ -1281,7 +1303,7 @@ async function showFileContent(file) {
             });
 
             isViewerMode = true;
-            console.log(`${ext.toUpperCase()} 파일 Toast Viewer로 표시`);
+
         }
 
         // 기타
@@ -1332,7 +1354,6 @@ function enterEditModeForFile() {
         });
 
         isViewerMode = false;
-        console.log('✅ 파일 편집 모드 활성화');
     }
 
     titleEl.contentEditable = 'false';  // 파일명은 편집 불가
@@ -1377,33 +1398,16 @@ function hideAllViews() {
     const editorArea = document.getElementById('editorArea');
     const previewArea = document.getElementById('previewArea');
     const spreadsheetArea = document.getElementById('spreadsheetArea');
+    const hwpPreview = document.getElementById('hwpPreview');
 
     if (contentEl) contentEl.style.display = 'none';
-    if (editorArea) editorArea.style.display = 'none';  // ✅ 추가
+    if (editorArea) editorArea.style.display = 'none';
     if (previewArea) previewArea.style.display = 'none';
     if (spreadsheetArea) spreadsheetArea.style.display = 'none';
+    if (hwpPreview) hwpPreview.style.display = 'none';
 }
 
 // ========== 19. HandsOnTable 초기화 ==========
-function initSpreadsheet(csvData) {
-    const container = document.getElementById('spreadsheetContainer');
-    if (!container) return;
-
-    try {
-        const rows = csvData.split('\n').map(r => r.split(','));
-        hotInstance = new Handsontable(container, {
-            data: rows,
-            colHeaders: true,
-            rowHeaders: true,
-            contextMenu: true,
-            licenseKey: 'non-commercial-and-evaluation',
-            width: '100%',
-            height: '100%'
-        });
-    } catch (e) {
-        console.error('HandsOnTable 초기화 실패:', e);
-    }
-}
 
 // ========== 20. 버튼 업데이트 ==========
 function updateButtons(type) {
@@ -1494,13 +1498,7 @@ async function goToExamCreate() {
     const noteTitle = selectedItem.title;
     const keywords = currentTags || [];
 
-    console.log('📝 문제은행으로 이동 시작:', {
-        noteIdx,
-        noteTitle,
-        keywords,
-        csrfToken: csrfToken ? '있음' : '없음',
-        csrfHeader: csrfHeader
-    });
+
 
     try {
         const headers = {
@@ -1511,12 +1509,7 @@ async function goToExamCreate() {
             headers[csrfHeader] = csrfToken;
         }
 
-        console.log('📤 요청 헤더:', headers);
-        console.log('📤 요청 바디:', {
-            noteIdx,
-            noteTitle,
-            keywords
-        });
+
 
         const response = await fetch('/exam/prepare-from-note', {
             method: 'POST',
@@ -1529,11 +1522,10 @@ async function goToExamCreate() {
             })
         });
 
-        console.log('📥 응답 상태:', response.status);
-        console.log('📥 응답 OK:', response.ok);
+
 
         const contentType = response.headers.get('content-type');
-        console.log('📥 Content-Type:', contentType);
+
 
         if (!response.ok) {
             console.error('❌ HTTP 오류:', response.status, response.statusText);
@@ -1551,104 +1543,23 @@ async function goToExamCreate() {
         }
 
         const result = await response.json();
-        console.log('📥 응답 데이터:', result);
+
 
         if (result.success) {
-            console.log('✅ 성공! 페이지 이동 중...');
+
             window.location.href = '/exam/create';
         } else {
-            console.error('❌ 실패:', result.message);
+
             showMessage('오류: ' + result.message);
         }
 
     } catch (error) {
-        console.error('❌ 요청 실패:', error);
-        console.error('에러 스택:', error.stack);
+
         showMessage('문제은행으로 이동하는 중 오류가 발생했습니다: ' + error.message);
     }
 }
 // ========== 21. 편집 모드 ==========
 
-// ✅ Toast Editor 비활성화
-function disableToastEditor() {
-    if (!toastEditor) return;
-
-    // 약간의 딜레이 후 실행 (DOM 완전 로드 대기)
-    setTimeout(() => {
-        // 1. ProseMirror 에디터 비활성화
-        const editorEl = document.querySelector('.toastui-editor .ProseMirror');
-        if (editorEl) {
-            editorEl.setAttribute('contenteditable', 'false');
-            editorEl.style.cursor = 'default';
-            editorEl.style.backgroundColor = '#f8f9fa';
-
-            // 모든 입력 이벤트 차단
-            editorEl.addEventListener('keydown', preventEdit, true);
-            editorEl.addEventListener('paste', preventEdit, true);
-            editorEl.addEventListener('drop', preventEdit, true);
-            editorEl.addEventListener('cut', preventEdit, true);
-        }
-
-        // 2. 툴바 완전 비활성화
-        const toolbar = document.querySelector('.toastui-editor-toolbar');
-        if (toolbar) {
-            toolbar.style.pointerEvents = 'none';
-            toolbar.style.opacity = '0.5';
-
-            // 툴바 버튼 비활성화
-            toolbar.querySelectorAll('button').forEach(btn => {
-                btn.disabled = true;
-                btn.style.cursor = 'not-allowed';
-            });
-        }
-
-        console.log('✅ Toast Editor 읽기 전용 완료');
-    }, 200);
-}
-
-// ✅ Toast Editor 활성화
-function enableToastEditor() {
-    if (!toastEditor) return;
-
-    setTimeout(() => {
-        // 1. ProseMirror 에디터 활성화
-        const editorEl = document.querySelector('.toastui-editor .ProseMirror');
-        if (editorEl) {
-            editorEl.setAttribute('contenteditable', 'true');
-            editorEl.style.cursor = 'text';
-            editorEl.style.backgroundColor = 'white';
-
-            // 이벤트 리스너 제거
-            editorEl.removeEventListener('keydown', preventEdit, true);
-            editorEl.removeEventListener('paste', preventEdit, true);
-            editorEl.removeEventListener('drop', preventEdit, true);
-            editorEl.removeEventListener('cut', preventEdit, true);
-        }
-
-        // 2. 툴바 활성화
-        const toolbar = document.querySelector('.toastui-editor-toolbar');
-        if (toolbar) {
-            toolbar.style.pointerEvents = 'auto';
-            toolbar.style.opacity = '1';
-
-            // 툴바 버튼 활성화
-            toolbar.querySelectorAll('button').forEach(btn => {
-                btn.disabled = false;
-                btn.style.cursor = 'pointer';
-            });
-        }
-
-        console.log('✅ Toast Editor 편집 모드 완료');
-    }, 200);
-}
-
-// ✅ 편집 방지 함수
-function preventEdit(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    console.log('편집 차단됨');
-    return false;
-}
 function enterEditMode() {
     if (!selectedItem || selectedItemType !== 'note') return;
 
@@ -1686,7 +1597,7 @@ function enterEditMode() {
             ]
         });
         isViewerMode = false;
-        console.log('✏️ 편집 모드 - Editor');
+
     }
 
     titleEl.contentEditable = true;
@@ -1792,7 +1703,7 @@ function cancelEdit() {
             initialValue: originalContent
         });
         isViewerMode = true;
-        console.log('❌ 취소 - Viewer 복원');
+
     }
 
     updateButtons('note');
@@ -1883,7 +1794,7 @@ async function saveFile() {
         content = originalContent;
     }
 
-    console.log('파일 저장:', {fileId: selectedItem.gridfsId, contentLength: content.length});
+
 
     try {
         const res = await secureFetch(`/api/files/update/${selectedItem.gridfsId}`, {
@@ -1950,45 +1861,10 @@ function cancelFileEdit() {
         });
 
         isViewerMode = true;
-        console.log('✅ 파일 편집 취소 - Viewer로 복원');
+
     }
 
     updateButtons('file');
-}
-
-async function saveSpreadsheet() {
-    if (!selectedItem || selectedItemType !== 'file' || !hotInstance) return;
-
-    // HandsOnTable 데이터를 CSV로 변환
-    const data = hotInstance.getData();
-    const csvContent = data.map(row => row.join(',')).join('\n');
-
-    try {
-        const res = await secureFetch(`/api/files/update/${selectedItem.gridfsId}`, {
-            method: 'PUT',
-            headers: new Headers({
-                'Content-Type': 'application/json',
-                [csrfHeader]: csrfToken
-            }),
-            body: JSON.stringify({ content: csvContent })
-        });
-
-        const result = await res.json();
-        if (result.success) {
-            showMessage('스프레드시트가 저장되었습니다.');
-
-            if (result.newGridfsId) {
-                selectedItem.gridfsId = result.newGridfsId;
-            }
-
-            fetchTreeData();
-        } else {
-            showMessage(result.message || '저장 실패');
-        }
-    } catch (e) {
-        console.error('스프레드시트 저장 오류:', e);
-        showMessage('저장 중 오류 발생');
-    }
 }
 
 // ========== 23. 다운로드 함수 ==========
@@ -1998,18 +1874,13 @@ function downloadNote() {
         return;
     }
 
-    console.log('Download note:', selectedItem.noteIdx);
+
 
     // ✅ 수정된 경로 확인
     const url = `/notion/api/notion/download/${selectedItem.noteIdx}`;
-    console.log('다운로드 URL:', url);
+
 
     window.open(url, '_blank');
-}
-
-function downloadFile() {
-    if (!selectedItem || selectedItemType !== 'file') return;
-    window.open(`/api/files/download/${selectedItem.gridfsId}`, '_blank');
 }
 
 function downloadSingleFile(gridfsId) {
@@ -2017,7 +1888,7 @@ function downloadSingleFile(gridfsId) {
 }
 
 async function downloadFolder(folderId) {
-    console.log('Download folder:', folderId);
+
 
     const fileIds = [];
     const noteIds = [];
@@ -2095,9 +1966,6 @@ async function downloadFolder(folderId) {
 
     collectItems(targetFolder);
 
-    console.log('수집된 파일:', fileIds.length + '개');
-    console.log('수집된 노트:', noteIds.length + '개');
-    console.log('폴더 구조:', folderStructure);
 
     if (fileIds.length === 0 && noteIds.length === 0) {
         showMessage('폴더에 파일이나 노트가 없습니다.');
@@ -2145,7 +2013,7 @@ async function downloadFolder(folderId) {
 }
 
 async function downloadFolderAsZip() {
-    console.log('downloadFolderAsZip 호출 - selectedItemType:', selectedItemType);
+
 
     if (!selectedItem) {
         showMessage('폴더를 선택해주세요.');
@@ -2166,13 +2034,13 @@ async function downloadFolderAsZip() {
         return;
     }
 
-    console.log('Folder ID:', folderId);
+
     await downloadFolder(folderId);
 }
 
 async function downloadSelectedAsZip() {
     if (selectedItems.length === 0) {
-        showMessage('다운로드할 항목을 선택해주세요.');
+        alert('선택된 항목이 없습니다.');
         return;
     }
 
@@ -2181,57 +2049,101 @@ async function downloadSelectedAsZip() {
     const noteIds = [];
     const folderStructure = [];
 
-    console.log('=== Selected Items ===');
-    selectedItems.forEach(({ type, item }) => {
-        console.log('Type:', type, 'Item:', item);
+    // ⭐ 폴더 구조 재귀적 수집 함수 ⭐
+    function collectFolderItems(folder, basePath = '') {
+        const currentPath = basePath ? `${basePath}/${folder.folderName}` : folder.folderName;
 
-        if (!type) {
-            console.warn('⚠️ type이 없는 아이템:', item);
-            return;  // type 없으면 스킵
+        // 폴더 자체 추가
+        folderStructure.push({
+            type: 'folder',
+            path: currentPath,
+            name: ''  // 폴더는 path에 이름 포함됨
+        });
+
+        // 폴더 내 파일 수집
+        if (folder.files && folder.files.length > 0) {
+            folder.files.forEach(f => {
+                const fileId = f.id || f.gridfsId;
+                fileIds.push(fileId);
+                folderStructure.push({
+                    type: 'file',
+                    id: fileId,
+                    path: currentPath,  // ⭐ 폴더 경로 포함
+                    name: f.originalName
+                });
+            });
         }
 
+        // 폴더 내 노트 수집
+        if (folder.notes && folder.notes.length > 0) {
+            folder.notes.forEach(n => {
+                noteIds.push(n.noteIdx);
+                folderStructure.push({
+                    type: 'note',
+                    id: n.noteIdx,
+                    path: currentPath,  // ⭐ 폴더 경로 포함
+                    name: n.title + '.md',
+                    title: n.title,
+                    content: n.content
+                });
+            });
+        }
+
+        // 하위 폴더 재귀 처리
+        if (folder.subfolders && folder.subfolders.length > 0) {
+            folder.subfolders.forEach(sub => {
+                collectFolderItems(sub, currentPath);
+            });
+        }
+    }
+
+    // ⭐ 선택된 항목 처리 ⭐
+    selectedItems.forEach(({ type, item }) => {
         if (type === 'folder') {
+            // ⭐ 폴더: 재귀적으로 모든 자식 항목 수집
             folderIds.push(item.id);
-        } else if (type === 'file') {
+            collectFolderItems(item, '');  // basePath는 빈 문자열 (루트부터 시작)
+        }
+        else if (type === 'noteFolder') {
+            // ⭐ NoteFolder: 재귀적으로 모든 자식 항목 수집
+            collectFolderItems(item, '');
+        }
+        else if (type === 'file') {
+            // ⚠️ 개별 파일: 루트에 저장
             const fileId = item.id || item.gridfsId;
             fileIds.push(fileId);
             folderStructure.push({
                 type: 'file',
                 id: fileId,
-                path: '',
-                name: item.originalName || '파일'
+                path: '',  // 루트
+                name: item.originalName
             });
-        } else if (type === 'note') {
+        }
+        else if (type === 'note') {
+            // ⚠️ 개별 노트: 루트에 저장
             noteIds.push(item.noteIdx);
             folderStructure.push({
                 type: 'note',
                 id: item.noteIdx,
-                path: '',
-                name: (item.title || '제목없음') + '.md'
+                path: '',  // 루트
+                name: item.title + '.md'
             });
         }
     });
 
-    console.log('Folder IDs:', folderIds);
-    console.log('File IDs:', fileIds);
-    console.log('Note IDs:', noteIds);
-
     if (fileIds.length === 0 && noteIds.length === 0) {
-        showMessage('다운로드할 파일이나 노트가 없습니다.');
+        alert('다운로드할 파일이나 노트가 없습니다.');
         return;
     }
 
     try {
-        // ✅ 노트가 있으면 download-folder-zip, 파일만 있으면 download-zip
-        const endpoint = noteIds.length > 0 ?
-            '/api/files/download-folder-zip' :
-            '/api/files/download-zip';
-
-        console.log('사용할 엔드포인트:', endpoint);
+        const endpoint = noteIds.length > 0
+            ? '/api/files/download-folder-zip'
+            : '/api/files/download-zip';
 
         const res = await secureFetch(endpoint, {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 folderIds,
                 fileIds,
@@ -2240,16 +2152,12 @@ async function downloadSelectedAsZip() {
             })
         });
 
-        console.log('Response status:', res.status);
-
         if (!res.ok) {
-            showMessage('ZIP 다운로드 실패');
+            alert('ZIP 다운로드 실패');
             return;
         }
 
         const blob = await res.blob();
-        console.log('Blob size:', blob.size);
-
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -2259,25 +2167,13 @@ async function downloadSelectedAsZip() {
         a.remove();
         window.URL.revokeObjectURL(url);
 
-        showMessage('다운로드 완료');
+        console.log('다운로드 완료');
     } catch (e) {
-        console.error('ZIP 다운로드 오류:', e);
-        showMessage('다운로드 중 오류 발생');
+        console.error('ZIP 다운로드 에러:', e);
+        alert('다운로드 중 오류가 발생했습니다.');
     }
 }
 
-function downloadBlob(blob, contentDisposition) {
-    const cd = contentDisposition || '';
-    const fname = (cd.match(/filename\*=UTF-8''([^;]+)/)?.[1]) || 'download.zip';
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = decodeURIComponent(fname);
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    window.URL.revokeObjectURL(url);
-}
 
 // ========== 24. 삭제 함수 ==========
 async function deleteNotePrompt() {
@@ -2495,7 +2391,7 @@ function handleDragStart(e, item, type) {
     e.dataTransfer.setData('text/plain', JSON.stringify({item, type}));
 
     e.target.style.opacity = '0.5';
-    console.log('Drag start:', type, item);
+
 }
 
 // ========== 드래그 종료 ==========
@@ -2504,7 +2400,6 @@ function handleDragEnd(e) {
     draggedItem = null;
     draggedType = null;
     e.target.style.opacity = '1';
-    console.log('Drag end');
 }
 
 // ========== 드래그 오버 ==========
@@ -2522,109 +2417,7 @@ function handleDragLeave(e) {
     e.currentTarget.classList.remove('drop-target');
 }
 
-// ========== 노트 드롭 ==========
-async function handleNoteDrop(e, targetFolderId) {
-    e.preventDefault();
-    e.stopPropagation();
-    e.currentTarget.classList.remove('drop-target');
 
-    try {
-        const dataStr = e.dataTransfer.getData('text/plain');
-        if (!dataStr) return;
-
-        const { item, type } = JSON.parse(dataStr);
-
-        if (type === 'note') {
-            // ✅ 수정: noteIdx를 URL에 포함
-            const noteId = item.noteIdx;
-            const res = await secureFetch(`/api/unified/notes/${noteId}/move`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(csrfHeader && csrfToken ? { [csrfHeader]: csrfToken } : {})
-                },
-                body: JSON.stringify({ targetFolderId })
-            });
-
-            const result = await res.json();
-            if (result.success) {
-                showMessage('노트가 이동되었습니다.');
-                fetchTreeData();
-            } else {
-                showMessage(result.message || '노트 이동 실패');
-            }
-        }
-    } catch (err) {
-        console.error('노트 드롭 오류:', err);
-        showMessage('노트 이동 중 오류가 발생했습니다.');
-    }
-}
-
-// ========== 파일 드롭 ==========
-async function handleFileDrop(e, targetFolderId) {
-    e.preventDefault();
-    e.currentTarget.classList.remove('drop-target');
-
-    try {
-        const dataStr = e.dataTransfer.getData('text/plain');
-        if (!dataStr) {
-            console.warn('드롭 데이터가 없습니다.');
-            return;
-        }
-
-        const {item, type} = JSON.parse(dataStr);
-
-        if (type !== 'file') {
-            console.log('파일이 아닙니다:', type);
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append('fileId', item.id || item.gridfsId);
-        if (targetFolderId) {
-            formData.append('targetFolderId', targetFolderId);
-        }
-
-        const res = await secureFetch('/api/folders/move-file', {
-            method: 'PUT',
-            headers: new Headers({
-                [csrfHeader]: csrfToken
-            }),
-            body: formData
-        });
-
-        const result = await res.json();
-
-        if (result.success) {
-            showMessage('파일을 이동했습니다.');
-            fetchTreeData();
-        } else {
-            showMessage(result.message || '이동 실패');
-        }
-    } catch (err) {
-        console.error('드롭 오류:', err);
-        showMessage('이동 중 오류 발생');
-    }
-}
-// ========== 27. 검색 기능 ==========
-async function performSearch(keyword) {
-    if (!keyword || keyword.length < 2) {
-        showMessage('검색어는 2글자 이상 입력해주세요.');
-        return;
-    }
-
-    const results = [];
-
-    if (currentTab === 'notes') {
-        searchInNotes(itemsData.notes || [], keyword, [], results);
-        searchInNoteFolders(itemsData.noteFolders || [], keyword, [], results);
-    } else {
-        searchInFiles(itemsData.files || [], keyword, [], results);
-        searchInFileFolders(itemsData.fileFolders || [], keyword, [], results);
-    }
-
-    displaySearchResults(results, keyword);
-}
 
 function searchInNotes(notes, keyword, path, results) {
     notes.forEach(note => {
@@ -2709,84 +2502,25 @@ function searchInFileFolders(folders, keyword, path, results) {
     });
 }
 
-function displaySearchResults(results, keyword) {
-    const modal = document.getElementById('searchModal');
-    const container = document.getElementById('searchResultsContainer');
-
-    if (!modal || !container) return;
-
-    container.innerHTML = '';
-
-    if (results.length === 0) {
-        container.innerHTML = `
-            <div class="search-no-results">
-                <p>"${escapeHtml(keyword)}"에 대한 검색 결과가 없습니다.</p>
-            </div>
-        `;
-    } else {
-        results.forEach(result => {
-            const item = document.createElement('div');
-            item.className = 'search-result-item';
-            item.innerHTML = `
-                <span class="search-result-icon">${result.icon}</span>
-                <div class="search-result-info">
-                    <div class="search-result-name">${escapeHtml(result.name)}</div>
-                    ${result.path ? `<div class="search-result-path">${escapeHtml(result.path)}</div>` : ''}
-                </div>
-            `;
-
-            item.addEventListener('click', () => {
-                selectSearchResult(result);
-                closeSearchModal();
-            });
-
-            container.appendChild(item);
-        });
-    }
-
-    modal.style.display = 'flex';
-}
-
-function selectSearchResult(result) {
-    setTimeout(() => {
-        if (result.type === 'note') {
-            const noteEl = document.querySelector(`[data-note-idx="${result.item.noteIdx}"]`);
-            if (noteEl) {
-                noteEl.click();
-                noteEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        } else if (result.type === 'file') {
-            const fileEl = document.querySelector(`[data-gridfs-id="${result.item.gridfsId}"]`);
-            if (fileEl) {
-                fileEl.click();
-                fileEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        } else if (result.type === 'noteFolder' || result.type === 'folder') {
-            const folderId = result.type === 'noteFolder' ? result.item.folderId : result.item.id;
-            const folderEl = document.querySelector(`[data-folder-id="${folderId}"]`);
-            if (folderEl) {
-                folderEl.click();
-                folderEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        }
-    }, 100);
-}
-
-function closeSearchModal() {
-    const modal = document.getElementById('searchModal');
-    if (modal) modal.style.display = 'none';
-}
-
 // ========== 28. 헬퍼 함수 ==========
 async function secureFetch(url, options = {}) {
-    const headers = options.headers instanceof Headers ? options.headers : new Headers(options.headers || {});
-    if (csrfToken) headers.set(csrfHeader, csrfToken);
+    // Headers 처리
+    const headers = options.headers instanceof Headers
+        ? options.headers
+        : new Headers(options.headers || {});
 
-    options.headers = headers;
-    options.credentials = options.credentials || 'same-origin';
-    options.cache = options.cache || 'no-store';
+    if (csrfToken) {
+        headers.set(csrfHeader, csrfToken);
+    }
 
-    return fetch(url, options);
+    // ✅ 새 객체 생성 (원본 수정 안함)
+    return fetch(url, {
+        credentials: 'same-origin',
+        cache: 'no-store',
+        ...options,  // 기존 options 적용
+        headers,     // headers 덮어쓰기
+
+    });
 }
 
 function getFileExtension(filename) {
@@ -2818,7 +2552,7 @@ function getFileIcon(filename) {
 }
 
 function showMessage(message) {
-    alert(message);
+
 }
 
 function escapeHtml(str) {
@@ -2830,21 +2564,6 @@ function escapeHtml(str) {
         .replace(/'/g, '&#039;');
 }
 
-function clearContent() {
-    hideAllViews();
-    const titleEl = document.getElementById('itemTitle');
-    const contentEl = document.getElementById('itemContent');
-    const welcomeMsg = document.getElementById('welcomeMessage');
-    const buttonContainer = document.getElementById('buttonContainer');
-
-    if (titleEl) titleEl.textContent = '파일이나 노트를 선택해주세요';
-    if (contentEl) {
-        contentEl.value = '';
-        contentEl.style.display = 'none';
-    }
-    if (welcomeMsg) welcomeMsg.style.display = 'flex';
-    if (buttonContainer) buttonContainer.innerHTML = '';
-}
 function setupRootDropZone() {
     const rootDropZone = document.getElementById('rootDropZone');
     if (!rootDropZone) return;
@@ -2928,53 +2647,92 @@ async function handleRootDrop(e) {
     try {
         const dataStr = e.dataTransfer.getData('text/plain');
         if (!dataStr) return;
+
         const { item, type } = JSON.parse(dataStr);
 
+        // ⭐ Note를 루트로 이동 ⭐
         if (type === 'note') {
-            const fd = new FormData();
-            fd.append('noteId', item.noteIdx);
-            // 루트 이동: targetFolderId 키 자체를 보내지 않음 (서버에서 null로 간주)
-            const res = await secureFetch('/api/unified/notes/move', {
+            const res = await secureFetch(`/api/unified/notes/${item.noteIdx}/move`, {
                 method: 'PUT',
-                headers: new Headers({ [csrfHeader]: csrfToken }),
-                body: fd
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(csrfHeader && csrfToken ? { [csrfHeader]: csrfToken } : {})
+                },
+                body: JSON.stringify({ targetFolderId: null })  // ⭐ null로 명시
             });
+
             const result = await res.json();
-            if (result.success) showMessage('노트를 루트로 이동했습니다.'), fetchTreeData();
+
+            if (result.success) {
+                console.log('노트를 루트로 이동 성공');
+                fetchTreeData();
+            } else {
+                console.error('노트 이동 실패:', result.message);
+            }
         }
+        // ⭐ NoteFolder를 루트로 이동 ⭐
         else if (type === 'noteFolder') {
             const res = await secureFetch(`/api/unified/note-folders/${item.folderId}/move`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ targetFolderId: null }) // null = 루트
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(csrfHeader && csrfToken ? { [csrfHeader]: csrfToken } : {})
+                },
+                body: JSON.stringify({ targetFolderId: null })  // ⭐ null로 명시
             });
+
             const result = await res.json();
-            if (result.success) showMessage('폴더를 루트로 이동했습니다.'), fetchTreeData();
+
+            if (result.success) {
+                console.log('폴더를 루트로 이동 성공');
+                fetchTreeData();
+            } else {
+                console.error('폴더 이동 실패:', result.message);
+            }
         }
+        // ⭐ File을 루트로 이동 ⭐
         else if (type === 'file') {
-            const fd = new FormData();
-            fd.append('fileId', item.id || item.gridfsId);
-            // 루트 이동: targetFolderId 미전송
-            const res = await secureFetch('/api/folders/move-file', {
+            const res = await secureFetch(`/api/unified/files/${item.id || item.gridfsId}/move`, {
                 method: 'PUT',
-                headers: new Headers({ [csrfHeader]: csrfToken }),
-                body: fd
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(csrfHeader && csrfToken ? { [csrfHeader]: csrfToken } : {})
+                },
+                body: JSON.stringify({ targetFolderId: null })  // ⭐ null로 명시
             });
+
             const result = await res.json();
-            if (result.success) showMessage('파일을 루트로 이동했습니다.'), fetchTreeData();
+
+            if (result.success) {
+                console.log('파일을 루트로 이동 성공');
+                fetchTreeData();
+            } else {
+                console.error('파일 이동 실패:', result.message);
+            }
         }
+        // ⭐ Folder를 루트로 이동 ⭐
         else if (type === 'folder') {
-            const res = await secureFetch(`/api/folders/${item.id}/move`, {
+            const res = await secureFetch(`/api/unified/folders/${item.id}/move`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ targetFolderId: null })
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(csrfHeader && csrfToken ? { [csrfHeader]: csrfToken } : {})
+                },
+                body: JSON.stringify({ targetFolderId: null })  // ⭐ null로 명시
             });
+
             const result = await res.json();
-            if (result.success) showMessage('폴더를 루트로 이동했습니다.'), fetchTreeData();
+
+            if (result.success) {
+                console.log('폴더를 루트로 이동 성공');
+                fetchTreeData();
+            } else {
+                console.error('폴더 이동 실패:', result.message);
+            }
         }
+
     } catch (err) {
-        console.error('루트 드롭 오류:', err);
-        showMessage('이동 중 오류가 발생했습니다.');
+        console.error('루트 드롭 에러:', err);
     }
 }
 
@@ -2997,10 +2755,8 @@ async function loadCategories() {
         categoryHierarchy = data.hierarchy;
         populateLargeCategories(data.largeCategories);
 
-        console.log('✅ 카테고리 로드 완료:', data.largeCategories.length, '개');
+
     } catch (e) {
-        console.error('❌ 카테고리 로드 실패:', e);
-        showMessage('카테고리를 불러올 수 없습니다.');
     }
 }
 
@@ -3067,7 +2823,6 @@ function setupCategorySelects() {
             mediumSelect.appendChild(option);
         });
 
-        console.log('대분류 선택:', large);
     });
 
     // ✅ 중분류 선택
@@ -3094,13 +2849,12 @@ function setupCategorySelects() {
             smallSelect.appendChild(option);
         });
 
-        console.log('중분류 선택:', medium);
     });
 
     // ✅ 소분류 선택
     smallSelect.addEventListener('change', (e) => {
         currentCategory.small = e.target.value;
-        console.log('소분류 선택:', currentCategory.small);
+
     });
 }
 
@@ -3256,14 +3010,15 @@ let isAllSelected = false;
 
 if (selectAllBtn) {
     selectAllBtn.addEventListener('click', function() {
+        // ⭐ document.querySelectorAll로 모든 체크박스 선택 ⭐
         const checkboxes = document.querySelectorAll('.item-checkbox');
         isAllSelected = !isAllSelected;
 
         if (isAllSelected) {
-            // ✅ 전체 선택
             checkboxes.forEach(checkbox => {
                 checkbox.checked = true;
 
+                // ⭐ 가장 가까운 항목 찾기 (폴더 안 파일도 포함) ⭐
                 const item = checkbox.closest('.file-item, .note-item, .folder-item');
                 if (!item) return;
 
@@ -3271,17 +3026,30 @@ if (selectAllBtn) {
 
                 let itemData, type;
 
+                // Note 항목
                 if (item.classList.contains('note-item')) {
                     type = 'note';
                     const noteIdx = item.dataset.noteIdx;
                     itemData = itemsData.notes.find(n => n.noteIdx == noteIdx);
 
-                } else if (item.classList.contains('file-item')) {
+                    // ⭐ 폴더 안의 노트도 찾기 ⭐
+                    if (!itemData) {
+                        itemData = findNoteInFolders(itemsData.noteFolders, noteIdx);
+                    }
+                }
+                // File 항목
+                else if (item.classList.contains('file-item')) {
                     type = 'file';
                     const gridfsId = item.dataset.gridfsId;
-                    itemData = itemsData.files.find(f => f.gridfsId === gridfsId);
+                    itemData = itemsData.files.find(f => f.gridfsId == gridfsId);
 
-                } else if (item.classList.contains('folder-item')) {
+                    // ⭐ 폴더 안의 파일도 찾기 ⭐
+                    if (!itemData) {
+                        itemData = findFileInFolders(itemsData.fileFolders, gridfsId);
+                    }
+                }
+                // Folder 항목
+                else if (item.classList.contains('folder-item')) {
                     const folderId = item.dataset.folderId;
 
                     if (currentTab === 'files') {
@@ -3295,10 +3063,10 @@ if (selectAllBtn) {
 
                 if (itemData) {
                     const exists = selectedItems.some(si => {
-                        if (type === 'note') return si.item.noteIdx === itemData.noteIdx;
-                        if (type === 'file') return si.item.gridfsId === itemData.gridfsId;
-                        if (type === 'folder') return si.item.id === itemData.id;
-                        if (type === 'noteFolder') return si.item.folderId === itemData.folderId;
+                        if (type === 'note') return si.item.noteIdx == itemData.noteIdx;
+                        if (type === 'file') return si.item.gridfsId == itemData.gridfsId;
+                        if (type === 'folder') return si.item.id == itemData.id;
+                        if (type === 'noteFolder') return si.item.folderId == itemData.folderId;
                         return false;
                     });
 
@@ -3308,17 +3076,165 @@ if (selectAllBtn) {
                 }
             });
 
-            selectAllBtn.textContent = '☑️ 전체해제';
-
+            selectAllBtn.textContent = '전체 해제';
         } else {
             clearMultiSelection();
-            selectAllBtn.textContent = '🔲 전체선택';
+            selectAllBtn.textContent = '전체 선택';
         }
 
         updateMultiSelectionUI();
-        console.log('✅ 선택된 항목:', selectedItems.length + '개');
     });
 }
+
+// ⭐ 폴더 안에서 노트 재귀적으로 찾기 ⭐
+function findNoteInFolders(folders, noteIdx) {
+    for (const folder of folders) {
+        if (folder.notes) {
+            const note = folder.notes.find(n => n.noteIdx == noteIdx);
+            if (note) return note;
+        }
+        if (folder.subfolders) {
+            const found = findNoteInFolders(folder.subfolders, noteIdx);
+            if (found) return found;
+        }
+    }
+    return null;
+}
+
+// ⭐ 폴더 안에서 파일 재귀적으로 찾기 ⭐
+function findFileInFolders(folders, gridfsId) {
+    for (const folder of folders) {
+        if (folder.files) {
+            const file = folder.files.find(f => f.gridfsId == gridfsId);
+            if (file) return file;
+        }
+        if (folder.subfolders) {
+            const found = findFileInFolders(folder.subfolders, gridfsId);
+            if (found) return found;
+        }
+    }
+    return null;
+}
+
+
+async function renderHWPFile(container, file) {
+    try {
+        container.innerHTML = '<div style="text-align:center;padding:40px;color:#666;">HWP 파일 로딩 중...</div>';
+
+        console.log('====== HWP 파일 처리 시작 ======');
+        console.log('파일명:', file.originalName);
+
+        const res = await fetch(`/api/files/preview/${file.gridfsId || file.id}`, {
+            method: 'GET',
+            credentials: 'same-origin'
+        });
+
+        if (!res.ok) {
+            throw new Error(`서버 응답 오류: ${res.status}`);
+        }
+
+        const blob = await res.blob();
+        console.log('다운로드 완료:', blob.size, 'bytes');
+
+        if (blob.size < 512) {
+            throw new Error('파일을 제대로 받지 못했습니다.');
+        }
+
+        // ⭐ 파일 시그니처 확인 ⭐
+        const arrayBuffer = await blob.arrayBuffer();
+        const header = new Uint8Array(arrayBuffer.slice(0, 8));
+        const signature = Array.from(header).map(b => b.toString(16).padStart(2, '0')).join(' ');
+        console.log('파일 시그니처:', signature);
+
+        // HWPX 체크 (ZIP 형식: 50 4B 03 04)
+        if (header[0] === 0x50 && header[1] === 0x4B) {
+            console.warn('⚠️ HWPX 형식은 지원하지 않습니다');
+            showHWPError(container, file,
+                'HWPX 파일은 웹 브라우저 미리보기를 지원하지 않습니다.\n' +
+                'HWP 5.0 (구 형식)만 미리보기 가능합니다.');
+            return;
+        }
+
+        // HWP 5.0만 처리
+        if (!(header[0] === 0xD0 && header[1] === 0xCF)) {
+            console.warn('⚠️ 알 수 없는 HWP 형식:', signature);
+            showHWPError(container, file, '지원하지 않는 HWP 형식입니다.');
+            return;
+        }
+
+        console.log('✅ HWP 5.0 형식 감지');
+
+        const hwpFile = new File([blob], file.originalName);
+        const reader = new FileReader();
+
+        reader.onloadend = (e) => {
+            try {
+                const bstr = e.target.result;
+                console.log('FileReader 완료, 길이:', bstr.length);
+
+                container.innerHTML = '';
+                new window.HWP.Viewer(container, bstr);
+
+                // 렌더링 후 내용 체크
+                setTimeout(() => {
+                    const textContent = container.textContent || '';
+                    const cleanText = textContent.replace(/[\s\n\r]/g, '');
+                    console.log('텍스트 길이:', cleanText.length);
+
+                    if (cleanText.length < 500) {
+                        console.warn('⚠️ 텍스트 내용 부족');
+                        showHWPError(container, file,
+                            '이 HWP 파일은 텍스트가 거의 없거나 이미지/도형이 포함되어 파싱이 불가능합니다.');
+                    } else {
+                        console.log('✅ HWP 렌더링 성공!');
+                    }
+                }, 1000);
+
+            } catch (err) {
+                console.error('❌ HWP 렌더링 실패:', err);
+
+                let errorMsg = '파일을 표시할 수 없습니다.';
+                if (err.message.includes('FileHeader')) {
+                    errorMsg = 'HWP 파일 형식이 손상되었거나 지원되지 않습니다.';
+                }
+
+                showHWPError(container, file, errorMsg);
+            }
+        };
+
+        reader.onerror = () => {
+            showHWPError(container, file, '파일을 읽을 수 없습니다.');
+        };
+
+        reader.readAsBinaryString(hwpFile);
+
+    } catch (err) {
+        console.error('❌ 전체 프로세스 실패:', err);
+        showHWPError(container, file, err.message);
+    }
+}
+
+function showHWPError(container, file, message) {
+    container.innerHTML = `
+        <div style="text-align:center;padding:60px 20px;">
+            <div style="font-size:48px;margin-bottom:20px;">📄</div>
+            <h3 style="margin:20px 0;color:#333;">${file.originalName}</h3>
+            <p style="color:#ff9800;margin:30px 0;line-height:1.8;font-size:15px;">
+                ⚠️ ${message}
+            </p>
+            <div style="display:flex;gap:15px;justify-content:center;margin-top:40px;">
+                <button onclick="window.open('/api/files/download/${file.gridfsId || file.id}')" 
+                        style="padding:14px 32px;background:#007bff;color:white;border:none;border-radius:8px;cursor:pointer;font-size:15px;font-weight:600;">
+                    💾 다운로드하여 열기
+                </button>
+            </div>
+            <p style="margin-top:30px;font-size:13px;color:#999;">
+                💡 한글 프로그램이나 무료 뷰어에서 열어주세요
+            </p>
+        </div>
+    `;
+}
+
 
 // ===== 선택 삭제 기능 =====
 const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
@@ -3339,7 +3255,6 @@ if (bulkDeleteBtn) {
         for (const si of selectedItems) {
             const { type, item } = si;
 
-            console.log('삭제 중:', type, item);
 
             if (type === 'file') {
                 // ✅ 파일 삭제

@@ -23,17 +23,16 @@ document.addEventListener('DOMContentLoaded', () => {
         folderTree = [];
         rootNotes = [];
     }
-
-    console.log('folderTree:', folderTree);
-    console.log('rootNotes:', rootNotes);
+	renderTree();
     // 초기 렌더링
+	/** 
     renderTree();
     if (PRESELECTED_NOTE_IDX) {
         setTimeout(() => {
             autoSelectNote(PRESELECTED_NOTE_IDX, PRESELECTED_KEYWORDS);
         }, 300);
     }
-    /**
+    
      * 트리 렌더링 (재귀)
      */
     function renderTree() {
@@ -312,9 +311,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateAutoQuestionCount() {
         const mode = document.querySelector('input[name="questionMode"]:checked').value;
         if (mode === 'auto') {
-            const count = selectedTags.size * 20;
-            questionCount.value = count > 0 ? count : 20;
-            questionHint.textContent = `키워드 ${selectedTags.size}개 × 20문제 = ${questionCount.value}문제`;
+            const count = selectedTags.size * 10;
+            questionCount.value = count > 0 ? count : 10;
+            questionHint.textContent = `키워드 ${selectedTags.size}개 × 10문제 = ${questionCount.value}문제`;
         }
     }
 
@@ -414,7 +413,6 @@ document.addEventListener('DOMContentLoaded', () => {
             adaptiveDifficulty: document.getElementById('difficulty').value === ''
         };
 
-        console.log('시험 생성 요청:', requestData);
 
         createBtn.disabled = true;
         createBtn.textContent = '🔄 생성 중...';

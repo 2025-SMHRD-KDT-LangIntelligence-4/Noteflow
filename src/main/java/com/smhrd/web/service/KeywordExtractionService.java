@@ -5,6 +5,7 @@ import com.smhrd.web.dto.CategoryResult;
 import com.smhrd.web.entity.CategoryHierarchy;
 import com.smhrd.web.repository.CategoryHierarchyRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -13,12 +14,15 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class KeywordExtractionService {
 
     private final WebClient webClient;
     private final CategoryHierarchyRepository categoryHierarchyRepository;
-
+    public KeywordExtractionService(@Qualifier("vllmApiClient") WebClient webClient, CategoryHierarchyRepository categoryHierarchyRepository /* 기타 파라미터 */) {
+        this.webClient = webClient;
+        // ... 초기화
+        this.categoryHierarchyRepository = categoryHierarchyRepository;
+    }
     @Value("${vllm.api.model}")
     private String modelName;
 

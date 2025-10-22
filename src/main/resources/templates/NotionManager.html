@@ -9,10 +9,10 @@
     <link rel="stylesheet" th:href="@{/css/footer.css}" />
     <link rel="stylesheet" th:href="@{/css/notionmanager.css}">
 
+
     <!-- ✅ Toast UI Editor CDN 추가 -->
     <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
     <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
-
     <!-- ✅ SheetJS CDN 추가 (Excel 파일용) -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 </head>
@@ -42,7 +42,7 @@
             </div>
 
             <div id="rootDropZone" class="root-drop-zone">
-                여기에 드롭하면 <strong>루트</strong>로 이동
+                여기에 드롭하면 <strong>최상위 폴더</strong>로 이동
             </div>
 
             <div id="itemList" class="notion-list">로딩 중...</div>
@@ -93,6 +93,9 @@
                 <div id="previewArea" style="display: none;">
                     <iframe id="pdfPreview" style="display: none; width: 100%; height: 100%; border: none;"></iframe>
                     <img id="imagePreview" style="display: none; width: 100%; height: 100%; object-fit: contain;" alt="미리보기">
+                    <div id="hwpPreview" class="file-preview hwp-preview" style="display:none;">
+                        <div id="hwpContainer" class="hwp-container"></div>
+                    </div>
                 </div>
 
                 <!-- ✅ 스프레드시트 영역 (Excel, CSV) -->
@@ -105,10 +108,16 @@
 
 <input type="file" id="fileInput" style="display: none;">
 
+<script type="module">
+    import * as HWP from '/js/hwp.browser.js';
+    window.HWP = HWP;
+    window.HWPLoaded = true;
+    console.log('✅ HWP 로드 완료');
+</script>
 <div th:replace="~{fragments/footer :: footer}"></div>
 
-
-
 <script th:src="@{/js/NotionManager.js}"></script>
+
+
 </body>
 </html>

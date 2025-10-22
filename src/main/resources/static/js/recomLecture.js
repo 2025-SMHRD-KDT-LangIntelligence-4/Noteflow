@@ -149,9 +149,14 @@
 			return;
 		}
 
+		//  검색 모드 가져오기
+		const searchMode = document.querySelector('input[name="searchMode"]:checked')?.value || 'OR';
+
 		const payload = {
 			keyword: currentTags.join(', '),
-			size: 1000 // 전체 가져오기
+			tags: currentTags,  // 배열로도 전달
+			searchMode: searchMode,  // ⭐ OR 또는 AND ⭐
+			size: 1000
 		};
 
 		await postRecommend(payload);
@@ -224,6 +229,17 @@
 			errorEl.style.display = 'block';
 		}
 	}
+// 버튼 변경 시 자동 재검색
+	const searchModeRadios = document.querySelectorAll('input[name="searchMode"]');
+	searchModeRadios.forEach(radio => {
+		radio.addEventListener('change', () => {
+			if (currentTags.length > 0) {
+				console.log(`🔄 검색 모드 변경: ${radio.value}`);
+				performSearch();  // 즉시 재검색
+			}
+		});
+	});
+
 
 // 현재 페이지 렌더링
 	function renderCurrentPage() {

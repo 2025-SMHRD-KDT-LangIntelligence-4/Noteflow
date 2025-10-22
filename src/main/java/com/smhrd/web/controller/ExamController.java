@@ -5,9 +5,15 @@ import com.smhrd.web.entity.*;
 import com.smhrd.web.repository.NoteRepository;
 import com.smhrd.web.repository.NoteFolderRepository;
 import com.smhrd.web.repository.NoteTagRepository;
+import com.smhrd.web.repository.TestItemRepository;
+import com.smhrd.web.repository.TestResultRepository;
+import com.smhrd.web.repository.UserAnswerRepository;
 import com.smhrd.web.security.CustomUserDetails;
 import com.smhrd.web.service.ExamService;
 import jakarta.servlet.http.HttpSession;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -32,7 +38,11 @@ public class ExamController {
     private final NoteRepository noteRepository;
     private final NoteFolderRepository noteFolderRepository;
     private final NoteTagRepository noteTagRepository;
-
+    private final TestResultRepository testResultRepository;
+    private final UserAnswerRepository userAnswerRepository;
+    private final TestItemRepository testItemRepository;
+    
+    
     /**
      * 노트 정보를 세션에 저장 (POST)
      */
@@ -351,63 +361,73 @@ public class ExamController {
      */
     @PostMapping("/api/submit")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> submitExam(
-            @RequestBody Map<String, Object> request,
+    public ResponseEntity<Map<String, Object>> submitExamApi(
+            @RequestBody Map<String, Object> payload,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-
+        
         Map<String, Object> response = new HashMap<>();
-
+        
         try {
-            if (userDetails == null) {
-                response.put("success", false);
-                response.put("message", "로그인이 필요합니다.");
-                return ResponseEntity.status(401).body(response);
+            log.info("시험 제출 요청 받음: {}", payload);
+            
+            Long userIdx = userDetails.getUserIdx();
+            Long testIdx = Long.valueOf(payload.get("testIdx").toString());
+            
+            // startTime, endTime 파싱
+            String startTimeStr = (String) payload.get("startTime");
+            String endTimeStr = (String) payload.get("endTime");
+            
+            LocalDateTime startTime = startTimeStr != null ? 
+                    LocalDateTime.parse(startTimeStr.substring(0, 19)) : LocalDateTime.now().minusMinutes(30);
+            LocalDateTime endTime = endTimeStr != null ? 
+                    LocalDateTime.parse(endTimeStr.substring(0, 19)) : LocalDateTime.now();
+            
+            // answers 파싱
+            Object answersObj = payload.get("answers");
+            Map<Integer, String> answersMap = new HashMap<>();
+            
+            if (answersObj instanceof Map) {
+                Map<?, ?> rawMap = (Map<?, ?>) answersObj;
+                rawMap.forEach((k, v) -> {
+                    try {
+                        int index = Integer.parseInt(String.valueOf(k));
+                        String answer = String.valueOf(v);
+                        answersMap.put(index, answer);
+                    } catch (Exception e) {
+                        log.warn("답안 파싱 실패: key={}, value={}", k, v);
+                    }
+                });
             }
-
-            Long testIdx = Long.parseLong(request.get("testIdx").toString());
-            Map<Long, String> answers = new HashMap<>();
-
-            // 답안 파싱
-            Map<String, String> answersRaw = (Map<String, String>) request.get("answers");
-            answersRaw.forEach((k, v) -> answers.put(Long.parseLong(k), v));
-
-            String startTimeStr = (String) request.get("startTime");
-            String endTimeStr = (String) request.get("endTime");
-
-            DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME;
-            LocalDateTime startTime = LocalDateTime.parse(startTimeStr, formatter);
-            LocalDateTime endTime = LocalDateTime.parse(endTimeStr, formatter);
-
-            log.info("시험 제출: testIdx={}, userIdx={}, 답안 수={}",
-                    testIdx, userDetails.getUserIdx(), answers.size());
-
-            // 채점
-            TestResult result = examService.submitExam(
-                    testIdx,
-                    userDetails.getUserIdx(),
-                    answers,
-                    startTime,
-                    endTime
-            );
-
+            
+            log.info("파싱된 답안: testIdx={}, answers={}, start={}, end={}", 
+                    testIdx, answersMap, startTime, endTime);
+            
+            // examService로 채점 처리 위임
+            Long resultIdx = examService.submitAndGrade(userIdx, testIdx, answersMap);
+            
             response.put("success", true);
-            response.put("message", "채점이 완료되었습니다.");
-            response.put("resultIdx", result.getResultIdx());
-            response.put("totalScore", result.getTotalScore());
-            response.put("userScore", result.getUserScore());
-            response.put("correctCount", result.getCorrectCount());
-            response.put("wrongCount", result.getWrongCount());
-            response.put("passed", result.getPassed());
-            response.put("passRate", String.format("%.1f",
-                    (double) result.getUserScore() / result.getTotalScore() * 100));
-
+            response.put("resultIdx", resultIdx);
+            
+            log.info("제출 완료: resultIdx={}", resultIdx);
             return ResponseEntity.ok(response);
-
+            
         } catch (Exception e) {
-            log.error("시험 제출 실패", e);
+            log.error("시험 제출 중 오류 발생", e);
             response.put("success", false);
             response.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    @Data
+    public static class SubmitRequest {
+        private Long testIdx;
+        private List<AnswerItem> answers;
+        
+        @Data
+        public static class AnswerItem {
+            private Long testSourceIdx;
+            private String userAnswer;
         }
     }
 
@@ -416,43 +436,201 @@ public class ExamController {
      */
     @GetMapping("/result/{resultIdx}")
     public String resultPage(@PathVariable Long resultIdx,
-                             @AuthenticationPrincipal CustomUserDetails userDetails,
-                             Model model) {
-
+                            @AuthenticationPrincipal CustomUserDetails userDetails,
+                            Model model) {
+        
         if (userDetails != null) {
             model.addAttribute("nickname", userDetails.getNickname());
             model.addAttribute("email", userDetails.getEmail());
         }
-
+        
+        Long userIdx = userDetails.getUserIdx();
+        
+        // 기존 방식으로 결과 조회
         Map<String, Object> resultData = examService.getResultDetail(resultIdx);
         TestResult result = (TestResult) resultData.get("result");
-        List<UserAnswer> answers = (List<UserAnswer>) resultData.get("answers");
-
-        // 답안 데이터 변환
-        List<Map<String, Object>> answerList = answers.stream()
-                .map(ua -> {
-                    Map<String, Object> ans = new HashMap<>();
-                    TestSource ts = ua.getTestSource();
-                    ans.put("testSourceIdx", ts.getTestSourceIdx());
-                    ans.put("question", ts.getQuestion());
-                    ans.put("correctAnswer", ts.getAnswer());
-                    ans.put("userAnswer", ua.getUserAnswer());
-                    ans.put("isCorrect", ua.getIsCorrect());
-                    ans.put("explanation", ts.getExplanation());
-                    ans.put("questionType", ts.getQuestionType());
-                    ans.put("options", ts.getOptions());
-                    ans.put("difficulty", ts.getDifficulty());
-                    return ans;
-                })
+        List<UserAnswer> userAnswers = (List<UserAnswer>) resultData.get("answers");
+        
+        // 권한 확인
+        if (!result.getUser().getUserIdx().equals(userIdx)) {
+            throw new IllegalArgumentException("접근 권한이 없습니다.");
+        }
+        
+        // ===== 과목별 통계 계산 =====
+        Map<String, SubjectStat> subjectStatsMap = new HashMap<>();
+        
+        for (UserAnswer ua : userAnswers) {
+            String subject = ua.getTestSource().getCategoryLarge();
+            if (subject == null || subject.isEmpty()) {
+                subject = "기타";
+            }
+            
+            SubjectStat stat = subjectStatsMap.getOrDefault(subject, new SubjectStat(subject));
+            stat.totalCount++;
+            if (ua.getIsCorrect()) {
+                stat.correctCount++;
+            }
+            subjectStatsMap.put(subject, stat);
+        }
+        
+        // 정답률 계산
+        List<SubjectStat> subjectStats = new ArrayList<>(subjectStatsMap.values());
+        subjectStats.forEach(stat -> {
+            stat.accuracy = (double) stat.correctCount / stat.totalCount;
+        });
+        subjectStats.sort((a, b) -> a.subject.compareTo(b.subject));
+        
+        // ===== 취약과목 & 우수과목 =====
+        List<String> weakSubjects = subjectStats.stream()
+                .filter(s -> s.accuracy < 0.6)
+                .map(s -> s.subject)
                 .collect(Collectors.toList());
-
+        
+        List<String> strongSubjects = subjectStats.stream()
+                .filter(s -> s.accuracy >= 0.8)
+                .map(s -> s.subject)
+                .collect(Collectors.toList());
+        
+        // ===== 난이도 변화 계산 =====
+        DifficultyChange diffChange = calculateDifficultyChange(userIdx, result);
+        
+        // ===== Model에 데이터 추가 =====
         model.addAttribute("pageTitle", "시험 결과");
         model.addAttribute("activeMenu", "exam");
         model.addAttribute("result", result);
-        model.addAttribute("answers", answerList);
+        model.addAttribute("userAnswers", userAnswers);
+        model.addAttribute("subjectStats", subjectStats);
+        model.addAttribute("weakSubjects", weakSubjects);
+        model.addAttribute("strongSubjects", strongSubjects);
+        model.addAttribute("previousDifficulty", diffChange.previousLevel);
+        model.addAttribute("currentDifficulty", diffChange.currentLevel);
+        model.addAttribute("difficultyChange", diffChange.changeType);
         model.addAttribute("passRate", resultData.get("passRate"));
+        
+        return "quizResult"; // ← 새 페이지로 변경
+    }
+    
+    /**
+     * 난이도 변화 계산
+     */
+    private DifficultyChange calculateDifficultyChange(Long userIdx, TestResult currentResult) {
+        String currentDesc = currentResult.getTest().getTestDesc();
+        int currentLevel = extractDifficultyLevel(currentDesc);
+        
+        // examService의 기존 메서드 활용
+        List<TestResult> recentResults = examService.getUserResults(userIdx, 0, 5);
+        
+        // 현재 결과 제외하고 이전 결과 찾기
+        int previousLevel = currentLevel; // ← 기본값을 현재 레벨로 변경
+        
+        for (TestResult tr : recentResults) {
+            if (!tr.getResultIdx().equals(currentResult.getResultIdx())) {
+                String prevDesc = tr.getTest().getTestDesc();
+                previousLevel = extractDifficultyLevel(prevDesc);
+                break;
+            }
+        }
+        
+        // 첫 시험인 경우 (이전 결과 없음)
+        if (recentResults.size() <= 1 || previousLevel == currentLevel) {
+            // 현재 정답률로 메시지 결정
+            int total = currentResult.getCorrectCount() + currentResult.getWrongCount();
+            double accuracy = total > 0 ? (double) currentResult.getCorrectCount() / total : 0;
+            
+            if (accuracy >= 0.8) {
+                return new DifficultyChange(currentLevel, currentLevel, "up");
+            } else if (accuracy < 0.6) {
+                return new DifficultyChange(currentLevel, currentLevel, "down");
+            } else {
+                return new DifficultyChange(currentLevel, currentLevel, "same");
+            }
+        }
+        
+        String changeType = "same";
+        if (currentLevel > previousLevel) {
+            changeType = "up";
+        } else if (currentLevel < previousLevel) {
+            changeType = "down";
+        }
+        
+        return new DifficultyChange(previousLevel, currentLevel, changeType);
+    }
 
-        return "examResult";
+    /**
+     * TestDesc에서 난이도 레벨 추출
+     */
+    private int extractDifficultyLevel(String testDesc) {
+        if (testDesc == null) return 2;
+        
+        try {
+            if (testDesc.contains("Level ")) {
+                int startIdx = testDesc.indexOf("Level ") + 6;
+                String levelStr = testDesc.substring(startIdx, startIdx + 1);
+                return Integer.parseInt(levelStr);
+            }
+        } catch (Exception e) {
+            log.warn("난이도 파싱 실패: {}", testDesc);
+        }
+        
+        return 2;
+    }
+
+    
+    /**
+     * 시험 해설 페이지 (URL: /exam/explanation/{resultIdx})
+     */
+    @GetMapping("/explanation/{resultIdx}")
+    public String showExplanation(@PathVariable Long resultIdx,
+                                  @AuthenticationPrincipal CustomUserDetails userDetails,
+                                  Model model) {
+        
+        if (userDetails == null) {
+            return "redirect:/login";
+        }
+        
+        model.addAttribute("nickname", userDetails.getNickname());
+        model.addAttribute("email", userDetails.getEmail());
+        
+        Long userIdx = userDetails.getUserIdx();
+        
+        // 기존 방식으로 결과 조회
+        Map<String, Object> resultData = examService.getResultDetail(resultIdx);
+        TestResult result = (TestResult) resultData.get("result");
+        List<UserAnswer> userAnswers = (List<UserAnswer>) resultData.get("answers");
+        
+        // 권한 확인
+        if (!result.getUser().getUserIdx().equals(userIdx)) {
+            throw new IllegalArgumentException("접근 권한이 없습니다.");
+        }
+        
+        // 해설 데이터 구성
+        List<ExplanationData> explanationList = new ArrayList<>();
+        
+        for (UserAnswer ua : userAnswers) {
+            TestSource ts = ua.getTestSource();
+            
+            ExplanationData data = new ExplanationData();
+            data.question = ts.getQuestion();
+            data.questionType = ts.getQuestionType().name(); // ← Enum을 String으로 변환
+            data.correctAnswer = ts.getAnswer();
+            data.explanation = ts.getExplanation();
+            data.userAnswer = ua.getUserAnswer();
+            data.isCorrect = ua.getIsCorrect();
+            
+            // 객관식인 경우 options 파싱
+            if (QuestionType.MULTIPLE_CHOICE.equals(ts.getQuestionType())) { // ← Enum 비교
+                data.options = ts.getOptions(); // ← getOptions() 메서드 사용
+            }
+            
+            explanationList.add(data);
+        }
+        
+        model.addAttribute("pageTitle", "시험 해설");
+        model.addAttribute("activeMenu", "exam");
+        model.addAttribute("resultIdx", resultIdx);
+        model.addAttribute("explanationData", explanationList);
+        
+        return "quizExplanation";
     }
 
     /**
@@ -460,24 +638,61 @@ public class ExamController {
      */
     @GetMapping("/my-results")
     public String myResultsPage(@RequestParam(defaultValue = "0") int page,
-                                @RequestParam(defaultValue = "15") int size,
-                                @AuthenticationPrincipal CustomUserDetails userDetails,
-                                Model model) {
-
+                               @RequestParam(defaultValue = "15") int size,
+                               @AuthenticationPrincipal CustomUserDetails userDetails,
+                               Model model) {
         if (userDetails == null) {
             return "redirect:/login";
         }
-
+        
         model.addAttribute("nickname", userDetails.getNickname());
         model.addAttribute("email", userDetails.getEmail());
-
-        List<TestResult> results = examService.getUserResults(userDetails.getUserIdx(), page, size);
-
+        
+        Long userIdx = userDetails.getUserIdx();
+        
+        // 시험 결과 조회
+        List<TestResult> results = examService.getUserResults(userIdx, page, size);
+        
+        // 결과 데이터 가공
+        List<Map<String, Object>> resultList = results.stream()
+                .map(result -> {
+                    Map<String, Object> data = new HashMap<>();
+                    data.put("resultIdx", result.getResultIdx());
+                    data.put("testTitle", result.getTest().getTestTitle());
+                    data.put("testDesc", result.getTest().getTestDesc());
+                    data.put("createdAt", result.getCreatedAt());
+                    data.put("totalScore", result.getTotalScore());
+                    data.put("userScore", result.getUserScore());
+                    data.put("correctCount", result.getCorrectCount());
+                    data.put("wrongCount", result.getWrongCount());
+                    data.put("passed", result.getPassed());
+                    
+                    int total = result.getCorrectCount() + result.getWrongCount();
+                    double accuracy = total > 0 ? (double) result.getCorrectCount() / total * 100 : 0;
+                    data.put("accuracy", accuracy);
+                    
+                    // 난이도 추출
+                    String difficulty = "2";
+                    if (result.getTest().getTestDesc() != null && result.getTest().getTestDesc().contains("Level ")) {
+                        try {
+                            int idx = result.getTest().getTestDesc().indexOf("Level ") + 6;
+                            difficulty = result.getTest().getTestDesc().substring(idx, idx + 1);
+                        } catch (Exception e) {
+                            // 파싱 실패 시 기본값
+                        }
+                    }
+                    data.put("difficulty", difficulty);
+                    
+                    return data;
+                })
+                .collect(Collectors.toList());
+        
         model.addAttribute("pageTitle", "내 시험 기록");
         model.addAttribute("activeMenu", "exam");
-        model.addAttribute("results", results);
+        model.addAttribute("results", resultList);
         model.addAttribute("currentPage", page);
-
+        model.addAttribute("hasMore", results.size() >= size);
+        
         return "examMyResults";
     }
 
@@ -569,5 +784,55 @@ public class ExamController {
             response.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(response);
         }
+    }
+    
+ // ===== 내부 DTO 클래스 (ExamController 클래스 안에 추가) =====
+
+    /**
+     * 과목별 통계 DTO
+     */
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class SubjectStat {
+        private String subject;
+        private int totalCount;
+        private int correctCount;
+        private double accuracy;
+        
+        public SubjectStat(String subject) {
+            this.subject = subject;
+            this.totalCount = 0;
+            this.correctCount = 0;
+            this.accuracy = 0.0;
+        }
+    }
+
+    /**
+     * 난이도 변화 DTO
+     */
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class DifficultyChange {
+        private int previousLevel;
+        private int currentLevel;
+        private String changeType; // "up", "down", "same"
+    }
+
+    /**
+     * 해설 데이터 DTO
+     */
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class ExplanationData {
+        private String question;
+        private String questionType; // ← enum String으로 변경
+        private String correctAnswer;
+        private String explanation;
+        private String userAnswer;
+        private Boolean isCorrect;
+        private List<String> options; // 객관식 보기
     }
 }

@@ -6,6 +6,8 @@
     <link rel="stylesheet" th:href="@{/css/header.css}" />
     <link rel="stylesheet" th:href="@{/css/login.css}" />
     <link rel="stylesheet" th:href="@{/css/footer.css}" />
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
 </head>
 <style>
 
@@ -62,6 +64,10 @@
   function closePopup() {
     const popup = document.querySelector('.login-popup-overlay');
     if (popup) popup.remove();
+  }
+
+  if (urlParams.has('expired')) {
+      alert('다른 곳에서 로그인하여 현재 세션이 종료되었습니다.');
   }
 </script>
 </body>

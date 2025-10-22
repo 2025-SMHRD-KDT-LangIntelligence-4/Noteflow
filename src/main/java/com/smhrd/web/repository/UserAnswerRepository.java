@@ -1,5 +1,6 @@
 package com.smhrd.web.repository;
 
+import com.smhrd.web.entity.TestResult;
 import com.smhrd.web.entity.UserAnswer;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -77,4 +78,6 @@ public interface UserAnswerRepository extends JpaRepository<UserAnswer, Long> {
 
     // ===== 답안 삭제 (시험 결과 삭제 시) =====
     void deleteByResultResultIdx(Long resultIdx);
+
+	List<UserAnswer> findByResult(TestResult result);
 }

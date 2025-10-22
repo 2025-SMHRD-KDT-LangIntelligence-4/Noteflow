@@ -60,41 +60,47 @@ public class LectureRecommendController {
     @PostMapping("/api/recommend")
     @ResponseBody
     public Map<String, Object> recommend(@RequestBody RecommendRequest req) {
-        log.info("🔍 강의 추천 요청: tags={}, keyword={}, category={}",
-                req.tags, req.keyword, req.category);
-
+        log.info("🔍 강의 추천 요청: tags={}, keyword={}, category={}, searchMode={}",
+                req.tags, req.keyword, req.category, req.searchMode);
+        
         int size = Math.max(1, Optional.ofNullable(req.size).orElse(30));
         List<Lecture> list = new ArrayList<>();
-
+        
         try {
-            // 2-1: 태그 배열 검색
+            // 태그 배열 검색
             if (req.tags != null && !req.tags.isEmpty()) {
-                log.info("📌 태그 배열 검색: {}", req.tags);
-                list = searchByTags(req.tags, size);
+                String mode = (req.searchMode != null) ? req.searchMode.toUpperCase() : "OR";
+                log.info("📌 태그 배열 검색: {} (모드: {})", req.tags, mode);
+                
+                if ("AND".equals(mode)) {
+                    list = searchByTagsAndEnhanced(req.tags, size); // ⭐ 개선된 AND 검색
+                } else {
+                    list = searchByTagsEnhanced(req.tags, size); // ⭐ 개선된 OR 검색
+                }
             }
-            // 2-2: 카테고리 검색
+            // 카테고리 검색
             else if (req.category != null && req.category.getLarge() != null) {
                 log.info("📁 카테고리 검색: {}", req.category);
                 list = searchByCategory(req.category, size);
             }
-            // 2-3: 키워드 검색 (스마트 점수 기반)
+            // 키워드 검색
             else if (req.keyword != null && !req.keyword.isBlank()) {
                 log.info("🔤 키워드 검색: {}", req.keyword);
                 list = searchByKeywords(req.keyword, size);
             }
-            // 2-4: 전체 조회
+            // 전체 조회
             else {
                 log.info("📚 전체 강의 조회");
                 list = lectureRepository
                         .findAll(PageRequest.of(0, size, Sort.by(Sort.Direction.DESC, "createdAt")))
                         .getContent();
             }
-
+            
             log.info("✅ 검색 결과: {}개 강의", list.size());
-
+            
             // 태그 정보 추가
             Map<Long, List<String>> tagMap = buildTagMap(list);
-
+            
             // 응답 생성
             Map<String, Object> out = new HashMap<>();
             out.put("success", true);
@@ -110,18 +116,16 @@ public class LectureRecommendController {
                 item.put("tags", tagMap.getOrDefault(l.getLecIdx(), List.of()));
                 return item;
             }).collect(Collectors.toList()));
-
+            
             return out;
-
+            
         } catch (Exception e) {
             log.error("❌ 강의 추천 에러", e);
-
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("success", false);
             errorResponse.put("count", 0);
             errorResponse.put("items", List.of());
             errorResponse.put("error", e.getMessage());
-
             return errorResponse;
         }
     }
@@ -129,37 +133,132 @@ public class LectureRecommendController {
     /**
      * 태그 배열로 검색
      */
-    private List<Lecture> searchByTags(List<String> tags, int size) {
+    private List<Lecture> searchByTagsEnhanced(List<String> tags, int size) {
         List<String> cleanTags = tags.stream()
                 .filter(Objects::nonNull)
                 .map(String::trim)
                 .filter(s -> !s.isBlank())
                 .distinct()
                 .collect(Collectors.toList());
-
+        
         log.info("  📌 정제된 태그: {}", cleanTags);
-
+        
         Map<Long, ScoreInfo> scoreMap = new HashMap<>();
-
+        
         for (String tag : cleanTags) {
-            // 정확 매칭 (10점)
+            // 1) 태그 정확 매칭 (10점)
             List<Lecture> exactMatches = lectureSearchRepository
-                    .findByTagNameExact(tag, PageRequest.of(0, size));
-
+                    .findByTagNameExact(tag, PageRequest.of(0, size * 2));
             for (Lecture lec : exactMatches) {
                 scoreMap.computeIfAbsent(lec.getLecIdx(), k -> new ScoreInfo(lec))
-                        .addScore(10, "정확:" + tag);
+                        .addScore(10, "정확태그:" + tag);
             }
-
-            log.info("  ✅ '{}' 정확 매칭: {}개", tag, exactMatches.size());
+            log.info("  ✅ '{}' 태그 정확 매칭: {}개", tag, exactMatches.size());
+            
+            // 2) 태그 포함 매칭 (3점)
+            List<Lecture> containsMatches = lectureSearchRepository
+                    .findByTagNameContains(tag, PageRequest.of(0, size * 2));
+            for (Lecture lec : containsMatches) {
+                scoreMap.computeIfAbsent(lec.getLecIdx(), k -> new ScoreInfo(lec))
+                        .addScore(3, "포함태그:" + tag);
+            }
+            log.info("  ✅ '{}' 태그 포함 매칭: {}개", tag, containsMatches.size());
+            
+            // 3) 제목 매칭 (5점)
+            List<Lecture> titleMatches = lectureRepository
+                    .findByLecTitleContainingOrderByCreatedAtDesc(tag);
+            for (Lecture lec : titleMatches) {
+                scoreMap.computeIfAbsent(lec.getLecIdx(), k -> new ScoreInfo(lec))
+                        .addScore(5, "제목:" + tag);
+            }
+            log.info("  ✅ '{}' 제목 매칭: {}개", tag, titleMatches.size());
+            
+            // 4) 카테고리 매칭 (2점)
+            List<Lecture> categoryMatches = lectureRepository
+                    .findByCategoryLargeContainingOrCategoryMediumContainingOrCategorySmallContaining(
+                            tag, tag, tag);
+            for (Lecture lec : categoryMatches) {
+                scoreMap.computeIfAbsent(lec.getLecIdx(), k -> new ScoreInfo(lec))
+                        .addScore(2, "카테고리:" + tag);
+            }
+            log.info("  ✅ '{}' 카테고리 매칭: {}개", tag, categoryMatches.size());
         }
-
-        // 점수 순으로 정렬
+        
+        // 스마트인재개발원 보너스
+        for (ScoreInfo info : scoreMap.values()) {
+            if (info.lecture.getLecTitle() != null &&
+                    info.lecture.getLecTitle().contains("스마트인재개발원")) {
+                boolean keywordInTitle = false;
+                for (String tag : cleanTags) {
+                    if (info.lecture.getLecTitle().toLowerCase()
+                            .contains(tag.toLowerCase())) {
+                        keywordInTitle = true;
+                        break;
+                    }
+                }
+                if (keywordInTitle) {
+                    info.addScore(50, "🏆스마트인재개발원");
+                }
+            }
+        }
+        
+        // 점수 순 정렬
         return scoreMap.values().stream()
                 .sorted((a, b) -> Integer.compare(b.score, a.score))
                 .map(si -> si.lecture)
                 .limit(size)
                 .collect(Collectors.toList());
+    }
+    
+    /**
+     * 개선된 AND 검색: 모든 검색어가 강의에 포함되어야 함 (태그+제목+카테고리)
+     */
+    private List<Lecture> searchByTagsAndEnhanced(List<String> tags, int size) {
+        List<String> cleanTags = tags.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .distinct()
+                .collect(Collectors.toList());
+        
+        log.info("🔗 AND 검색 시작: {}", cleanTags);
+        
+        if (cleanTags.isEmpty()) {
+            return List.of();
+        }
+        
+        // 모든 강의 조회
+        List<Lecture> allLectures = lectureRepository.findAll();
+        
+        // 태그 정보 미리 로드
+        Map<Long, List<String>> tagMap = buildTagMap(allLectures);
+        
+        // 각 강의가 모든 검색어를 포함하는지 확인
+        List<Lecture> results = allLectures.stream()
+                .filter(lecture -> {
+                    // 강의의 모든 텍스트 정보를 합침
+                    String combinedText = (
+                            lecture.getLecTitle() + " " +
+                            String.join(" ", tagMap.getOrDefault(lecture.getLecIdx(), List.of())) + " " +
+                            (lecture.getCategoryLarge() != null ? lecture.getCategoryLarge() : "") + " " +
+                            (lecture.getCategoryMedium() != null ? lecture.getCategoryMedium() : "") + " " +
+                            (lecture.getCategorySmall() != null ? lecture.getCategorySmall() : "")
+                    ).toLowerCase();
+                    
+                    // 모든 검색어가 포함되어 있는지 확인
+                    for (String tag : cleanTags) {
+                        if (!combinedText.contains(tag.toLowerCase())) {
+                            return false; // 하나라도 없으면 제외
+                        }
+                    }
+                    return true; // 모두 포함
+                })
+                .limit(size)
+                .collect(Collectors.toList());
+        
+        log.info("✅ AND 검색 완료: {}개 강의 (모든 검색어 포함)", results.size());
+        
+        return results;
     }
 
     /**
@@ -334,6 +433,7 @@ public class LectureRecommendController {
         public String keyword;
         public Integer size;
         public Boolean like;
+        public String searchMode;  // 추가: "OR" 또는 "AND"
 
         @Override
         public String toString() {
@@ -343,6 +443,7 @@ public class LectureRecommendController {
                     ", keyword='" + keyword + '\'' +
                     ", size=" + size +
                     ", like=" + like +
+                    ", searchMode='" + searchMode + '\'' +  // ⭐ 추가
                     '}';
         }
     }
