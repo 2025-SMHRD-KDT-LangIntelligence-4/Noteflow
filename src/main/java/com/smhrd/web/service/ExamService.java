@@ -1,5 +1,6 @@
 package com.smhrd.web.service;
 
+import com.smhrd.web.controller.ExamController;
 import com.smhrd.web.entity.*;
 import com.smhrd.web.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -231,6 +232,95 @@ public class ExamService {
         Pageable pageable = PageRequest.of(page, size);
         return testRepository.findAllByOrderByCreatedAtDesc(pageable);
     }
+    
+    /**
+     * 시험 채점
+     */
+    @Transactional
+    public TestResult gradeExam(Long userIdx, Long testIdx, List<ExamController.SubmitRequest.AnswerItem> answers) {
+        
+        User user = userRepository.findById(userIdx)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        
+        Test test = testRepository.findById(testIdx)
+                .orElseThrow(() -> new IllegalArgumentException("시험을 찾을 수 없습니다."));
+        
+        // TestItem 조회
+        List<TestItem> testItems = testItemRepository.findByTestOrderBySequenceAsc(test);
+        
+        int correctCount = 0;
+        int wrongCount = 0;
+        int totalScore = 0;
+        int userScore = 0;
+        
+        // 채점 및 UserAnswer 저장을 위한 임시 결과 생성
+        TestResult tempResult = TestResult.builder()
+                .user(user)
+                .test(test)
+                .totalScore(0)
+                .userScore(0)
+                .correctCount(0)
+                .wrongCount(0)
+                .build();
+        
+        TestResult savedResult = testResultRepository.save(tempResult);
+        
+        // 각 문제 채점
+        for (TestItem item : testItems) {
+            TestSource source = item.getTestSource();
+            totalScore += item.getScore();
+            
+            // 사용자 답안 찾기
+            String userAnswer = answers.stream()
+                    .filter(a -> a.getTestSourceIdx().equals(source.getTestSourceIdx()))
+                    .map(ExamController.SubmitRequest.AnswerItem::getUserAnswer)
+                    .findFirst()
+                    .orElse(null);
+            
+            // 정답 체크
+            boolean isCorrect = checkAnswer(source.getAnswer(), userAnswer);
+            
+            if (isCorrect) {
+                correctCount++;
+                userScore += item.getScore();
+            } else {
+                wrongCount++;
+            }
+            
+            // UserAnswer 저장
+            UserAnswer userAnswerEntity = UserAnswer.builder()
+                    .result(savedResult)
+                    .testSource(source)
+                    .userAnswer(userAnswer)
+                    .isCorrect(isCorrect)
+                    .build();
+            
+            userAnswerRepository.save(userAnswerEntity);
+        }
+        
+        // 결과 업데이트
+        savedResult.setTotalScore(totalScore);
+        savedResult.setUserScore(userScore);
+        savedResult.setCorrectCount(correctCount);
+        savedResult.setWrongCount(wrongCount);
+        
+        return testResultRepository.save(savedResult);
+    }
+
+    /**
+     * 정답 체크
+     */
+    private boolean checkAnswer(String correctAnswer, String userAnswer) {
+        if (userAnswer == null || userAnswer.trim().isEmpty()) {
+            return false;
+        }
+        
+        // 공백 제거 후 대소문자 무시하고 비교
+        String correct = correctAnswer.trim().toLowerCase();
+        String user = userAnswer.trim().toLowerCase();
+        
+        return correct.equals(user);
+    }
 
     /**
      * 시험 제출 및 채점
@@ -311,19 +401,7 @@ public class ExamService {
         return result;
     }
 
-    /**
-     * 답안 비교
-     */
-    private boolean checkAnswer(String userAnswer, String correctAnswer) {
-        if (userAnswer == null || correctAnswer == null) {
-            return false;
-        }
-
-        String normalized1 = userAnswer.trim().toLowerCase();
-        String normalized2 = correctAnswer.trim().toLowerCase();
-
-        return normalized1.equals(normalized2);
-    }
+    
 
     /**
      * 사용자 시험 결과 조회
@@ -405,4 +483,94 @@ public class ExamService {
                         Collectors.counting()
                 ));
     }
+
+    /**
+     * 시험 제출 및 채점
+     */
+    @Transactional
+    public Long submitAndGrade(Long userIdx, Long testIdx, Map<Integer, String> answers) {
+        
+        User user = userRepository.findById(userIdx)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        
+        Test test = testRepository.findById(testIdx)
+                .orElseThrow(() -> new IllegalArgumentException("시험을 찾을 수 없습니다."));
+        
+        // TestItem 조회
+        List<TestItem> testItems = testItemRepository.findByTestOrderBySequenceAsc(test);
+        
+        int correctCount = 0;
+        int wrongCount = 0;
+        int totalScore = 0;
+        int userScore = 0;
+        
+        // 시작 시간: Test 생성 시간 사용
+        LocalDateTime startTime = test.getCreatedAt();
+        // 종료 시간: 현재 시간
+        LocalDateTime endTime = LocalDateTime.now();
+        
+        // 결과 생성 (필수 필드 모두 포함)
+        TestResult result = TestResult.builder()
+                .user(user)
+                .test(test)
+                .totalScore(0)
+                .userScore(0)
+                .correctCount(0)
+                .wrongCount(0)
+                .passed(false)
+                .startTime(startTime) // ← Test 생성 시간
+                .endTime(endTime)     // ← 제출 시간
+                .build();
+        
+        TestResult savedResult = testResultRepository.save(result);
+        
+        // 각 문제 채점
+        for (int i = 0; i < testItems.size(); i++) {
+            TestItem item = testItems.get(i);
+            TestSource source = item.getTestSource();
+            totalScore += item.getScore();
+            
+            String userAnswer = answers.get(i);
+            boolean isCorrect = checkAnswer(source.getAnswer(), userAnswer);
+            
+            if (isCorrect) {
+                correctCount++;
+                userScore += item.getScore();
+            } else {
+                wrongCount++;
+            }
+            
+            UserAnswer userAnswerEntity = UserAnswer.builder()
+                    .result(savedResult)
+                    .testSource(source)
+                    .userAnswer(userAnswer)
+                    .isCorrect(isCorrect)
+                    .build();
+            
+            userAnswerRepository.save(userAnswerEntity);
+        }
+        
+        // 합격 여부 (60% 이상)
+        boolean passed = totalScore > 0 && ((double) userScore / totalScore) >= 0.6;
+        
+        // 결과 업데이트
+        savedResult.setTotalScore(totalScore);
+        savedResult.setUserScore(userScore);
+        savedResult.setCorrectCount(correctCount);
+        savedResult.setWrongCount(wrongCount);
+        savedResult.setPassed(passed);
+        
+        testResultRepository.save(savedResult);
+        
+        log.info("채점 완료: resultIdx={}, 정답={}/{}, 합격={}, 소요시간={}분", 
+                savedResult.getResultIdx(), correctCount, testItems.size(), passed,
+                java.time.Duration.between(startTime, endTime).toMinutes());
+        
+        return savedResult.getResultIdx();
+    }
+
+    
+
+
+    
 }

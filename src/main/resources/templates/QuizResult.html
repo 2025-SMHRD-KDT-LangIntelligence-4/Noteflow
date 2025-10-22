@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>시험 결과</title>
+<link rel="stylesheet" th:href="@{/css/quizResult.css}">
+<link rel="stylesheet" th:href="@{/css/header.css}">
+<link rel="stylesheet" th:href="@{/css/footer.css}">
+</head>
+<body>
+	<!-- Header 포함 -->
+	<div th:replace="~{fragments/header :: header}"></div>
+
+	<div class="page-wrapper">
+		<div class="result-container">
+			<!-- 상단: 제목 & 점수 -->
+			<div class="result-header">
+				<h1 class="result-title">시험 결과</h1>
+				<div class="score-display">
+					<div class="score-main">
+						<span class="score-number" th:text="${result.correctCount}">0</span>
+						<span class="score-divider">/</span> <span class="score-total"
+							th:text="${result.correctCount + result.wrongCount}">0</span>
+					</div>
+					<div class="score-percentage"
+						th:text="${#numbers.formatDecimal((result.correctCount * 100.0) / (result.correctCount + result.wrongCount), 1, 1)} + '%'">0%</div>
+				</div>
+			</div>
+
+			<!-- 문제별 정오 표시 -->
+			<div class="answer-summary">
+				<h2 class="section-title">문제별 결과</h2>
+				<div class="answer-grid">
+					<div th:each="answer, stat : ${userAnswers}" class="answer-item"
+						th:classappend="${answer.isCorrect} ? 'correct' : 'wrong'">
+						<span class="question-num" th:text="${stat.index + 1}">1</span> <span
+							class="answer-mark" th:text="${answer.isCorrect} ? 'O' : 'X'">O</span>
+					</div>
+				</div>
+			</div>
+
+			<!-- 과목별 통계 -->
+			<div class="subject-stats">
+				<h2 class="section-title">과목별 통계</h2>
+				<table class="stats-table">
+					<thead>
+						<tr>
+							<th>과목</th>
+							<th>문제 수</th>
+							<th>정답 수</th>
+							<th>정답률</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr th:each="stat : ${subjectStats}">
+							<td th:text="${stat.subject}">과목명</td>
+							<td th:text="${stat.totalCount}">0</td>
+							<td th:text="${stat.correctCount}">0</td>
+							<td
+								th:text="${#numbers.formatDecimal(stat.accuracy * 100, 1, 1)} + '%'">0%</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+
+			<!-- 과목 분석 -->
+			<div class="subject-analysis">
+				<div class="weak-subjects">
+					<h3>취약 과목</h3>
+					<div class="subject-tags">
+						<span th:each="subject : ${weakSubjects}" class="subject-tag weak"
+							th:text="${subject}">과목명</span> <span
+							th:if="${#lists.isEmpty(weakSubjects)}" class="no-data">없음</span>
+					</div>
+				</div>
+				<div class="strong-subjects">
+					<h3>우수 과목</h3>
+					<div class="subject-tags">
+						<span th:each="subject : ${strongSubjects}"
+							class="subject-tag strong" th:text="${subject}">과목명</span> <span
+							th:if="${#lists.isEmpty(strongSubjects)}" class="no-data">없음</span>
+					</div>
+				</div>
+			</div>
+
+			<div class="difficulty-message">
+				<th:block
+					th:with="accuracy=${result.correctCount * 100.0 / (result.correctCount + result.wrongCount)}">
+					<p th:if="${accuracy >= 80}" class="msg-up">🎉 우수한 성적입니다! 다음
+						시험은 난이도가 상승합니다.</p>
+					<p th:if="${accuracy < 60}" class="msg-down">💪 조금 더 기초를 다져봅시다.
+						다음 시험은 난이도가 하락합니다.</p>
+					<p th:if="${accuracy >= 60 and accuracy < 80}" class="msg-same">
+						👍 적절한 난이도로 학습 중입니다.</p>
+				</th:block>
+			</div>
+
+			<!-- 액션 버튼 -->
+			<div class="action-buttons">
+				<button class="btn-recommend" th:onclick="|goToRecommend()|">
+					취약과목 강의추천</button>
+				<button class="btn-explanation"
+					th:onclick="|goToExplanation(${result.resultIdx})|">해설보기</button>
+			</div>
+
+			<div class="bottom-buttons">
+				<button class="btn-main" onclick="location.href='/main'">메인으로</button>
+				<button class="btn-exam" onclick="location.href='/exam/list'">시험
+					목록</button>
+			</div>
+		</div>
+	</div>
+
+	<script th:inline="javascript">
+		/*<![CDATA[*/
+		const weakSubjects = /*[[${weakSubjects}]]*/[];
+		const resultIdx = /*[[${result.resultIdx}]]*/0;
+
+		function goToRecommend() {
+			if (weakSubjects.length === 0) {
+				alert('취약과목이 없습니다!');
+				return;
+			}
+
+			// NotionComplete처럼 sessionStorage 사용
+			const payload = {
+				tags : weakSubjects,
+				searchMode : 'OR'
+			};
+			sessionStorage.setItem('lectureRecommendPayload', JSON
+					.stringify(payload));
+			location.href = '/lecture/recommend';
+		}
+
+		function goToExplanation(resultIdx) {
+			location.href = `/exam/explanation/${resultIdx}`;
+		}
+		/*]]>*/
+	</script>
+</body>
+</html>

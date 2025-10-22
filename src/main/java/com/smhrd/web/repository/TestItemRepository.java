@@ -1,6 +1,10 @@
 package com.smhrd.web.repository;
 
+import com.smhrd.web.entity.Test;
 import com.smhrd.web.entity.TestItem;
+import com.smhrd.web.entity.TestResult;
+import com.smhrd.web.entity.TestSource;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -35,4 +39,10 @@ public interface TestItemRepository extends JpaRepository<TestItem, Long> {
     // ===== 시퀀스 최대값 조회 (다음 순서 번호 계산용) =====
     @Query("SELECT COALESCE(MAX(ti.sequence), 0) FROM TestItem ti WHERE ti.test.testIdx = :testIdx")
     Integer findMaxSequenceByTestIdx(@Param("testIdx") Long testIdx);
+
+	Optional<TestResult> findByTestAndTestSource(Test test, TestSource testSource);
+	
+    
+    List<TestItem> findByTestOrderBySequenceAsc(Test test);
+    
 }

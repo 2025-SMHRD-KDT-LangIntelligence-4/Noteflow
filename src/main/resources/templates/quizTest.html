@@ -6,6 +6,8 @@
     <link rel="stylesheet" th:href="@{/css/header.css}">
     <link rel="stylesheet" th:href="@{/css/footer.css}">
     <link rel="stylesheet" th:href="@{/css/quizTest.css}">
+      <meta name="_csrf" th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
 </head>
 <body>
 <div th:replace="~{fragments/header :: siteHeader}"></div>
@@ -41,7 +43,8 @@
         </div>
     </div>
 </div>
-
+<input type="hidden" id="csrfToken" th:value="${_csrf.token}"/>
+<input type="hidden" id="csrfHeader" th:value="${_csrf.headerName}"/>
 <div th:replace="~{fragments/footer :: siteFooter}"></div>
 
 <!-- ⭐ 데이터 주입 ⭐ -->
@@ -62,6 +65,7 @@
     let startTime = new Date().toISOString();
     /*]]>*/
 </script>
+
 
 <script src="/js/quizTest.js"></script>
 </body>

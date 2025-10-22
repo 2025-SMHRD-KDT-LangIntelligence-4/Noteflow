@@ -31,4 +31,6 @@ public interface TestResultRepository extends JpaRepository<TestResult, Long> {
     long countByUserUserIdx(Long userIdx);
 
     long countByUserUserIdxAndPassedTrue(Long userIdx);
+    
+    
 }

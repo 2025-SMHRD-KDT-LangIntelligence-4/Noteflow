@@ -1,0 +1,185 @@
+@charset "UTF-8";
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+body {
+    font-family: 'Pretendard', sans-serif;
+    background: #f7f7f7;
+    margin: 0;
+    padding: 0;
+}
+
+.page-wrapper {
+    margin-top: 110px;
+    margin-bottom: 150px;
+    padding: 0 20px;
+    min-height: calc(100vh - 260px);
+}
+
+.explanation-container {
+    max-width: 900px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    padding: 40px;
+}
+
+/* 헤더 */
+.explanation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #eee;
+}
+
+.question-number {
+    font-size: 24px;
+    font-weight: 700;
+    color: #4A90E2;
+}
+
+.btn-back-result {
+    padding: 10px 20px;
+    border: 2px solid #4A90E2;
+    border-radius: 8px;
+    background: white;
+    color: #4A90E2;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-back-result:hover {
+    background: #4A90E2;
+    color: white;
+}
+
+/* 각 섹션 공통 스타일 */
+.question-section,
+.answer-section,
+.user-answer-section,
+.explanation-section {
+    margin-bottom: 30px;
+}
+
+.question-section h2,
+.answer-section h2,
+.user-answer-section h2,
+.explanation-section h2 {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 0 15px 0;
+    color: #333;
+}
+
+.question-text {
+    font-size: 18px;
+    line-height: 1.8;
+    color: #333;
+    padding: 20px;
+    background: #F5F8FA;
+    border-radius: 10px;
+    white-space: pre-wrap;
+}
+
+/* 답안 컨테이너 (읽기 전용) */
+.answer-container {
+    padding: 20px;
+    background: #F5F8FA;
+    border-radius: 10px;
+}
+
+.option-item {
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    background: white;
+    border: 2px solid #E0E0E0;
+    font-size: 16px;
+    color: #333;
+}
+
+.option-item.correct-answer {
+    border-color: #4CAF50;
+    background: #E8F5E9;
+    font-weight: 700;
+}
+
+.subjective-answer {
+    padding: 15px;
+    background: white;
+    border: 2px solid #4CAF50;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #2E7D32;
+}
+
+/* 사용자 답안 표시 */
+.user-answer-display {
+    padding: 20px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.user-answer-display.correct {
+    background: #E8F5E9;
+    color: #2E7D32;
+    border: 2px solid #4CAF50;
+}
+
+.user-answer-display.wrong {
+    background: #FFEBEE;
+    color: #C62828;
+    border: 2px solid #EF5350;
+}
+
+/* 해설 */
+.explanation-text {
+    font-size: 16px;
+    line-height: 1.8;
+    color: #555;
+    padding: 20px;
+    background: #FFFDE7;
+    border-left: 4px solid #FFC107;
+    border-radius: 10px;
+    white-space: pre-wrap;
+}
+
+/* 네비게이션 버튼 */
+.navigation-buttons {
+    display: flex;
+    gap: 15px;
+    margin-top: 40px;
+    padding-top: 30px;
+    border-top: 2px solid #eee;
+}
+
+.nav-btn {
+    flex: 1;
+    padding: 18px;
+    border: none;
+    border-radius: 10px;
+    background: #4A90E2;
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.nav-btn:hover {
+    background: #357ABD;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(74,144,226,0.3);
+}
+
+.nav-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    transform: none;
+}

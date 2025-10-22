@@ -1,69 +1,70 @@
+const csrfToken = document.getElementById('csrfToken')?.value || '';
+const csrfHeader = document.getElementById('csrfHeader')?.value || 'X-CSRF-TOKEN';
+
+console.log('CSRF 정보:', {token: csrfToken, header: csrfHeader});
+
 let currentIndex = 0;
 let answers = {};
 
 function renderQuestion(index) {
     const q = questions[index];
-
     document.getElementById('quizNumber').textContent = `${index+1}/${questions.length}`;
-    //document.getElementById('quizTitle').textContent = `${index+1}번`;
     document.getElementById('quizText').textContent = q.question;
-
+    
     const container = document.getElementById('quizAnswerContainer');
     container.innerHTML = '';
-
-    // ⭐ MULTIPLE_CHOICE만 객관식 ⭐
+    
+    // MULTIPLE_CHOICE만 객관식
     if (q.questionType === 'MULTIPLE_CHOICE') {
-        // 객관식
         if (q.options && q.options.length > 0) {
             q.options.forEach((opt, idx) => {
                 const id = `opt-${index}-${idx}`;
                 const div = document.createElement('div');
                 div.classList.add('checkbox-container');
-
+                
                 const input = document.createElement('input');
                 input.type = 'radio';
                 input.name = `question-${index}`;
                 input.id = id;
                 input.value = opt;
-
-                // ⭐ 수정: answers는 객체! ⭐
+                
                 if(answers[index] === opt) {
                     input.checked = true;
                 }
-
+                
                 const label = document.createElement('label');
                 label.htmlFor = id;
                 label.textContent = opt;
-
+                
                 div.appendChild(input);
                 div.appendChild(label);
                 container.appendChild(div);
             });
         } else {
-            container.innerHTML = '<p style="color:red;">⚠️ 보기가 없습니다.</p>';
+            container.innerHTML = '<p>⚠️ 보기가 없습니다.</p>';
         }
     } else {
-        // ⭐ 주관식 ⭐
+        // 주관식
         const input = document.createElement('input');
         input.type = 'text';
         input.placeholder = '답안을 입력하세요';
         input.name = `question-${index}`;
         input.classList.add('quiz-answer2');
-
+        
         if(answers[index]) {
             input.value = answers[index];
         }
-
+        
         container.appendChild(input);
     }
-
+    
     updateButtons();
 }
 
 function saveAnswer() {
     const q = questions[currentIndex];
     const container = document.getElementById('quizAnswerContainer');
-
+    
     // 객관식
     if (q.questionType === 'MULTIPLE_CHOICE' || q.questionType === 'CONCEPT') {
         const checked = container.querySelector('input[type=radio]:checked');
@@ -83,7 +84,7 @@ function saveAnswer() {
 function updateButtons() {
     const prevBtn = document.getElementById('prevBtn');
     const nextBtn = document.getElementById('nextBtn');
-
+    
     prevBtn.style.opacity = currentIndex === 0 ? '0.3' : '1';
     nextBtn.style.opacity = currentIndex === questions.length - 1 ? '0.3' : '1';
 }
@@ -100,15 +101,15 @@ function shuffleArray(array) {
 function initQuiz() {
     // 객관식 문제들의 보기 섞기
     questions.forEach(q => {
-        if ((q.questionType === 'MULTIPLE_CHOICE' || q.questionType === 'CONCEPT')
+        if ((q.questionType === 'MULTIPLE_CHOICE' || q.questionType === 'CONCEPT') 
             && q.options && q.options.length > 0) {
             q.options = shuffleArray(q.options);
         }
     });
-
+    
     // 첫 문제 렌더링
     renderQuestion(currentIndex);
-
+    
     // 이전 버튼
     document.getElementById('prevBtn').addEventListener('click', () => {
         saveAnswer();
@@ -117,7 +118,7 @@ function initQuiz() {
             renderQuestion(currentIndex);
         }
     });
-
+    
     // 다음 버튼
     document.getElementById('nextBtn').addEventListener('click', () => {
         saveAnswer();
@@ -126,11 +127,11 @@ function initQuiz() {
             renderQuestion(currentIndex);
         }
     });
-
+    
     // 제출 버튼
     document.getElementById('submitBtn').addEventListener('click', async () => {
         saveAnswer();
-
+        
         // 미응답 문제 확인
         const unanswered = questions.filter((q, idx) => !answers[idx]);
         if (unanswered.length > 0) {
@@ -138,12 +139,17 @@ function initQuiz() {
                 return;
             }
         }
-
+        
         try {
+            // CSRF 토큰 가져오기
+            const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+            const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+            
             const response = await fetch('/exam/api/submit', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    [csrfHeader]: csrfToken // CSRF 헤더 추가
                 },
                 body: JSON.stringify({
                     testIdx: testIdx,
@@ -152,9 +158,9 @@ function initQuiz() {
                     endTime: new Date().toISOString()
                 })
             });
-
+            
             const data = await response.json();
-
+            
             if (data.success) {
                 alert('제출 완료!');
                 window.location.href = `/exam/result/${data.resultIdx}`;

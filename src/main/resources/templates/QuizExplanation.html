@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>시험 해설</title>
+    <link rel="stylesheet" th:href="@{/css/quizExplanation.css}">
+            <link rel="stylesheet" th:href="@{/css/header.css}">
+        <link rel="stylesheet" th:href="@{/css/footer.css}">
+</head>
+<body>
+    <div th:replace="~{fragments/header :: header}"></div>
+
+    <div class="page-wrapper">
+        <div class="explanation-container">
+            <!-- 헤더 -->
+            <div class="explanation-header">
+                <div id="questionNumber" class="question-number">1/20</div>
+                <button class="btn-back-result" th:onclick="|location.href='/exam/result/${resultIdx}'|">
+                    채점결과 돌아가기
+                </button>
+            </div>
+
+            <!-- 문제 표시 영역 -->
+            <div class="question-section">
+                <h2 class="question-title">문제</h2>
+                <div id="questionText" class="question-text"></div>
+            </div>
+
+            <!-- 보기 및 답안 영역 -->
+            <div class="answer-section">
+                <h2 class="answer-title">보기 및 정답</h2>
+                <div id="answerContainer" class="answer-container"></div>
+            </div>
+
+            <!-- 사용자 답안 표시 -->
+            <div class="user-answer-section">
+                <h2 class="user-answer-title">내가 선택한 답</h2>
+                <div id="userAnswerDisplay" class="user-answer-display"></div>
+            </div>
+
+            <!-- 해설 영역 -->
+            <div class="explanation-section">
+                <h2 class="explanation-title">해설</h2>
+                <div id="explanationText" class="explanation-text"></div>
+            </div>
+
+            <!-- 네비게이션 버튼 -->
+            <div class="navigation-buttons">
+                <button id="prevBtn" class="nav-btn prev-btn">이전</button>
+                <button id="nextBtn" class="nav-btn next-btn">다음</button>
+            </div>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const explanationData = /*[[${explanationData}]]*/ [];
+        const resultIdx = /*[[${resultIdx}]]*/ 0;
+        /*]]>*/
+    </script>
+    <script th:src="@{/js/quizExplanation.js}"></script>
+</body>
+</html>
