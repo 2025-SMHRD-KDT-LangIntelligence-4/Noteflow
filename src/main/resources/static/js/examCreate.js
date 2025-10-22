@@ -23,15 +23,16 @@ document.addEventListener('DOMContentLoaded', () => {
         folderTree = [];
         rootNotes = [];
     }
-
+	renderTree();
     // 초기 렌더링
+	/** 
     renderTree();
     if (PRESELECTED_NOTE_IDX) {
         setTimeout(() => {
             autoSelectNote(PRESELECTED_NOTE_IDX, PRESELECTED_KEYWORDS);
         }, 300);
     }
-    /**
+    
      * 트리 렌더링 (재귀)
      */
     function renderTree() {

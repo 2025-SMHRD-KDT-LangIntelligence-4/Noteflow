@@ -108,16 +108,16 @@
 
 <input type="file" id="fileInput" style="display: none;">
 
-<div th:replace="~{fragments/footer :: footer}"></div>
-
-<script th:src="@{/js/NotionManager.js}"></script>
-
 <script type="module">
     import * as HWP from '/js/hwp.browser.js';
     window.HWP = HWP;
     window.HWPLoaded = true;
     console.log('✅ HWP 로드 완료');
 </script>
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<script th:src="@{/js/NotionManager.js}"></script>
+
 
 </body>
 </html>

@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -249,32 +250,43 @@ public class NotionContentService {
 	}
 	@Transactional
 	public void syncNoteTags(Note note, List<String> tagNames) {
-		if (tagNames == null || tagNames.isEmpty()) {
-			return;
-		}
+	    if (tagNames == null || tagNames.isEmpty()) {
+	        return;
+	    }
 
-		// 기존 태그 전부 삭제
-		noteTagRepository.deleteByNote(note);
+	    // 기존 태그 전부 삭제
+	    noteTagRepository.deleteByNote(note);
+	    noteTagRepository.flush(); // ⭐ 강제 반영
+	    
+	    // 새 태그 추가
+	    for (String tagName : tagNames) {
+	        if (tagName == null || tagName.isBlank()) continue;
 
-		// 새 태그 추가
-		for (String tagName : tagNames) {
-			if (tagName == null || tagName.isBlank()) continue;
+	        Tag tag = tagRepository.findByName(tagName)
+	                .orElseGet(() -> {
+	                    try {
+	                        Tag newTag = Tag.builder()
+	                                .name(tagName)
+	                                .usageCount(0)
+	                                .build();
+	                        return tagRepository.save(newTag);
+	                    } catch (DataIntegrityViolationException e) {
+	                        // 동시성 문제로 이미 생성되었을 수 있음
+	                        return tagRepository.findByName(tagName)
+	                                .orElseThrow(() -> new RuntimeException("태그 조회 실패"));
+	                    }
+	                });
 
-			Tag tag = tagRepository.findByName(tagName)
-					.orElseGet(() -> {
-						Tag newTag = Tag.builder()
-								.name(tagName)
-								.usageCount(0)
-								.build();
-						return tagRepository.save(newTag);
-					});
-
-			NoteTag noteTag = NoteTag.builder()
-					.note(note)
-					.tag(tag)
-					.build();
-
-			noteTagRepository.save(noteTag);
-		}
+	        // ⭐ 중복 체크 (안전장치)
+	        if (!noteTagRepository.existsByNoteAndTag(note, tag)) {
+	            NoteTag noteTag = NoteTag.builder()
+	                    .note(note)
+	                    .tag(tag)
+	                    .build();
+	            noteTagRepository.save(noteTag);
+	        } else {
+	            log.warn("⚠️ 이미 연결된 태그 건너뜀: note={}, tag={}", note.getNoteIdx(), tag.getName());
+	        }
+	    }
 	}
 }

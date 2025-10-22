@@ -6,6 +6,7 @@ import com.smhrd.web.entity.Tag;
 
 import org.apache.ibatis.annotations.Param;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
@@ -37,7 +38,9 @@ public interface NoteTagRepository extends JpaRepository<NoteTag, Long> {
     /**
      * 특정 노트의 모든 태그 연결 삭제
      */
-    void deleteByNote(Note note);
+    @Modifying
+    @Query("DELETE FROM NoteTag nt WHERE nt.note = :note")
+    void deleteByNote(@Param("note") Note note);
 
     List<NoteTag> findAllByNote(Note note);
     
@@ -45,5 +48,7 @@ public interface NoteTagRepository extends JpaRepository<NoteTag, Long> {
     //  노트에 달린 태그명만 빠르게 로딩 (검색용)
      @Query("select lower(nt.tag.name) from NoteTag nt where nt.note.noteIdx = :noteIdx")
      List<String> findTagNamesByNoteIdx(@Param("noteIdx") Long noteIdx);
-
+     
+     
+     void flush(); // JpaRepository에 이미 있지만 명시
 }

@@ -523,52 +523,8 @@ public class NotionController {
             return ResponseEntity.status(500).body(res);
         }
     }
-
-    /**
-     * ✅ 태그 동기화 헬퍼 메소드
-     * - 기존 태그 제거 (usage_count -1)
-     * - 신규 태그 추가 (usage_count +1)
-     */
-    private void syncNoteTags(Note note, List<String> newKeywords) {
-        // 1) 기존 태그 조회
-        List<NoteTag> oldNoteTags = noteTagRepository.findAllByNote(note);
-        Set<String> oldTagNames = oldNoteTags.stream()
-                .map(nt -> nt.getTag().getName())
-                .collect(Collectors.toSet());
-
-        Set<String> newTagNames = new HashSet<>(newKeywords);
-
-        // 2) 제거할 태그 (old - new)
-        for (NoteTag nt : oldNoteTags) {
-            if (!newTagNames.contains(nt.getTag().getName())) {
-                tagRepository.bumpUsage(nt.getTag().getTagIdx(), -1);
-                noteTagRepository.delete(nt);
-            }
-        }
-
-        // 3) 추가할 태그 (new - old)
-        for (String tagName : newKeywords) {
-            String name = tagName.trim();
-            if (name.isEmpty()) continue;
-
-            if (!oldTagNames.contains(name)) {
-                // 태그 생성 or 조회
-                Tag tag = tagRepository.findByName(name).orElseGet(() -> {
-                    try {
-                        return tagRepository.save(Tag.builder().name(name).build());
-                    } catch (DataIntegrityViolationException e) {
-                        return tagRepository.findByName(name).orElseThrow();
-                    }
-                });
-
-                // 연결 추가
-                if (!noteTagRepository.existsByNoteAndTag(note, tag)) {
-                    noteTagRepository.save(NoteTag.builder().note(note).tag(tag).build());
-                    tagRepository.bumpUsage(tag.getTagIdx(), 1);
-                }
-            }
-        }
-    }
+    
+    
     @DeleteMapping("/api/notion/{noteIdx}")
     @ResponseBody
     @Transactional
