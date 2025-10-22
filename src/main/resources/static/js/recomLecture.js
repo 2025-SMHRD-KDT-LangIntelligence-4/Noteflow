@@ -609,51 +609,7 @@
 		return uniq.map(s => (s.startsWith('#') ? s : '#' + s)).join(' ');
 	}
 
-	// ⭐ 추가: 강의 카드 렌더링 함수 수정
-	function renderLectureCard(lecture) {
-		const card = document.createElement('div');
-		card.className = 'lecture-card';
 
-		// 오프라인 제공 여부
-		const hasOffline = lecture.hasOfflineVideo === true;
-		const videoFileId = lecture.videoFileId || '';
-
-		// [스마트인재개발원] 태그 확인
-		const isSmhrd = lecture.title && lecture.title.includes('[스마트인재개발원]');
-
-		// 스인개 태그 확인
-		const hasSingaeTag = lecture.tags && lecture.tags.some(tag =>
-			tag === '스인개' || tag === '스마트인재개발원'
-		);
-
-		// 바로보기 버튼 활성화 조건
-		const canPlayOffline = hasOffline && (isSmhrd || hasSingaeTag);
-
-		card.innerHTML = `
-        <h3 class="lecture-title">
-            ${escapeHtml(lecture.title)}
-            ${canPlayOffline ? '<span class="offline-badge">오프라인 제공</span>' : ''}
-        </h3>
-        <p class="lecture-category">
-            카테고리: ${lecture.categoryLarge} > ${lecture.categoryMedium} > ${lecture.categorySmall}
-        </p>
-        <div class="lecture-tags">
-            ${lecture.tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}
-        </div>
-        <div class="lecture-buttons">
-            <button class="rec-openBtn" onclick="window.open('${lecture.url}', '_blank')">
-                강의열기
-            </button>
-            <button class="rec-openBtn2" 
-                    ${!canPlayOffline ? 'disabled' : ''}
-                    onclick="playOfflineVideo('${videoFileId}', '${escapeHtml(lecture.title)}')">
-                바로보기
-            </button>
-        </div>
-    `;
-
-		return card;
-	}
 
 
 // ⭐ 추가: 모달 배경 클릭 시 닫기
