@@ -638,24 +638,61 @@ public class ExamController {
      */
     @GetMapping("/my-results")
     public String myResultsPage(@RequestParam(defaultValue = "0") int page,
-                                @RequestParam(defaultValue = "15") int size,
-                                @AuthenticationPrincipal CustomUserDetails userDetails,
-                                Model model) {
-
+                               @RequestParam(defaultValue = "15") int size,
+                               @AuthenticationPrincipal CustomUserDetails userDetails,
+                               Model model) {
         if (userDetails == null) {
             return "redirect:/login";
         }
-
+        
         model.addAttribute("nickname", userDetails.getNickname());
         model.addAttribute("email", userDetails.getEmail());
-
-        List<TestResult> results = examService.getUserResults(userDetails.getUserIdx(), page, size);
-
+        
+        Long userIdx = userDetails.getUserIdx();
+        
+        // 시험 결과 조회
+        List<TestResult> results = examService.getUserResults(userIdx, page, size);
+        
+        // 결과 데이터 가공
+        List<Map<String, Object>> resultList = results.stream()
+                .map(result -> {
+                    Map<String, Object> data = new HashMap<>();
+                    data.put("resultIdx", result.getResultIdx());
+                    data.put("testTitle", result.getTest().getTestTitle());
+                    data.put("testDesc", result.getTest().getTestDesc());
+                    data.put("createdAt", result.getCreatedAt());
+                    data.put("totalScore", result.getTotalScore());
+                    data.put("userScore", result.getUserScore());
+                    data.put("correctCount", result.getCorrectCount());
+                    data.put("wrongCount", result.getWrongCount());
+                    data.put("passed", result.getPassed());
+                    
+                    int total = result.getCorrectCount() + result.getWrongCount();
+                    double accuracy = total > 0 ? (double) result.getCorrectCount() / total * 100 : 0;
+                    data.put("accuracy", accuracy);
+                    
+                    // 난이도 추출
+                    String difficulty = "2";
+                    if (result.getTest().getTestDesc() != null && result.getTest().getTestDesc().contains("Level ")) {
+                        try {
+                            int idx = result.getTest().getTestDesc().indexOf("Level ") + 6;
+                            difficulty = result.getTest().getTestDesc().substring(idx, idx + 1);
+                        } catch (Exception e) {
+                            // 파싱 실패 시 기본값
+                        }
+                    }
+                    data.put("difficulty", difficulty);
+                    
+                    return data;
+                })
+                .collect(Collectors.toList());
+        
         model.addAttribute("pageTitle", "내 시험 기록");
         model.addAttribute("activeMenu", "exam");
-        model.addAttribute("results", results);
+        model.addAttribute("results", resultList);
         model.addAttribute("currentPage", page);
-
+        model.addAttribute("hasMore", results.size() >= size);
+        
         return "examMyResults";
     }
 
