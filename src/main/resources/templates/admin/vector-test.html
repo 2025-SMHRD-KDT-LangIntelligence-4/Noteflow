@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>RAG 챗봇 테스트</title>
+    <style>
+        /* 기존 스타일 유지 + 추가 */
+        body { 
+            font-family: 'Malgun Gothic', sans-serif; 
+            padding: 20px; 
+            background-color: #f5f5f5;
+            margin: 0;
+        }
+        .container { 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .section { 
+            background: white;
+            padding: 20px; 
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .full-width { grid-column: 1 / -1; }
+        
+        /* 파일 업로드 영역 */
+        .upload-area {
+            border: 2px dashed #2196F3;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+        .upload-area:hover {
+            background-color: #e3f2fd;
+            border-color: #1976D2;
+        }
+        .upload-area.dragover {
+            background-color: #bbdefb;
+            border-color: #0D47A1;
+        }
+        .upload-input {
+            display: none;
+        }
+        
+        .file-list { 
+            max-height: 300px; 
+            overflow-y: auto; 
+            border: 1px solid #eee; 
+            border-radius: 4px; 
+        }
+        .file-item { 
+            padding: 10px; 
+            margin: 0;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .file-item:last-child { border-bottom: none; }
+        .file-item:hover { background-color: #f5f5f5; }
+        .file-item.selected { 
+            background-color: #e3f2fd; 
+            border-left: 4px solid #2196F3;
+            font-weight: bold;
+        }
+        
+        .btn { 
+            padding: 10px 20px; 
+            margin: 5px; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .btn:hover { opacity: 0.8; transform: translateY(-1px); }
+        .btn-primary { background-color: #2196F3; color: white; }
+        .btn-success { background-color: #4CAF50; color: white; }
+        .btn-danger { background-color: #f44336; color: white; }
+        
+        .result-box { 
+            background-color: #f5f5f5; 
+            padding: 15px; 
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 10px;
+            font-size: 13px;
+        }
+        
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 500px;
+        }
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background-color: #fafafa;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+        }
+        .chat-message {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .chat-message.user {
+            background-color: #e3f2fd;
+            text-align: right;
+            margin-left: 20%;
+        }
+        .chat-message.bot {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            margin-right: 20%;
+        }
+        .chat-message .label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 12px;
+            color: #666;
+        }
+        .chat-input-area {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .chat-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .loading { 
+            display: none; 
+            color: #2196F3;
+            font-style: italic;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .error { color: #f44336; }
+        .success { color: #4CAF50; }
+        
+        h1 { 
+            grid-column: 1 / -1;
+            margin: 0 0 20px 0;
+            color: #333;
+        }
+        h2 {
+            margin-top: 0;
+            color: #555;
+            border-bottom: 2px solid #2196F3;
+            padding-bottom: 10px;
+        }
+        
+        label {
+            display: inline-block;
+            margin: 5px 10px 5px 0;
+        }
+        input[type="number"] {
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 80px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 RAG 챗봇 성능 테스트 (독립형)</h1>
+        
+        <!-- 파일 업로드 & 선택 -->
+        <div class="section full-width">
+            <h2>1️⃣ PDF 파일 업로드</h2>
+            
+            <!-- 드래그 앤 드롭 업로드 -->
+            <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+                <input type="file" 
+                       id="fileInput" 
+                       class="upload-input" 
+                       accept=".pdf"
+                       onchange="uploadFile(this.files[0])">
+                <div style="font-size: 48px; margin-bottom: 10px;">📄</div>
+                <div style="font-size: 16px; color: #666;">
+                    클릭하거나 PDF 파일을 드래그하여 업로드하세요
+                </div>
+                <div style="font-size: 12px; color: #999; margin-top: 5px;">
+                    (최대 100MB, PDF만 가능)
+                </div>
+            </div>
+            
+            <span class="loading" id="uploadLoading">⏳ 업로드 중...</span>
+            <div id="uploadResult"></div>
+            
+            <!-- 업로드된 파일 목록 -->
+            <h3 style="margin-top: 20px;">업로드된 파일 목록</h3>
+            <div class="file-list" id="fileList">
+                <div th:each="file : ${pdfFiles}" 
+                     class="file-item"
+                     th:data-file-id="${file.id}"
+                     th:onclick="'selectFile(this)'">
+                    <strong th:text="${file.originalName}">파일명</strong><br>
+                    <small style="color: #666;">
+                        크기: <span th:text="${#numbers.formatDecimal(file.size/1024/1024, 1, 2)}">0</span> MB | 
+                        업로드: <span th:text="${#temporals.format(file.uploadedAt, 'yyyy-MM-dd HH:mm')}">날짜</span>
+                    </small>
+                </div>
+                <div th:if="${#lists.isEmpty(pdfFiles)}" style="color: #999; padding: 20px; text-align: center;">
+                    📂 업로드된 PDF 파일이 없습니다. 위에서 파일을 업로드하세요.
+                </div>
+            </div>
+        </div>
+        
+        <!-- 벡터화 설정 -->
+        <div class="section">
+            <h2>2️⃣ 청킹 & 벡터화</h2>
+            <div>
+                <label>청크 크기 (글자): 
+                    <input type="number" id="chunkSize" value="1000" min="100" max="5000">
+                </label>
+                <br>
+                <label>오버랩 (글자): 
+                    <input type="number" id="overlap" value="200" min="0" max="1000">
+                </label>
+            </div>
+            <div style="margin-top: 15px;">
+                <button class="btn btn-primary" onclick="startVectorize()">
+                    🚀 벡터화 시작
+                </button>
+                <button class="btn btn-danger" onclick="viewChunks()">
+                    📋 청크 보기
+                </button>
+                <span class="loading" id="vectorizeLoading">⏳ 처리 중...</span>
+            </div>
+            <div id="vectorizeResult"></div>
+        </div>
+        
+        <!-- 통계 -->
+        <div class="section">
+            <h2>📊 현재 상태</h2>
+            <div id="statsArea" style="font-size: 14px; color: #666;">
+                파일을 선택하고 벡터화를 진행하세요.
+            </div>
+        </div>
+        
+        <!-- RAG 챗봇 테스트 -->
+<div class="section full-width">
+    <h2>3️⃣ RAG 챗봇 테스트</h2>
+    <div class="chat-container">
+        <div class="chat-messages" id="chatMessages">
+            <div style="text-align: center; color: #999; padding: 50px;">
+                📖 파일을 선택하고 벡터화한 후 질문해보세요!
+            </div>
+        </div>
+         <div class="chat-input-area">
+            <input type="text" 
+                   class="chat-input" 
+                   id="chatInput" 
+                   placeholder="문서에 대해 질문하세요..."
+                   onkeypress="if(event.key==='Enter') sendChat()">
+            <label style="display: flex; align-items: center; margin: 0 10px;">
+                Top K: 
+                <input type="number" id="topK" value="5" min="1" max="20" 
+                       style="width: 60px; margin-left: 5px;">
+            </label>
+            <button class="btn btn-success" onclick="sendChat()">
+                💬 질문하기
+            </button>
+            <button class="btn btn-danger" onclick="clearChat()" style="background-color: #f44336;">
+                🗑️ 초기화
+            </button>
+        </div>
+        <span class="loading" id="chatLoading" style="margin-top: 10px;">🤖 답변 생성 중...</span>
+    </div>
+</div>
+    
+    <script th:inline="javascript">
+        let selectedFileId = null;
+        
+        // 드래그 앤 드롭
+        const uploadArea = document.getElementById('uploadArea');
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                uploadFile(files[0]);
+            }
+        });
+        
+        // 파일 업로드
+        async function uploadFile(file) {
+            if (!file) return;
+            
+            if (!file.name.toLowerCase().endsWith('.pdf')) {
+                alert('PDF 파일만 업로드 가능합니다.');
+                return;
+            }
+            
+            if (file.size > 100 * 1024 * 1024) {
+                alert('파일 크기는 100MB 이하만 가능합니다.');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            document.getElementById('uploadLoading').style.display = 'inline';
+            document.getElementById('uploadResult').innerHTML = '';
+            
+            try {
+                const response = await fetch('/admin/vector-test/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('uploadResult').innerHTML = `
+                        <div class="result-box success">
+✅ ${result.message}
+
+파일명: ${result.filename}
+파일 ID: ${result.fileId}
+크기: ${(result.size / 1024 / 1024).toFixed(2)} MB
+                        </div>
+                    `;
+                    
+                    // 페이지 새로고침하여 파일 목록 갱신
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    throw new Error(result.error || '업로드 실패');
+                }
+            } catch (error) {
+                document.getElementById('uploadResult').innerHTML = `
+                    <div class="result-box error">❌ 오류: ${error.message}</div>
+                `;
+            } finally {
+                document.getElementById('uploadLoading').style.display = 'none';
+                document.getElementById('fileInput').value = '';
+            }
+        }
+        
+        // 파일 선택
+        function selectFile(element) {
+            document.querySelectorAll('.file-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            element.classList.add('selected');
+            selectedFileId = element.dataset.fileId;
+            
+            document.getElementById('statsArea').innerHTML = `
+                <strong>선택된 파일:</strong><br>
+                ID: ${selectedFileId}<br>
+                파일명: ${element.querySelector('strong').textContent}<br>
+                <span style="color: #f44336;">벡터화를 진행하세요!</span>
+            `;
+        }
+        
+        // 벡터화
+        async function startVectorize() {
+            if (!selectedFileId) {
+                alert('PDF 파일을 먼저 선택하세요!');
+                return;
+            }
+            
+            const chunkSize = parseInt(document.getElementById('chunkSize').value);
+            const overlap = parseInt(document.getElementById('overlap').value);
+            
+            document.getElementById('vectorizeLoading').style.display = 'inline';
+            document.getElementById('vectorizeResult').innerHTML = '';
+            
+            try {
+                const response = await fetch('/admin/vector-test/vectorize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        fileId: selectedFileId,
+                        chunkSize: chunkSize,
+                        overlap: overlap
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('vectorizeResult').innerHTML = `
+                        <div class="result-box success">
+✅ 벡터화 완료!
+
+파일명: ${result.filename}
+추출된 텍스트: ${result.extractedTextLength.toLocaleString()}자
+총 청크 수: ${result.totalChunks}개
+벡터화된 청크: ${result.vectorizedChunks}개
+총 토큰 수: 약 ${result.totalTokens.toLocaleString()}개
+처리 시간: ${result.processingTimeMs}ms (${(result.processingTimeMs/1000).toFixed(2)}초)
+
+이제 채팅으로 질문해보세요! 💬
+                        </div>
+                    `;
+                    
+                    document.getElementById('statsArea').innerHTML = `
+                        <strong>✅ 벡터화 완료</strong><br>
+                        청크 수: ${result.totalChunks}개<br>
+                        토큰 수: ${result.totalTokens.toLocaleString()}개<br>
+                        처리 시간: ${(result.processingTimeMs/1000).toFixed(2)}초
+                    `;
+                } else {
+                    throw new Error(result.error || '벡터화 실패');
+                }
+            } catch (error) {
+                document.getElementById('vectorizeResult').innerHTML = `
+                    <div class="result-box error">❌ 오류: ${error.message}</div>
+                `;
+            } finally {
+                document.getElementById('vectorizeLoading').style.display = 'none';
+            }
+        }
+        
+        // 청크 보기
+        async function viewChunks() {
+            if (!selectedFileId) {
+                alert('파일을 먼저 선택하세요!');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/admin/vector-test/chunks/${selectedFileId}`);
+                const data = await response.json();
+                
+                let html = `<div class="result-box">총 ${data.total_chunks}개의 청크\n\n`;
+                data.chunks.forEach((chunk, idx) => {
+                    const preview = chunk.content.substring(0, 150) + '...';
+                    html += `[청크 ${chunk.chunk_index}] (${chunk.token_count}토큰)\n${preview}\n\n---\n\n`;
+                });
+                html += '</div>';
+                
+                document.getElementById('vectorizeResult').innerHTML = html;
+            } catch (error) {
+                alert('청크 조회 실패: ' + error.message);
+            }
+        }
+        
+        // 채팅 전송
+        async function sendChat() {
+            if (!selectedFileId) {
+                alert('파일을 먼저 선택하고 벡터화하세요!');
+                return;
+            }
+            
+            const question = document.getElementById('chatInput').value.trim();
+            const topK = parseInt(document.getElementById('topK').value);
+            
+            if (!question) {
+                alert('질문을 입력하세요!');
+                return;
+            }
+            
+            addChatMessage('user', question);
+            document.getElementById('chatInput').value = '';
+            document.getElementById('chatLoading').style.display = 'block';
+            
+            try {
+                const startTime = Date.now();
+                
+                const response = await fetch('/admin/vector-test/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        fileId: selectedFileId,
+                        question: question,
+                        topK: topK
+                    })
+                });
+                
+                const result = await response.json();
+                const totalTime = Date.now() - startTime;
+                
+                if (response.ok) {
+                    let botMessage = result.answer;
+                    botMessage += `\n\n📊 검색 통계:\n`;
+                    botMessage += `• 사용된 청크: ${result.chunks_used}개\n`;
+                    botMessage += `• 처리 시간: ${result.processing_time_ms}ms\n`;
+                    botMessage += `• 총 소요 시간: ${totalTime}ms`;
+                    
+                    addChatMessage('bot', botMessage);
+                } else {
+                    throw new Error(result.error || '답변 생성 실패');
+                }
+            } catch (error) {
+                addChatMessage('bot', `❌ 오류: ${error.message}`, 'error');
+            } finally {
+                document.getElementById('chatLoading').style.display = 'none';
+            }
+        }
+        
+        // 채팅 메시지 추가
+        function addChatMessage(type, content, extraClass = '') {
+            const messagesDiv = document.getElementById('chatMessages');
+            
+            if (messagesDiv.children.length === 1 && 
+                messagesDiv.children[0].style.textAlign === 'center') {
+                messagesDiv.innerHTML = '';
+            }
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${type} ${extraClass}`;
+            
+            const label = type === 'user' ? '👤 질문' : '🤖 답변';
+            messageDiv.innerHTML = `
+                <div class="label">${label}</div>
+                <div>${content.replace(/\n/g, '<br>')}</div>
+            `;
+            
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+     // 채팅 초기화
+        function clearChat() {
+            if (confirm('대화 내용을 모두 삭제하시겠습니까?')) {
+                const messagesDiv = document.getElementById('chatMessages');
+                messagesDiv.innerHTML = `
+                    <div style="text-align: center; color: #999; padding: 50px;">
+                        📖 파일을 선택하고 벡터화한 후 질문해보세요!
+                    </div>
+                `;
+                console.log('채팅 초기화 완료');
+            }
+        }
+    </script>
+</body>
+</html>

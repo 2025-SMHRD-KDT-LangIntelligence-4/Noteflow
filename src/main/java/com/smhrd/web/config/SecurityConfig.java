@@ -47,13 +47,16 @@ public class SecurityConfig {
         http
             // 인증 제공자 등록
             .authenticationProvider(authenticationProvider())
-
+            .csrf(csrf -> csrf
+                    // 벡터 테스트 API는 CSRF 체크 제외
+                    .ignoringRequestMatchers("/admin/vector-test/**")
+                )
             // URL 접근 제어
             .authorizeHttpRequests(auth -> auth
                 // 로그인/회원가입 페이지 및 정적 자원 접근 허용
                 .requestMatchers(HttpMethod.GET, "/login", "/signup").permitAll()
                 .requestMatchers(HttpMethod.POST, "/login", "/signup").permitAll()
-                .requestMatchers("/main","/css/**", "/js/**", "/images/**", "/fonts/**", "/static/**", "/", "/webjars/**","/templates/fragments/**").permitAll()
+                .requestMatchers("/main","/css/**", "/js/**", "/images/**", "/fonts/**", "/static/**", "/", "/webjars/**","/templates/fragments/**","/admin/vector-test/**").permitAll()
                 // 그 외 요청은 인증 필요
                 .anyRequest().authenticated()
             )
