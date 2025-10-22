@@ -5,7 +5,7 @@ function renderQuestion(index) {
     const q = questions[index];
 
     document.getElementById('quizNumber').textContent = `${index+1}/${questions.length}`;
-    document.getElementById('quizTitle').textContent = `${index+1}번`;
+    //document.getElementById('quizTitle').textContent = `${index+1}번`;
     document.getElementById('quizText').textContent = q.question;
 
     const container = document.getElementById('quizAnswerContainer');
@@ -48,7 +48,7 @@ function renderQuestion(index) {
         input.type = 'text';
         input.placeholder = '답안을 입력하세요';
         input.name = `question-${index}`;
-        input.classList.add('quiz-answer');
+        input.classList.add('quiz-answer2');
 
         if(answers[index]) {
             input.value = answers[index];
