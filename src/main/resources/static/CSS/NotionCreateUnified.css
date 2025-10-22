@@ -57,13 +57,11 @@ body{
 }
 .nc-slide-item:hover { 
 	background-color:#eff6ff; 
-	border-color:#96D0FF; 
 	transform: translateY(-2px); 
 }
 .nc-slide-item.nc-selected { 
 	background-color:#96D0FF; 
 	color:#fff; 
-	border:2px solid #5daaff; 
 	transform: scale(1.03); 
 }
 .nc-item-title { 
@@ -328,4 +326,11 @@ body{
 	border-radius:8px; 
 	cursor:pointer;
 	outline:none;
+}
+.nc-item-image {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    border-bottom: 1px solid #ccc;
+    margin-bottom: 8px;
 }

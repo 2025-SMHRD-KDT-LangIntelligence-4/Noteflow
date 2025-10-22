@@ -207,7 +207,7 @@ body {
 	height:auto;
 	border-top:1px solid white;
 	border-bottom: 1px solid white;
-	overflow-x: scroll;
+	white-space:nowrap;
 }
 .reward-title{
 	width:93%;
@@ -217,15 +217,17 @@ body {
 	font-weight:bold;
 }
 .reward-info-container{
-	width: 93%;
+	width: 94.2%;
     height: auto;
     padding: 20px 20px;
     display: flex;
     align-items: center;
     gap:15px;
+    flex-wrap:nowrap;
+    overflow-x:scroll;
 }
 .path-reward-list{
-	width: 35%;
+	width: 245px;
     height: 245px;
     border: 1px solid #c7c7c7;
     border-radius: 10px;
@@ -235,6 +237,7 @@ body {
     background-color: white;
     opacity: 0.7;
     align-items:center;
+    flex-shrink:0;
 }
 .reward-img{
 	width:95%;
@@ -251,4 +254,5 @@ body {
 .next-sign{
 	width:50px;
 	height:50px;
+	flex-shrink:0;
 }

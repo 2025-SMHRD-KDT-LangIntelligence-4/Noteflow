@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const $charCount       = document.getElementById('nc-charCount');
   const $tokenCount      = document.getElementById('nc-tokenCount');
   const $lengthHint      = document.getElementById('nc-lengthHint');
-
+  
   // ==== 상태/상수 ====
   const CARD_WIDTH = 240;
   const MAX_TOKENS = 7000; // ✅ 추가
@@ -131,7 +131,6 @@ document.addEventListener('DOMContentLoaded', () => {
     title.className = 'nc-item-title';
     title.title = p.title || '제목 없음';
     title.textContent = p.title || '제목 없음';
-
     const actions = document.createElement('div');
     actions.className = 'nc-item-actions';
 
@@ -153,8 +152,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     actions.appendChild(label);
     actions.appendChild(btn);
+	// 이미지
+	if (p.imageUrl) {
+	    const img = document.createElement('img');
+	    img.src = p.imageUrl;
+	    img.alt = p.title || '프롬프트 이미지';
+	    img.className = 'nc-item-image';
+	    img.style.width = '100%'; // 카드 전체 폭
+	    img.style.height = '120px'; // 원하는 높이
+	    img.style.objectFit = 'cover';
+		card.appendChild(title);
+	    card.appendChild(img);
+	}else{
+		card.appendChild(title);
 
-    card.appendChild(title);
+	}
+	
     card.appendChild(actions);
 
     // 체크박스 동작

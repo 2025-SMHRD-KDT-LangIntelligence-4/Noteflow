@@ -16,12 +16,17 @@ body {
 }
 
 .explanation-container {
-    max-width: 900px;
+    width: 900px;
     margin: 0 auto;
     background: white;
     border-radius: 20px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     padding: 40px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:20px;
+    justify-content:center;
+    height:auto;
 }
 
 /* 헤더 */
@@ -29,9 +34,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 30px;
-    padding-bottom: 20px;
-    border-bottom: 2px solid #eee;
+    width:75%;
 }
 
 .question-number {
@@ -63,6 +66,7 @@ body {
 .user-answer-section,
 .explanation-section {
     margin-bottom: 30px;
+    width:45%;
 }
 
 .question-section h2,
@@ -83,6 +87,7 @@ body {
     background: #F5F8FA;
     border-radius: 10px;
     white-space: pre-wrap;
+    height:75%
 }
 
 /* 답안 컨테이너 (읽기 전용) */
@@ -90,6 +95,7 @@ body {
     padding: 20px;
     background: #F5F8FA;
     border-radius: 10px;
+    height:75%;
 }
 
 .option-item {
@@ -154,13 +160,14 @@ body {
 .navigation-buttons {
     display: flex;
     gap: 15px;
-    margin-top: 40px;
-    padding-top: 30px;
-    border-top: 2px solid #eee;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #eee;
+    width:100%;
+    justify-content:space-between;
 }
 
 .nav-btn {
-    flex: 1;
+	height:60px;
     padding: 18px;
     border: none;
     border-radius: 10px;
@@ -170,6 +177,7 @@ body {
     font-weight: 700;
     cursor: pointer;
     transition: all 0.3s;
+    width:80px;
 }
 
 .nav-btn:hover {

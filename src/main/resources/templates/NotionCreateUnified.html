@@ -4,8 +4,38 @@
   <meta charset="UTF-8"/>
   <title th:text="${pageTitle} ?: '노션 작성'">노션 작성</title>
 <link rel="stylesheet" th:href="@{/css/header.css}" />
-<link rel="stylesheet" th:href="@{/css/NotionCreateUnified.css}" />
+<link rel="stylesheet" id="theme-css"th:href="@{/css/NotionCreateUnified.css}" />
 <link rel="stylesheet" th:href="@{/css/footer.css}" />
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const themeLink = document.getElementById("theme-css");
+      const themeToggleBtn = document.getElementById("theme-toggle-btn");
+
+      // 저장된 모드 복원 (localStorage 사용)
+      const savedTheme = localStorage.getItem("theme") || "light";
+      applyTheme(savedTheme);
+
+      themeToggleBtn.addEventListener("click", () => {
+        const current = localStorage.getItem("theme") || "light";
+        const next = current === "light" ? "dark" : "light";
+        applyTheme(next);
+      });
+
+      function applyTheme(mode) {
+        if (mode === "dark") {
+          themeLink.setAttribute("th:href", "@{/CSSDARK/NotionCreateUnified.css}");
+          themeLink.setAttribute("href", "/CSSDARK/NotionCreateUnified.css"); // 실질적 적용
+          localStorage.setItem("theme", "dark");
+          themeToggleBtn.textContent = "☀️";
+        } else {
+          themeLink.setAttribute("th:href", "@{/css/NotionCreateUnified.css}");
+          themeLink.setAttribute("href", "/css/NotionCreateUnified.css");
+          localStorage.setItem("theme", "light");
+          themeToggleBtn.textContent = "🌙";
+        }
+      }
+    });
+  </script>    
 
   <!-- CSRF -->
   <meta name="_csrf" th:content="${_csrf.token}"/>
@@ -94,7 +124,10 @@
     </section>
 
     <!-- 로딩 오버레이 -->
-    <div id="nc-loadingOverlay">요약 중...</div>
+    <div id="nc-loadingOverlay">
+    	
+    	요약 중...
+    </div>
   </div>
 
   <!-- ✅ 푸터 프래그먼트 포함 (실제 fragment 이름에 맞게 조정) -->

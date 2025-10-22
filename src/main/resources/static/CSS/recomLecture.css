@@ -177,6 +177,7 @@ body {
 	transition: all 0.3s;
 	display: flex;
 	flex-direction: column;
+	overflow:hidden;
 }
 
 .lecture-list:hover {
@@ -224,6 +225,7 @@ body {
 	display: -webkit-box;
 	-webkit-line-clamp: 1;
 	-webkit-box-orient: vertical;
+	width:95%;
 }
 
 .rec-row {

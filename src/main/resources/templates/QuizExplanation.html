@@ -14,11 +14,16 @@
     <div class="page-wrapper">
         <div class="explanation-container">
             <!-- 헤더 -->
-            <div class="explanation-header">
-                <div id="questionNumber" class="question-number">1/20</div>
-                <button class="btn-back-result" th:onclick="|location.href='/exam/result/${resultIdx}'|">
-                    채점결과 돌아가기
-                </button>
+            <!-- 네비게이션 버튼 -->
+            <div class="navigation-buttons">
+                <button id="prevBtn" class="nav-btn prev-btn">이전</button>
+	            <div class="explanation-header">
+	                <div id="questionNumber" class="question-number">1/20</div>
+	                <button class="btn-back-result" th:onclick="|location.href='/exam/result/${resultIdx}'|">
+	                    채점결과 돌아가기
+	                </button>
+	            </div>
+                <button id="nextBtn" class="nav-btn next-btn">다음</button>
             </div>
 
             <!-- 문제 표시 영역 -->
@@ -45,11 +50,6 @@
                 <div id="explanationText" class="explanation-text"></div>
             </div>
 
-            <!-- 네비게이션 버튼 -->
-            <div class="navigation-buttons">
-                <button id="prevBtn" class="nav-btn prev-btn">이전</button>
-                <button id="nextBtn" class="nav-btn next-btn">다음</button>
-            </div>
         </div>
     </div>
 

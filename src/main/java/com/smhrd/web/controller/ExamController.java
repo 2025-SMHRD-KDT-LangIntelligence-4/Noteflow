@@ -334,10 +334,10 @@ public class ExamController {
                 .collect(Collectors.toList());
 
         // ✅ 여기서 랜덤 20문제 선택
-        Collections.shuffle(questions);
-        if (questions.size() > 20) {
-            questions = questions.subList(0, 20);
-        }
+        //Collections.shuffle(questions);
+        //if (questions.size() > 20) {
+        //    questions = questions.subList(0, 20);
+        //}
 
         // JSON 변환 후 Thymeleaf에 담기
         ObjectMapper mapper = new ObjectMapper();

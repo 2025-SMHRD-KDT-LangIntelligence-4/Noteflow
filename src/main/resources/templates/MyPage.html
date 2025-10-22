@@ -66,6 +66,33 @@
 		        			<div class="reward-name"></div>
 	        			</div>
 		        		<img class="next-sign" th:src="@{/images/arrowVector.svg}"/>
+		        		<div class="path-reward-list">
+							<div class="reward-img"></div>	        			
+		        			<div class="reward-name"></div>
+	        			</div>
+		        		<img class="next-sign" th:src="@{/images/arrowVector.svg}"/>
+		        		<div class="path-reward-list">
+							<div class="reward-img"></div>	        			
+		        			<div class="reward-name"></div>
+	        			</div>
+		        		<img class="next-sign" th:src="@{/images/arrowVector.svg}"/>
+		        		<div class="path-reward-list">
+							<div class="reward-img"></div>	        			
+		        			<div class="reward-name"></div>
+	        			</div>
+		        		<img class="next-sign" th:src="@{/images/arrowVector.svg}"/>
+		   		        <div class="path-reward-list">
+							<div class="reward-img"></div>	        			
+		        			<div class="reward-name"></div>
+	        			</div>
+		        		<img class="next-sign" th:src="@{/images/arrowVector.svg}"/>
+		        		
+		        	    <div class="path-reward-list">
+							<div class="reward-img"></div>	        			
+		        			<div class="reward-name"></div>
+	        			</div>
+		        		<img class="next-sign" th:src="@{/images/arrowVector.svg}"/>
+		        		
         			</div>
         		</div>
         	</div>
@@ -102,6 +129,17 @@
 		    }
 		}, speed);
 	</script>
+	<script>
+	    const rewardInfoContainer = document.querySelector('.reward-info-container');
+	
+	    if (rewardInfoContainer) {
+	        rewardInfoContainer.addEventListener('wheel', function(e) {
+	            e.preventDefault(); // 기본 세로 스크롤 막기
+	            rewardInfoContainer.scrollLeft += e.deltaY; // 세로 휠 값으로 가로 이동
+	        });
+	    }
+	</script>
+
     <div th:replace="~{fragments/footer :: siteFooter}"></div>
 </body>
 </html>

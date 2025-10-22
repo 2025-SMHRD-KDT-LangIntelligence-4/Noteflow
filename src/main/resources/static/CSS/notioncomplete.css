@@ -8,17 +8,20 @@ body {
 }
 
 .title {
-    margin-left: 20px;
-    width: 300px;
+    width: 100%;
     height: 50px;
     font-size: 30px;
+    align-items: center;
+    display: flex;
+    justify-content: center;
 }
 
 .date {
-    margin-left: 20px;
-    width: 300px;
+    width: 100%;
     height: 50px;
     font-size: 20px;
+    display: flex;
+    justify-content: flex-end;
 }
 
 .keyward-box {

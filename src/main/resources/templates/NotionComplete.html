@@ -6,8 +6,38 @@
     <meta name="csrf" th:content="${_csrf?.token}">
     <meta name="csrf-header" th:content="${_csrf?.headerName}">
 <link rel="stylesheet" th:href="@{/css/header.css}" />
-<link rel="stylesheet" th:href="@{/css/notioncomplete.css}" />
+<link rel="stylesheet" id="theme-css" th:href="@{/css/notioncomplete.css}" />
 <link rel="stylesheet" th:href="@{/css/footer.css}" />
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const themeLink = document.getElementById("theme-css");
+      const themeToggleBtn = document.getElementById("theme-toggle-btn");
+
+      // 저장된 모드 복원 (localStorage 사용)
+      const savedTheme = localStorage.getItem("theme") || "light";
+      applyTheme(savedTheme);
+
+      themeToggleBtn.addEventListener("click", () => {
+        const current = localStorage.getItem("theme") || "light";
+        const next = current === "light" ? "dark" : "light";
+        applyTheme(next);
+      });
+
+      function applyTheme(mode) {
+        if (mode === "dark") {
+          themeLink.setAttribute("th:href", "@{/CSSDARK/notioncomplete.css}");
+          themeLink.setAttribute("href", "/CSSDARK/notioncomplete.css"); // 실질적 적용
+          localStorage.setItem("theme", "dark");
+          themeToggleBtn.textContent = "☀️";
+        } else {
+          themeLink.setAttribute("th:href", "@{/css/notioncomplete.css}");
+          themeLink.setAttribute("href", "/css/notioncomplete.css");
+          localStorage.setItem("theme", "light");
+          themeToggleBtn.textContent = "🌙";
+        }
+      }
+    });
+  </script>    
 </head>
 <body>
 <!-- 헤더 -->
@@ -26,12 +56,12 @@
 
 <!-- 제목 -->
 <div class="title">
-<span th:text="${title != null ? title : '노선 제목'}">노선 제목</span>
+<span th:text="${title != null ? title : '노트제목'}">노트제목</span>
 </div>
 
 <!-- 작성일 -->
 <div class="date">
-<span th:text="${createdAt != null ? createdAt : '노선 작성일'}">노선 작성일</span>
+<span th:text="${createdAt != null ? createdAt : '노트 작성일'}">노트 작성일</span>
 </div>
 
 <!-- 키워드 (id 추가) -->
@@ -51,10 +81,9 @@
 <!-- href="#" 으로 변경하고 id 추가 -->
 <a href="#" id="nc-go-lecture">강의페이지</a>
 <a th:href="@{/notion/create}" class="action-btn">작성페이지로</a>
-<a th:href="@{/notion/manage}" class="action-btn">노션 관리</a>
-    <a href="#" id="nc-go-exam">📝 문제은행 가기</a>
+<a th:href="@{/notion/manage}" class="action-btn">노트관리</a>
+    <a href="#" id="nc-go-exam">문제은행 가기</a>
     <input type="hidden" id="nc-note-id" th:value="${noteId}">
-<a th:href="@{/main}" class="action-btn">메인으로</a>
 </div>
 </div>
 </div>

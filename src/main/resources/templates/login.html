@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <title>로그인</title>
     <link rel="stylesheet" th:href="@{/css/header.css}" />
-    <link rel="stylesheet" th:href="@{/css/login.css}" />
+    <link rel="stylesheet" id="theme-css" th:href="@{/css/login.css}" />
     <link rel="stylesheet" th:href="@{/css/footer.css}" />
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
-</head>
+    </head>
 <style>
 
 </style>
@@ -60,6 +60,7 @@
         </div>
     </div>
 <div th:replace="fragments/footer :: siteFooter"></div>
+
 <script>
   function closePopup() {
     const popup = document.querySelector('.login-popup-overlay');
