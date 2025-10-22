@@ -2,6 +2,7 @@ package com.smhrd.web.repository;
 
 import com.smhrd.web.entity.Schedule;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -22,4 +23,11 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
 
     // 일정 겹침 조회 (예: 시간 중복 체크)
     List<Schedule> findByUser_UserIdxAndStartTimeLessThanEqualAndEndTimeGreaterThanEqual(Long userIdx, LocalDateTime end, LocalDateTime start);
+
+    @Query("SELECT s FROM Schedule s " +
+    	       "WHERE s.user.userIdx = :userIdx " +
+    	       "AND (s.isDeleted = false OR s.isDeleted IS NULL) " +
+    	       "AND (LOWER(s.title) LIKE LOWER(CONCAT('%', :kw, '%')) " +
+    	       "     OR LOWER(s.description) LIKE LOWER(CONCAT('%', :kw, '%')))")
+    	List<Schedule> searchByTitleOrDescription(Long userIdx, String kw);
 }

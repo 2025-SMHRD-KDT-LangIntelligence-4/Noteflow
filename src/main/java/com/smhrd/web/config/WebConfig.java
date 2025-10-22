@@ -1,10 +1,13 @@
 package com.smhrd.web.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+
 
 /**
  * WebConfig ---------------------------------------- 정적 리소스(js/css/images 등) 및
@@ -13,6 +16,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  */
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
+	
+	@Value("${file.upload-dir:./uploads}")
+	private String uploadDir;
 
 	/**
 	 * ✅ 정적 리소스 핸들러 설정 - /js/** 요청 → classpath:/static/js/ 매핑 - /css/** 요청 →
@@ -29,6 +35,7 @@ public class WebConfig implements WebMvcConfigurer {
 				.setCachePeriod(3600);
 
 		registry.addResourceHandler("/fonts/**").addResourceLocations("classpath:/static/fonts/").setCachePeriod(3600);
+		registry.addResourceHandler("/uploads/**").addResourceLocations("file:" + uploadDir + "/").setCachePeriod(3600);
 	}
 
 	/**

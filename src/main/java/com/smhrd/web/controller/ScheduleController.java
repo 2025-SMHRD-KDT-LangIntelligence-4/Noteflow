@@ -113,7 +113,9 @@ public class ScheduleController {
                         s.getColorTag(),
                         s.getDescription(),
                         s.getIsAllDay(),
-                        s.getEmoji()
+                        s.getEmoji(),
+                        s.getCategory(),
+                        s.getHighlightType()
                 ))
                 .collect(Collectors.toList());
 
@@ -138,13 +140,36 @@ public class ScheduleController {
                         s.getColorTag(),
                         s.getDescription(),
                         s.getIsAllDay(),
-                        s.getEmoji()
+                        s.getEmoji(),
+                        s.getCategory(),
+                        s.getHighlightType()
                 ))
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(events);
     }
-
+    // 4.1 일정 검색 (제목 + 내용)
+    @GetMapping("/search2")
+    public ResponseEntity<List<ScheduleEventDto>> searchSchedules2(
+            Authentication authentication, @RequestParam String keyword) {
+        Long userIdx = ((CustomUserDetails) authentication.getPrincipal()).getUserIdx();
+        List<Schedule> results = scheduleService.searchSchedulesByTitleOrDesc(userIdx, keyword);
+        List<ScheduleEventDto> events = results.stream()
+            .map(s -> new ScheduleEventDto(
+                s.getScheduleId(),
+                s.getTitle(),
+                s.getStartTime() != null ? s.getStartTime().format(fmt) : null,
+                s.getEndTime() != null ? s.getEndTime().format(fmt) : null,
+                s.getColorTag(),
+                s.getDescription(),
+                s.getIsAllDay(),
+                s.getEmoji(),
+                s.getCategory(),
+                s.getHighlightType()
+            ))
+            .collect(Collectors.toList());
+        return ResponseEntity.ok(events);
+    }
     // 5. 일정 수정
     @PutMapping("/update/{scheduleId}")
     public ResponseEntity<Schedule> updateSchedule(@PathVariable Long scheduleId,

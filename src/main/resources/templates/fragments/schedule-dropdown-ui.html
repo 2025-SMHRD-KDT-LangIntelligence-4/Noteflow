@@ -33,23 +33,21 @@
 		<div class="quick-add-row small-row justify-between">
 			<label> <span class="icon-clock">🕒</span> <input
 				id="qaAllDay" type="checkbox" /> 하루종일
-			</label> 
-			<label id="repeatOptionLabel" style="font-size: 0.9em;"> 
-				<input id="qaRepeat" type="checkbox" /> 선택 기간 동안 매일 동일 시간 적용
+			</label> <label id="repeatOptionLabel" style="font-size: 0.9em;"> <input
+				id="qaRepeat" type="checkbox" /> 선택 기간 동안 매일 동일 시간 적용
 			</label>
 		</div>
-		
+
 		<!-- ✅ 반복 일정 경고 멘트: 초기에는 숨겨진 상태로 배치 -->
 		<div id="repeatWarningContainer" style="display: none;">
 			<p id="repeatWarningText"
 				style="font-size: 0.75em; color: #E53E3E; margin-top: 2px; padding-left: 1.5em; line-height: 1.3;">
-				**주의:** 동일 시간 적용한 일정은 개별적인 일정으로 반복 등록됩니다. 수정/삭제 시 모든 일정을 개별적으로 처리해야 할 수
-				있습니다.</p>
+				**주의:** 동일 시간 적용한 일정은 개별적인 일정으로 반복 등록됩니다. 수정/삭제 시 모든 일정을 개별적으로 처리해야
+				할 수 있습니다.</p>
 		</div>
 
 		<div class="quick-add-row notify-row">
-			<label>알림</label> 
-			<select id="qaNotify">
+			<label>알림</label> <select id="qaNotify">
 				<option value="-1">알림 없음</option>
 				<option value="0">일정 시작</option>
 				<option value="10">10분 전</option>
@@ -57,18 +55,18 @@
 				<option value="1440">1일 전</option>
 				<option value="custom">직접 설정...</option>
 			</select>
-			
+
 			<!-- ✅ 직접 설정 시 나타날 사용자 정의 알림 필드 (초기 숨김) -->
 			<div id="qaCustomAlertContainer" style="display: none; gap: 5px;">
-                <input id="qaCustomAlertValue" type="number" min="1" style="width: 70px;" placeholder="값" />
-                <select id="qaCustomAlertUnit">
-                    <option value="M">분</option>
-                    <option value="H">시간</option>
-                    <option value="D">일</option>
-                    <option value="W">주</option>
-                </select>
-                <span>전</span>
-            </div>
+				<input id="qaCustomAlertValue" type="number" min="1"
+					style="width: 70px;" placeholder="값" /> <select
+					id="qaCustomAlertUnit">
+					<option value="M">분</option>
+					<option value="H">시간</option>
+					<option value="D">일</option>
+					<option value="W">주</option>
+				</select> <span>전</span>
+			</div>
 		</div>
 
 		<div class="quick-add-row justify-end">
@@ -78,26 +76,48 @@
 
 		<div id="qaAdvancedOptions" class="advanced-options hidden">
 			<div class="quick-add-row">
-				<input id="qaAlertType" type="text" placeholder="알림 타입(alert_type)" />
+				<input id="qaAlertType" type="hidden"
+					placeholder="알림 타입(alert_type)" />
+				<div class="quick-add-row-label"
+					style="font-size: 0.9em; margin-bottom: 5px;">알림 방법 (다중 선택
+					가능)</div>
+				<div class="quick-add-row alert-type-options"
+					style="display: flex; gap: 15px; padding-left: 5px;">
+					<label style="font-size: 0.9em;"> <input type="checkbox"
+						name="qaAlertType" value="chatbot"> 챗봇
+					</label> <label style="font-size: 0.9em;"> <input type="checkbox"
+						name="qaAlertType" value="email"> 메일
+					</label> <label style="font-size: 0.9em; color: #999;"> <input
+						type="checkbox" name="qaAlertType" value="windows" disabled>
+						윈도우 알림 (추후 개발)
+					</label>
+				</div>
 			</div>
 
 			<div class="quick-add-row">
 				<span class="icon-location">📍</span> <input id="qaLocation"
 					type="text" placeholder="장소 입력" />
 				<button id="qaMapBtn" class="btn secondary small">지도</button>
+
+			</div>
+			<div class="quick-add-row">
+				<input id="qaCategory" type="text"
+					placeholder="카테고리 입력 후 Enter 또는 +버튼" />
+				<button id="qaCategoryAddBtn" class="btn small secondary">+</button>
+			</div>
+			<div class="quick-add-row" style="flex-wrap: wrap; gap: 6px"
+				id="qaCategoryTags"></div>
+			<div class="quick-add-row">
+				<label for="qaFileUploader" class="btn secondary small"
+					style="cursor: pointer;">파일 첨부</label> <input type="file"
+					id="qaFileUploader" style="display: none;" multiple />
+
+				<div id="qaAttachmentListSlot" class="attachment-list-slot"
+					style="margin-top: 5px;"></div>
 			</div>
 
-			<div class="quick-add-row">
-				<input id="qaHighlightType" type="text"
-					placeholder="하이라이트 타입(highlight_type)" /> <input id="qaCategory"
-					type="text" placeholder="카테고리(category)" />
-			</div>
-			<div class="quick-add-row">
-				<input id="qaAttachmentPath" type="text"
-					placeholder="첨부 파일 경로(attachment_path)" /> <input
-					id="qaAttachmentList" type="text"
-					placeholder="첨부 파일 목록(attachment_list)" />
-			</div>
+			<input type="hidden" id="qaAttachmentPath" /> <input type="hidden"
+				id="qaAttachmentList" value="[]" />
 		</div>
 
 		<div class="quick-add-actions">
@@ -150,8 +170,7 @@
 
 		<div class="quick-add-row notify-row">
 			<!-- editModal에도 "알림 없음" 및 커스텀 알림 UI를 일관성 있게 추가합니다. -->
-			<label>알림</label> 
-			<select id="editNotify">
+			<label>알림</label> <select id="editNotify">
 				<option value="-1">알림 없음</option>
 				<option value="0">일정 시작</option>
 				<option value="10">10분 전</option>
@@ -159,17 +178,17 @@
 				<option value="1440">1일 전</option>
 				<option value="custom">직접 설정...</option>
 			</select>
-			
+
 			<div id="editCustomAlertContainer" style="display: none; gap: 5px;">
-                <input id="editCustomAlertValue" type="number" min="1" style="width: 70px;" placeholder="값" />
-                <select id="editCustomAlertUnit">
-                    <option value="M">분</option>
-                    <option value="H">시간</option>
-                    <option value="D">일</option>
-                    <option value="W">주</option>
-                </select>
-                <span>전</span>
-            </div>
+				<input id="editCustomAlertValue" type="number" min="1"
+					style="width: 70px;" placeholder="값" /> <select
+					id="editCustomAlertUnit">
+					<option value="M">분</option>
+					<option value="H">시간</option>
+					<option value="D">일</option>
+					<option value="W">주</option>
+				</select> <span>전</span>
+			</div>
 		</div>
 
 		<div class="quick-add-row justify-end">
@@ -179,9 +198,20 @@
 
 		<div id="editAdvancedOptions" class="advanced-options hidden">
 			<div class="quick-add-row">
-				<input id="editAlertType" type="text"
-					placeholder="알림 타입(alert_type)" /> 
-				<!-- editCustomAlertValue는 위로 이동했으므로 삭제 -->
+				<div class="quick-add-row-label"
+					style="font-size: 0.9em; margin-bottom: 5px;">알림 방법 (다중 선택
+					가능)</div>
+				<div class="quick-add-row alert-type-options"
+					style="display: flex; gap: 15px; padding-left: 5px;">
+					<label style="font-size: 0.9em;"> <input type="checkbox"
+						name="editAlertType" value="chatbot"> 챗봇
+					</label> <label style="font-size: 0.9em;"> <input type="checkbox"
+						name="editAlertType" value="email"> 메일
+					</label> <label style="font-size: 0.9em; color: #999;"> <input
+						type="checkbox" name="editAlertType" value="windows" disabled>
+						윈도우 알림 (추후 개발)
+					</label>
+				</div>
 			</div>
 
 			<div class="quick-add-row">
@@ -194,6 +224,15 @@
 				<input id="editHighlightType" type="text"
 					placeholder="하이라이트 타입(highlight_type)" /> <input id="editCategory"
 					type="text" placeholder="카테고리(category)" />
+			</div>
+			<div class="quick-add-row" style="flex-wrap: wrap; gap: 6px"
+				id="editCategoryTags"></div>
+			<div class="quick-add-row">
+				<label for="editFileUploader" class="btn secondary small"
+					style="cursor: pointer;">파일 첨부</label> <input type="file"
+					id="editFileUploader" style="display: none;" multiple />
+				<div id="editAttachmentListSlot" class="attachment-list-slot"
+					style="margin-top: 5px;"></div>
 			</div>
 			<div class="quick-add-row">
 				<input id="editAttachmentPath" type="text"

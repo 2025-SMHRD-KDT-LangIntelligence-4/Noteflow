@@ -16,4 +16,6 @@ public class ScheduleEventDto {
     private String description;
     private Boolean is_all_day;
     private String emoji;
+    private String category;
+    private String highlight_type;
 }

@@ -340,3 +340,76 @@
 @media screen and (max-width: 480px) {
     .day-plus-btn { width: 18px; height: 18px; font-size: 12px; }
 }
+/* 카카오맵 모달 스타일 */
+.kakao-map-modal {
+    display: none; /* 초기 숨김 */
+    position: fixed;
+    z-index: 1001; /* 퀵 애드 모달(1000)보다 높게 */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.5); /* 반투명 배경 */
+    
+    /* 모달 컨텐츠 중앙 정렬 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.map-modal-content {
+    background-color: #fefefe;
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 90%;
+    max-width: 600px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.map-modal-footer {
+    margin-top: 15px;
+    display: flex;
+    flex-wrap: wrap; /* 반응형으로 줄바꿈 */
+    gap: 10px;
+    align-items: center;
+}
+
+.map-modal-footer #mapSearchKeyword {
+    flex-grow: 1; /* 검색창이 남은 공간 차지 */
+    min-width: 200px;
+}
+/* 파일 첨부 목록 슬롯 */
+.attachment-list-slot {
+    width: 100%;
+    font-size: 0.9em;
+    padding-left: 5px;
+}
+.file-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 3px 5px;
+    background-color: #f4f4f4;
+    border-radius: 4px;
+    margin-top: 3px;
+}
+.file-delete-btn {
+    cursor: pointer;
+    color: #E53E3E;
+    font-weight: bold;
+    padding: 0 5px;
+}
+/* 하이라이트 공통 */
+.fc .fc-event.hl-important { border-left: 4px solid #e11d48; box-shadow: inset 0 0 0 1px rgba(225,29,72,.15); }
+.fc .fc-event.hl-warning  { border-left: 4px solid #f59e0b; box-shadow: inset 0 0 0 1px rgba(245,158,11,.15); }
+.fc .fc-event.hl-success  { border-left: 4px solid #10b981; box-shadow: inset 0 0 0 1px rgba(16,185,129,.15); }
+.fc .fc-event.hl-info     { border-left: 4px solid #0ea5e9; box-shadow: inset 0 0 0 1px rgba(14,165,233,.15); }
+.fc .fc-event.hl-none     { }
+
+/* 모달 계층 고정: 지도 모달이 최상단 */
+.quick-add-modal { z-index: 10000; }     /* 기존 일정 생성/수정 모달 */
+.kakao-map-modal { z-index: 11000; }      /* 지도 모달(최상단) */
+.kakao-map-modal .map-modal-content { position: relative; z-index: 1; }
+

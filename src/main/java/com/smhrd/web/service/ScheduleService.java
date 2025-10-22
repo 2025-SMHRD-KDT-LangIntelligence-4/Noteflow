@@ -23,7 +23,10 @@ public class ScheduleService {
 
     private final ScheduleRepository scheduleRepository;
     private final UserRepository userRepository; // UserRepository 의존성 주입 유지
-
+    
+    public List<Schedule> searchSchedulesByTitleOrDesc(long userIdx, String keyword) {
+        return scheduleRepository.searchByTitleOrDescription(userIdx, keyword);
+    }
     // ✅ 1. 일정 생성 (기존 단일 일정 생성)
     public Schedule createSchedule(long userIdx, Schedule schedule) {
         // userIdx를 받아 서비스에서 User 엔티티를 조회
