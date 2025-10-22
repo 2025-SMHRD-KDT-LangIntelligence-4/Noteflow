@@ -32,4 +32,8 @@ public class Lecture {
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "video_file_id")
+    private String videoFileId;
+
 }

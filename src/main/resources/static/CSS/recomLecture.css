@@ -252,23 +252,58 @@ body {
 	background: #2563eb;
 	color: white;
 }
+/*  추가: 오프라인처리 */
+.offline-badge {
+	background-color: #4CAF50;
+	color: white;
+	padding: 3px 8px;
+	border-radius: 4px;
+	font-size: 11px;
+	font-weight: bold;
+	margin-left: 8px;
+	vertical-align: middle;
+}
+
+/*  추가: 바로보기 버튼 스타일 */
 .rec-openBtn2 {
-	padding: 6px 14px; /* 8px 16px → 6px 14px */
-	border: 1px solid #2563eb;
-	color: #2563eb;
-	background: white;
-	border-radius: 6px;
+	background-color: #4CAF50;
+	color: white;
+	border: none;
+	padding: 10px 20px;
+	border-radius: 5px;
 	cursor: pointer;
-	font-size: 13px; /* 14px → 13px */
-	font-weight: 500;
-	transition: all 0.2s;
+	font-size: 14px;
+	font-weight: bold;
+	margin-left: 10px;
 }
 
 .rec-openBtn2:hover {
 	background: #2563eb;
 	color: white;
 }
+.rec-openBtn2.enabled {
+	background-color: #4CAF50;
+	color: white;
+	cursor: pointer;
+}
 
+.rec-openBtn2.enabled:hover {
+	background-color: #45a049;
+}
+
+/* 바로보기 버튼 - 비활성화 */
+.rec-openBtn2.disabled,
+.rec-openBtn2:disabled {
+	background-color: #cccccc !important;
+	color: #666666 !important;
+	cursor: not-allowed !important;
+	opacity: 0.6;
+}
+
+.rec-openBtn2.disabled:hover,
+.rec-openBtn2:disabled:hover {
+	background-color: #cccccc !important;
+}
 .lecture-title {
 	width: 95%;
 	height: 50px;
@@ -359,3 +394,76 @@ body {
 	color: #007bff;
 	font-weight: 600;
 }
+
+/* ⭐ 추가: 비디오 모달 */
+.video-modal {
+	display: none;
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background-color: rgba(0, 0, 0, 0.95);
+	z-index: 10000;
+	overflow: auto;
+}
+
+.video-modal-content {
+	position: relative;
+	width: 90%;
+	max-width: 1400px;
+	height: 85vh;
+	margin: 3% auto;
+	background-color: #000;
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.video-modal-header {
+	background-color: #333;
+	color: white;
+	padding: 15px 20px;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	border-bottom: 2px solid #444;
+}
+
+.video-modal-header h3 {
+	margin: 0;
+	font-size: 18px;
+	font-weight: 600;
+}
+
+.video-modal-close {
+	background-color: #f44336;
+	color: white;
+	border: none;
+	padding: 8px 20px;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 16px;
+	font-weight: bold;
+	transition: background-color 0.3s;
+}
+
+.video-modal-close:hover {
+	background-color: #d32f2f;
+}
+
+.video-container {
+	width: 100%;
+	height: calc(100% - 60px);
+	background-color: #000;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.video-container video {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+}
+

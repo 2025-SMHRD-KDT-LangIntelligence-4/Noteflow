@@ -56,7 +56,7 @@ public class SecurityConfig {
                 // 로그인/회원가입 페이지 및 정적 자원 접근 허용
                 .requestMatchers(HttpMethod.GET, "/login", "/signup").permitAll()
                 .requestMatchers(HttpMethod.POST, "/login", "/signup").permitAll()
-                .requestMatchers("/main","/css/**", "/js/**", "/images/**", "/fonts/**", "/static/**", "/", "/webjars/**","/templates/fragments/**","/admin/vector-test/**").permitAll()
+                .requestMatchers("/main","/css/**", "/js/**", "/images/**", "/fonts/**", "/static/**", "/", "/webjars/**","/templates/fragments/**","/admin/vector-test/**","/api/video/stream/**").permitAll()
                 // 그 외 요청은 인증 필요
                 .anyRequest().authenticated()
             )

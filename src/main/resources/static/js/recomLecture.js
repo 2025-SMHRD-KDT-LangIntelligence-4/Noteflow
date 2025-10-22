@@ -5,6 +5,12 @@
 	let allLectures = []; // 전체 검색 결과
 	let currentPage = 1;
 	const itemsPerPage = 15; // 페이지당 15개
+	// ⭐ 오디오 증폭 관련 변수
+	let audioContext = null;
+	let gainNode = null;
+	let analyser = null;
+	let source = null;
+	let isManualControl = false;  // ⭐ 수동 조절 중인지 플래그
 
 	document.addEventListener('DOMContentLoaded', () => {
 
@@ -302,17 +308,18 @@
 			tags: Array.isArray(d.tags) ? d.tags : [],
 			large: d.categoryLarge ?? d.category_large ?? null,
 			medium: d.categoryMedium ?? d.category_medium ?? null,
-			small: d.categorySmall ?? d.category_small ?? null
+			small: d.categorySmall ?? d.category_small ?? null,
+			videoFileId: d.videoFileId ?? d.video_file_id ?? '',
+			hasOfflineVideo: d.hasOfflineVideo ?? false
 		}));
 	}
 
 	function renderCards(items) {
 		const listEl = document.getElementById('rec-lecture-list');
 		const tpl = document.getElementById('rec-lecture-card-tpl');
-
 		if (!listEl || !tpl) return;
 
-		listEl.innerHTML = ''; // 기존 리스트 클리어
+		listEl.innerHTML = '';
 		const frag = document.createDocumentFragment();
 
 		items.forEach(it => {
@@ -321,13 +328,44 @@
 			const titleEl = node.querySelector('.rec-title');
 			const tagsEl = node.querySelector('.rec-tags');
 			const btnEl = node.querySelector('.rec-openBtn');
+			const btn2El = node.querySelector('.rec-openBtn2');
 
 			titleEl.textContent = it.title;
 			tagsEl.textContent = buildTagsLine(it.tags, it.small, it.medium, it.large);
 
+			// 강의열기 버튼
 			btnEl.addEventListener('click', () => {
 				if (it.url) window.open(it.url, '_blank', 'noopener');
 			});
+
+			// ⭐ 바로보기 버튼 처리
+			if (btn2El) {
+				const canPlayOffline = checkCanPlayOffline(it);
+
+				if (canPlayOffline) {
+					btn2El.disabled = false;
+					btn2El.classList.remove('disabled');
+					btn2El.classList.add('enabled');
+
+					// ⭐ 클릭 이벤트 등록 (중요!)
+					btn2El.addEventListener('click', () => {
+						console.log(`[클릭] videoFileId: ${it.videoFileId}`);
+						playOfflineVideo(it.videoFileId, it.title);
+					});
+				} else {
+					btn2El.disabled = true;
+					btn2El.classList.add('disabled');
+					btn2El.classList.remove('enabled');
+
+					// disabled 버튼 클릭 시 알림
+					btn2El.addEventListener('click', (e) => {
+						e.preventDefault();
+						alert('이 강의는 오프라인 재생을 지원하지 않습니다.');
+					});
+				}
+
+				console.log(`[${it.title}] 바로보기: ${canPlayOffline ? '활성화' : '비활성화'} (videoFileId: ${it.videoFileId})`);
+			}
 
 			node.querySelector('.lecture-list').dataset.searchBlob =
 				(it.title + ' ' + tagsEl.textContent).toLowerCase();
@@ -337,12 +375,301 @@
 
 		listEl.appendChild(frag);
 	}
+	function checkCanPlayOffline(lecture) {
+		const hasVideo = lecture.videoFileId && lecture.videoFileId.trim() !== '';
+		if (!hasVideo) {
+			return false;
+		}
+
+		const isSmhrd = lecture.title && lecture.title.includes('[스마트인재개발원]');
+		const hasSingaeTag = lecture.tags && lecture.tags.some(tag =>
+			tag === '스인개' || tag === '스마트인재개발원'
+		);
+
+		return hasVideo && (isSmhrd || hasSingaeTag);
+	}
+
+	// ⭐ 오프라인 영상 재생
+	function playOfflineVideo(videoFileId, title) {
+		if (!videoFileId) {
+			alert('재생 가능한 영상이 없습니다.');
+			return;
+		}
+
+		console.log(`[재생 시작] videoFileId: ${videoFileId}, title: ${title}`);
+
+		const modal = document.getElementById('videoModal');
+		const modalTitle = document.getElementById('videoModalTitle');
+		const videoSource = document.getElementById('videoSource');
+		const videoPlayer = document.getElementById('videoPlayer');
+
+		if (!modal || !modalTitle || !videoSource || !videoPlayer) {
+			console.error('모달 요소를 찾을 수 없습니다!');
+			alert('비디오 플레이어를 초기화할 수 없습니다.');
+			return;
+		}
+
+		modalTitle.textContent = title;
+		videoSource.src = `/api/video/stream/${videoFileId}`;
+
+		videoPlayer.load();
+		modal.style.display = 'block';
+
+		// ⭐ 오디오 증폭 설정
+		setupAudioBoost(videoPlayer);
+
+		videoPlayer.play().catch(err => {
+			console.error('자동 재생 실패:', err);
+		});
+	}
+
+// ⭐ 오디오 자동 증폭 설정
+	function setupAudioBoost(videoElement) {
+		try {
+			// 이미 설정되어 있으면 초기화
+			if (audioContext) {
+				audioContext.close();
+			}
+
+			// Web Audio API 초기화
+			audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+			// 비디오 소스 연결
+			source = audioContext.createMediaElementSource(videoElement);
+
+			// 게인 노드 생성 (초기 볼륨 1.0 = 100%)
+			gainNode = audioContext.createGain();
+			gainNode.gain.value = 1.0;
+
+			// 분석기 노드 생성
+			analyser = audioContext.createAnalyser();
+			analyser.fftSize = 2048;
+
+			// 노드 연결: 비디오 → 게인 → 분석기 → 스피커
+			source.connect(gainNode);
+			gainNode.connect(analyser);
+			analyser.connect(audioContext.destination);
+
+			console.log('[오디오 증폭] 초기화 완료');
+
+			// 1초마다 음량 분석 및 자동 조절
+			startVolumeAnalysis();
+
+		} catch (e) {
+			console.error('[오디오 증폭] 초기화 실패:', e);
+		}
+	}
+
+// ⭐ 음량 자동 분석 및 조절
+	function startVolumeAnalysis() {
+		const bufferLength = analyser.frequencyBinCount;
+		const dataArray = new Uint8Array(bufferLength);
+
+		let analysisInterval = setInterval(() => {
+			if (!analyser || !gainNode) {
+				clearInterval(analysisInterval);
+				return;
+			}
+
+			// ⭐ 수동 조절 중이면 자동 증폭 스킵
+			if (isManualControl) {
+				return;
+			}
+
+			// 현재 음량 분석
+			analyser.getByteFrequencyData(dataArray);
+
+			let sum = 0;
+			for (let i = 0; i < bufferLength; i++) {
+				sum += dataArray[i];
+			}
+			let average = sum / bufferLength;
+
+			// 자동 증폭 로직
+			let targetGain = 1.0;
+
+			if (average < 30) {
+				targetGain = 3.0;
+			} else if (average < 50) {
+				targetGain = 2;
+			} else if (average < 80) {
+				targetGain = 1.5;
+			} else {
+				targetGain = 1.0;
+			}
+
+			// 부드럽게 볼륨 조절
+			if (audioContext) {
+				gainNode.gain.linearRampToValueAtTime(
+					targetGain,
+					audioContext.currentTime + 0.5
+				);
+
+				// 슬라이더도 동기화
+				const slider = document.getElementById('volumeBoost');
+				const label = document.getElementById('volumeLabel');
+				if (slider && label) {
+					slider.value = targetGain.toFixed(1);
+					label.textContent = targetGain.toFixed(1) + 'x';
+				}
+			}
+
+		}, 5000); // ⭐ 5초마다로 변경 (1초는 너무 자주)
+
+		window.audioAnalysisInterval = analysisInterval;
+	}
+	// ⭐ 수동 볼륨 조절
+	function adjustVolume(value) {
+		if (gainNode) {
+			// 수동 조절 모드 활성화
+			isManualControl = true;
+
+			// 즉시 볼륨 적용
+			gainNode.gain.setValueAtTime(parseFloat(value), audioContext.currentTime);
+			document.getElementById('volumeLabel').textContent = value + 'x';
+			console.log('[수동 볼륨 조절] ' + value + 'x');
+
+			// 5초 동안 손 안 대면 자동 증폭 재개
+			if (manualControlTimeout) {
+				clearTimeout(manualControlTimeout);
+			}
+			manualControlTimeout = setTimeout(() => {
+				isManualControl = false;
+				console.log('[자동 증폭 재개]');
+			}, 5000);
+		} else {
+			console.warn('[볼륨 조절] gainNode가 아직 초기화되지 않았습니다.');
+		}
+	}
+
+	// ⭐ 모달 닫기
+	function closeVideoModal() {
+		const videoPlayer = document.getElementById('videoPlayer');
+		const modal = document.getElementById('videoModal');
+
+		if (videoPlayer) {
+			videoPlayer.pause();
+			videoPlayer.currentTime = 0;
+		}
+
+		// 타이머 정리
+		if (window.audioAnalysisInterval) {
+			clearInterval(window.audioAnalysisInterval);
+			window.audioAnalysisInterval = null;
+		}
+
+		if (manualControlTimeout) {
+			clearTimeout(manualControlTimeout);
+			manualControlTimeout = null;
+		}
+
+		// 오디오 컨텍스트 정리
+		if (audioContext) {
+			audioContext.close();
+			audioContext = null;
+		}
+
+		// 플래그 초기화
+		isManualControl = false;
+
+		if (modal) {
+			modal.style.display = 'none';
+		}
+	}
+
+	// 전역 함수로 등록 (HTML에서 onclick으로 호출)
+	window.playOfflineVideo = playOfflineVideo;
+	window.closeVideoModal = closeVideoModal;
+	window.adjustVolume = adjustVolume;
+	// ESC 키로 모달 닫기
+	document.addEventListener('keydown', function(e) {
+		if (e.key === 'Escape') {
+			const modal = document.getElementById('videoModal');
+			if (modal && modal.style.display === 'block') {
+				closeVideoModal();
+			}
+		}
+	});
+
+	// 모달 배경 클릭 시 닫기
+	document.addEventListener('DOMContentLoaded', function() {
+		const modal = document.getElementById('videoModal');
+		if (modal) {
+			modal.addEventListener('click', function(e) {
+				if (e.target === this) {
+					closeVideoModal();
+				}
+			});
+		}
+	});
 
 	function buildTagsLine(tags, small, medium, large) {
 		const base = Array.isArray(tags) && tags.length ? tags : [small, medium, large].filter(Boolean);
 		const uniq = Array.from(new Set(base.map(s => String(s).trim()).filter(Boolean)));
 		return uniq.map(s => (s.startsWith('#') ? s : '#' + s)).join(' ');
 	}
+
+	// ⭐ 추가: 강의 카드 렌더링 함수 수정
+	function renderLectureCard(lecture) {
+		const card = document.createElement('div');
+		card.className = 'lecture-card';
+
+		// 오프라인 제공 여부
+		const hasOffline = lecture.hasOfflineVideo === true;
+		const videoFileId = lecture.videoFileId || '';
+
+		// [스마트인재개발원] 태그 확인
+		const isSmhrd = lecture.title && lecture.title.includes('[스마트인재개발원]');
+
+		// 스인개 태그 확인
+		const hasSingaeTag = lecture.tags && lecture.tags.some(tag =>
+			tag === '스인개' || tag === '스마트인재개발원'
+		);
+
+		// 바로보기 버튼 활성화 조건
+		const canPlayOffline = hasOffline && (isSmhrd || hasSingaeTag);
+
+		card.innerHTML = `
+        <h3 class="lecture-title">
+            ${escapeHtml(lecture.title)}
+            ${canPlayOffline ? '<span class="offline-badge">오프라인 제공</span>' : ''}
+        </h3>
+        <p class="lecture-category">
+            카테고리: ${lecture.categoryLarge} > ${lecture.categoryMedium} > ${lecture.categorySmall}
+        </p>
+        <div class="lecture-tags">
+            ${lecture.tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}
+        </div>
+        <div class="lecture-buttons">
+            <button class="rec-openBtn" onclick="window.open('${lecture.url}', '_blank')">
+                강의열기
+            </button>
+            <button class="rec-openBtn2" 
+                    ${!canPlayOffline ? 'disabled' : ''}
+                    onclick="playOfflineVideo('${videoFileId}', '${escapeHtml(lecture.title)}')">
+                바로보기
+            </button>
+        </div>
+    `;
+
+		return card;
+	}
+
+
+// ⭐ 추가: 모달 배경 클릭 시 닫기
+	document.addEventListener('DOMContentLoaded', function() {
+		const modal = document.getElementById('videoModal');
+		if (modal) {
+			modal.addEventListener('click', function(e) {
+				if (e.target === this) {
+					closeVideoModal();
+				}
+			});
+		}
+	});
+
+
+
 
 	function escapeHtml(str) {
 		if (!str) return '';

@@ -113,6 +113,8 @@ public class LectureRecommendController {
                 item.put("categoryLarge", l.getCategoryLarge());
                 item.put("categoryMedium", l.getCategoryMedium());
                 item.put("categorySmall", l.getCategorySmall());
+                item.put("videoFileId", l.getVideoFileId());
+                item.put("hasOfflineVideo", l.getVideoFileId() != null && !l.getVideoFileId().isBlank());
                 item.put("tags", tagMap.getOrDefault(l.getLecIdx(), List.of()));
                 return item;
             }).collect(Collectors.toList()));
