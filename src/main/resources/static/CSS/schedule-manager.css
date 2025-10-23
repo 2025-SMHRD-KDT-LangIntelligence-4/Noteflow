@@ -463,7 +463,6 @@ input[type="time" i]{
 .fc .fc-event.hl-warning  { border-left: 4px solid #f59e0b; box-shadow: inset 0 0 0 1px rgba(245,158,11,.15); }
 .fc .fc-event.hl-success  { border-left: 4px solid #10b981; box-shadow: inset 0 0 0 1px rgba(16,185,129,.15); }
 .fc .fc-event.hl-info     { border-left: 4px solid #0ea5e9; box-shadow: inset 0 0 0 1px rgba(14,165,233,.15); }
-.fc .fc-event.hl-none     { }
 
 /* 모달 계층 고정: 지도 모달이 최상단 */
 .quick-add-modal { z-index: 10000; }     /* 기존 일정 생성/수정 모달 */
@@ -508,3 +507,84 @@ input[type="time" i]{
 #openTrashBtn:hover{
 	background:#96d0ff;
 }
+.day-highlight-pin{
+  font-size: 14px;
+  line-height: 1;
+  display: inline-block;
+  user-select: none;
+}
+/* 색 */
+.color-red    { color:#e53935; }
+.color-yellow { color:#fbc02d; }
+.color-blue   { color:#1e88e5; }
+.color-orange { color:#fb8c00; }
+/* 공통 변수 */
+:root {
+  --hl-size: 22px;     /* 도형 한 변(또는 지름) */
+  --hl-stroke: 2px;    /* 테두리 두께 */
+}
+
+.fc-daygrid-day-number {
+  position: relative; /* pin이 이걸 기준으로 정중앙 */
+  z-index: 2;         /* 숫자 최상위 */
+}
+
+/* 하이라이트 핀 공통 */
+.day-highlight-pin {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--hl-size);
+  height: var(--hl-size);
+  transform: translate(-50%, -50%);
+  display: inline-block;
+  pointer-events: auto;
+  z-index: 1;                 /* 숫자보다 아래 */
+  color: currentColor;        /* SVG에서 stroke=currentColor 를 쓰기 위함 */
+}
+
+/* 색상(필요 색만 남겨 써) */
+.color-red    { color:#e53935; }
+.color-yellow { color:#fbc02d; }
+.color-blue   { color:#1e88e5; }
+.color-orange { color:#fb8c00; }
+
+/* 2-1) 원: 속 투명, 테두리만 */
+.symbol-circle {
+  border: var(--hl-stroke) solid currentColor;
+  border-radius: 50%;
+  background: transparent;
+}
+
+/* 2-2) 네모: 속 투명, 테두리만 */
+.symbol-square {
+  border: var(--hl-stroke) solid currentColor;
+  border-radius: 4px;      /* 각진 네모면 0으로 */
+  background: transparent;
+}
+
+/* 2-3) 세모(외곽선만) – SVG data-URI로 stroke만 표시 */
+.symbol-triangle {
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  background-image:
+    url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>\
+<polygon points='50,8 92,92 8,92' fill='none' stroke='currentColor' stroke-width='10' stroke-linejoin='round'/>\
+</svg>");
+}
+
+/* 2-4) 별(외곽선만) – SVG data-URI로 stroke만 표시 */
+.symbol-star {
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  background-image:
+    url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>\
+<path d='M50 8 L61 38 L93 38 L66 56 L76 87 L50 68 L24 87 L34 56 L7 38 L39 38 Z' \
+fill='none' stroke='currentColor' stroke-width='10' stroke-linejoin='round'/>\
+</svg>");
+}
+

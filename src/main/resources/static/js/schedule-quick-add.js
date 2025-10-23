@@ -18,7 +18,7 @@ const qaEmoji = document.getElementById('qaEmoji');
 const qaSave = document.getElementById('qaSave');
 const qaCancel = document.getElementById('qaCancel');
 const qaQuickAddCard = document.querySelector('.quick-add-card');
-
+const qaTempSave = document.getElementById('qaTempSave');
 // ✅ 반복 일정 및 관련 DOM 참조 추가
 const qaRepeat = document.getElementById('qaRepeat');
 const repeatOptionLabel = document.getElementById('repeatOptionLabel');
@@ -42,6 +42,64 @@ const qaCategoryTags = document.getElementById('qaCategoryTags');
 let qaCategoryValues = []; // 내부 상태: ['java','python',...]
 const qaFileUploader = document.getElementById('qaFileUploader');
 const qaAttachmentListSlot = document.getElementById('qaAttachmentListSlot');
+
+let _currentTempId = null; // ← 지금 모달이 ‘임시초안’에서 열린 경우, 그 temp_id를 기억 
+
+
+// 드래프트로 모달 열고 값 채우기 + 현재 temp_id 기억
+window.openQuickAddFromDraft = function(draft) {
+	if (!draft) return;
+
+	// + 모달 기본 오픈 (기준 날짜 추출)
+	const baseDate = draft.start_time || draft.startTime || null;
+	openQuickAddModal(baseDate ? String(baseDate).slice(0, 10) : null);
+
+	// 임시초안에서 열렸음을 표시
+	_currentTempId = draft.temp_id || draft.tempId || null;
+
+	// 값 채우기 (snake/camel 모두 수용)
+	const s = draft.start_time || draft.startTime;
+	const e = draft.end_time || draft.endTime;
+	const isAllDay = !!(draft.is_all_day ?? draft.isAllDay);
+
+	qaTitle.value = draft.title || '';
+	qaDesc.value = draft.description || '';
+	qaColor.value = draft.color_tag || draft.colorTag || '#3788d8';
+	qaAllDay.checked = isAllDay;
+
+	if (s) {
+		qaStartDate.value = s.slice(0, 10);
+		qaStartTime.value = isAllDay ? '00:00' : (s.slice(11, 16) || '09:00');
+	}
+	if (e) {
+		qaEndDate.value = e.slice(0, 10);
+		qaEndTime.value = isAllDay ? '23:59' : (e.slice(11, 16) || '10:00');
+	}
+
+	if (qaEmoji) qaEmoji.value = draft.emoji || '';
+	if (qaLocation) qaLocation.value = draft.location || '';
+	if (qaHighlightType) qaHighlightType.value = draft.highlight_type || draft.highlightType || 'none';
+	if (qaCategory) qaCategory.value = draft.category || '';
+	if (qaAttachmentPath) qaAttachmentPath.value = draft.attachment_path || draft.attachmentPath || '';
+	if (qaAttachmentList) qaAttachmentList.value = draft.attachment_list || draft.attachmentList || '[]';
+
+	if (qaAttachmentListSlot) {
+		qaAttachmentListSlot.innerHTML = '';
+		try {
+			const items = JSON.parse(qaAttachmentList.value || '[]');
+			items.forEach(it => {
+				const div = document.createElement('div');
+				div.className = 'file-item';
+				div.dataset.path = it.filePath;
+				div.innerHTML = `${it.fileName} <span class="file-delete-btn" title="목록에서 제거">X</span>`;
+				qaAttachmentListSlot.appendChild(div);
+			});
+		} catch { }
+	}
+
+	toggleTimeInputs(qaAllDay.checked);
+	toggleCustomAlertFields();
+};
 
 function renderQaCategoryTags() {
 	qaCategoryTags.innerHTML = '';
@@ -210,7 +268,6 @@ function toggleCustomAlertFields() {
 
 // 최종 저장용 데이터 수집 함수 (isRepeat 필드 제거, 백엔드는 URL로 구분)
 function collectData() {
-	if (!qaTitle) return null;
 
 	const isAllDay = qaAllDay.checked;
 
@@ -324,7 +381,7 @@ export function injectPlusButtons() {
 // 모달 열기
 export function openQuickAddModal(dateStr) {
 	if (!quickModal) return;
-
+	_currentTempId = null;   // ← 새로 여는 경우, 이전 temp 편집 상태 해제
 	// 필드 초기화
 	qaTitle.value = '';
 	qaDesc.value = '';
@@ -399,17 +456,28 @@ function handleEscClose(e) {
 	}
 }
 
-// 모달 외부 클릭 핸들러 (임시 저장 로직 제거)
+// 모달 외부 클릭 핸들러: 이제 '퀵 모달 카드' 기준으로 닫기
 function handleOutsideClick(e) {
-	if (quickModal.classList.contains('hidden')) return;
-	// 1) 지도 모달이 열려있으면 바깥 클릭 닫기 비활성화
+	if (!quickModal || quickModal.classList.contains('hidden')) return;
+
+	// 1) 지도 모달 열려있으면 닫기 동작 막기
 	if (window.__MAP_MODAL_OPEN) return;
-	// 2) 클릭 타깃이 지도 모달 내부면 무시
+
+	// 2) 지도 모달 내부 클릭이면 무시
 	const inMapModal = e.target.closest && e.target.closest('#kakaoMapModal');
 	if (inMapModal) return;
-	// 3) 진짜 바깥 클릭만 닫기
-	const isClickOutside = !quickModal.contains(e.target);
-	if (isClickOutside) closeQuickAddModal();
+
+	// 3) 기준 요소를 '퀵 모달 카드'로 변경
+	const cardEl = qaQuickAddCard || quickModal.querySelector('.quick-add-card');
+	if (!cardEl) return;
+
+	// 4) 카드 내부 클릭이면 닫지 않음 / 카드 외부 클릭이고, 오버레이(quickModal) 안에서의 클릭이면 닫기
+	const clickedInsideCard = cardEl.contains(e.target);
+	const clickedInsideOverlay = quickModal.contains(e.target);
+
+	if (!clickedInsideCard && clickedInsideOverlay) {
+		closeQuickAddModal();
+	}
 }
 
 
@@ -482,7 +550,50 @@ document.addEventListener('DOMContentLoaded', () => {
 			e.stopPropagation();
 		});
 	}
+	// 임시저장 (덮어쓰기/신규 생성 자동 분기)
+	if (qaTempSave) {
+		qaTempSave.addEventListener('click', async () => {
+			const payload = collectData();
+			if (!payload) return;
+			if (!payload.title) payload.title = "(제목 없음)";
 
+			try {
+				// (선택) 중복 클릭 방지
+				qaTempSave.disabled = true;
+				// 백엔드가 PUT 미지원 → 업데이트도 POST로 보냄
+				// 신규:  POST /api/temp-schedule
+				// 수정:  POST /api/temp-schedule/{id}
+				const url = _currentTempId
+					? `/api/temp-schedule/${_currentTempId}`
+					: `/api/temp-schedule`;
+
+				const saved = await fetchWithCsrf(url, {
+					method: 'POST',
+					body: JSON.stringify(payload)
+				});
+
+				// 응답으로 temp_id 확보(신규 생성 시 이후부터는 덮어쓰기)
+				_currentTempId = saved?.temp_id || saved?.tempId || _currentTempId;
+
+				// ✅ 먼저 모달 닫기
+				closeQuickAddModal();
+				// 그 다음 토스트(알림)
+				Swal.fire({ icon: 'success', text: saved?.message || '임시 저장되었습니다.' });
+
+				// 사이드바/뱃지 갱신
+				if (window.loadTempDrafts) await window.loadTempDrafts();
+				if (window.refreshTempBadges) await window.refreshTempBadges();
+
+			} catch (err) {
+				console.error(err);
+				Swal.fire({ icon: 'error', text: `임시 저장 실패: ${err?.message || '알 수 없는 오류'}` });
+			} finally {
+				// (선택) 버튼 원복
+				qaTempSave.disabled = false;
+			}
+
+		});
+	}
 	// 5. 저장 버튼 이벤트
 	qaSave.addEventListener('click', async () => {
 		const payload = collectData();
@@ -511,11 +622,24 @@ document.addEventListener('DOMContentLoaded', () => {
 				: '일정이 성공적으로 생성되었습니다.';
 			alertSuccess(successMessage);
 
-			// 캘린더 이벤트 갱신 (성공 시에만 실행)
+			// 캘린더 갱신 (성공 시)
 			if (window.refreshEvents && typeof window.refreshEvents === 'function') {
 				await window.refreshEvents();
 			} else if (window.calendar && typeof window.calendar.refetchEvents === 'function') {
 				window.calendar.refetchEvents();
+			}
+
+			// ★ 임시초안에서 시작했다면 자동 삭제
+			if (_currentTempId) {
+				try {
+					await fetchWithCsrf(`/api/temp-schedule/${_currentTempId}`, { method: 'DELETE' });
+					if (window.loadTempDrafts) await window.loadTempDrafts();
+					if (window.refreshTempBadges) await window.refreshTempBadges();
+				} catch (e) {
+					console.warn('임시초안 자동 삭제 실패(무시 가능):', e);
+				} finally {
+					_currentTempId = null;
+				}
 			}
 
 			closeQuickAddModal();
@@ -528,8 +652,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	});
 
-	qaCancel.addEventListener('click', closeQuickAddModal);
-
+	qaCancel.addEventListener('click', () => {
+		_currentTempId = null;   // 편집 상태 초기화
+		closeQuickAddModal();
+	});
 	// 6. 전역 이벤트 리스너 등록
 	document.addEventListener('keydown', handleEscClose);
 	document.addEventListener('click', handleOutsideClick);
@@ -537,4 +663,5 @@ document.addEventListener('DOMContentLoaded', () => {
 	// ✅ 초기 상태 설정 (필요한 경우)
 	toggleCustomAlertFields();
 	toggleRepeatWarning(); // 초기화 시점에 경고 멘트 숨김 보장
+
 });
