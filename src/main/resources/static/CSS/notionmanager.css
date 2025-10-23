@@ -802,12 +802,16 @@ body {
     text-align: center;
     margin-top: 100px;
     color: #666;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
 }
 
 .welcome-message h2 {
     font-size: 24px;
     margin-bottom: 10px;
     color: #333;
+    width:100%;
 }
 
 .welcome-message p {

@@ -4,9 +4,8 @@
 
 /* 전체 레이아웃 관리를 위한 래퍼 */
 .location-container {
-    padding: 20px 15px;
+	margin-top:100px;
     max-width: 1400px; /* 사이드바 공간 확보를 위해 최대 너비 증가 */
-    margin: 0 auto;
 }
 
 .main-content-wrapper {
