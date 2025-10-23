@@ -292,6 +292,9 @@ input[type="time" i]{
 	background: #96d0ff !important;
     border: none !important;
 }
+#catCustomInput{
+	outline:none;
+}
 /* 필터 섹션 */
 .filter-category-list {
     display: flex;
@@ -310,7 +313,7 @@ input[type="time" i]{
     
 }
 .category-tag:hover {
-    background-color: #dee2e6;
+    background-color: #96d0ff;
 }
 .category-tag.active {
     background-color: #2b6ef6; /* 파란색 활성화 */
@@ -498,3 +501,10 @@ input[type="time" i]{
 }
 .sel-badge input[type="checkbox"]{ width:14px; height:14px; margin:0; pointer-events:none; }
 .fc-event{ position:relative; }
+
+#openDeleteCenterBtn:hover{
+	background:#96d0ff;
+}
+#openTrashBtn:hover{
+	background:#96d0ff;
+}
