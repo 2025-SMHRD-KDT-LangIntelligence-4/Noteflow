@@ -87,7 +87,10 @@ document.addEventListener("DOMContentLoaded", () => {
 			<div class="ad-banner2">
 				<div class="AI-comment-box">
 					<div class="comment-box">
-						<div class="schedule-alarm">OO님 오늘 스케줄이 있어요!</div>
+						<div class="schedule-alarm">
+    <span th:if="${nickname != null and nickname != ''}" th:text="|${nickname}님 오늘 스케줄이 있어요!|"></span>
+    <span th:if="${nickname == null or nickname == ''}">오늘 스케줄이 있어요!</span>
+</div>
 						<a th:href="@{/schedule}" class="goSchedule-btn">스케줄 확인하러가기</a>
 					</div>
 				</div>
