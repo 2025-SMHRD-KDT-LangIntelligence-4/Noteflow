@@ -32,15 +32,20 @@ document.addEventListener("DOMContentLoaded", () => {
     applyTheme("light");
   }
 
+  // ✅ 테마 적용 함수
   function applyTheme(mode) {
     if (mode === "dark") {
       themeLink.setAttribute("href", "/CSSDARK/editMypage.css");
       localStorage.setItem("theme", "dark");
-      if (themeToggleBtn) themeToggleBtn.textContent = "☀️";
+      if (themeToggleBtn) {
+        themeToggleBtn.classList.add("dark"); // 버튼 이동 클래스 추가
+      }
     } else {
-      themeLink.setAttribute("href", "/css/editmypage.css");
+      themeLink.setAttribute("href", "/css/editMypage.css");
       localStorage.setItem("theme", "light");
-      if (themeToggleBtn) themeToggleBtn.textContent = "🌙";
+      if (themeToggleBtn) {
+        themeToggleBtn.classList.remove("dark"); // 기본 위치로 복귀
+      }
     }
   }
 });

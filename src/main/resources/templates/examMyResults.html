@@ -5,6 +5,51 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>내 시험 기록</title>
     <link rel="stylesheet" th:href="@{/css/examMyResults.css}">
+    <script>
+		document.addEventListener("DOMContentLoaded", () => {
+		  const themeLink = document.getElementById("theme-css");
+		  const themeToggleBtn = document.getElementById("theme-toggle-btn");
+		
+		  // 저장된 모드 불러오기
+		  const savedTheme = localStorage.getItem("theme") || "light";
+		
+		  // 로그인 여부 확인 (버튼이 없으면 로그아웃 상태로 판단)
+		  const isLoggedIn = !!themeToggleBtn;
+		
+		  if (isLoggedIn) {
+		    // 로그인 상태에서는 저장된 테마 적용
+		    applyTheme(savedTheme);
+		
+		    // 버튼 클릭 시 다크모드 전환
+		    themeToggleBtn.addEventListener("click", () => {
+		      const current = localStorage.getItem("theme") || "light";
+		      const next = current === "light" ? "dark" : "light";
+		      applyTheme(next);
+		    });
+		  } else {
+		    // 로그아웃 상태에서는 항상 라이트모드 적용
+		    applyTheme("light");
+		  }
+		
+		  // ✅ 테마 적용 함수
+		  function applyTheme(mode) {
+		    if (mode === "dark") {
+		      themeLink.setAttribute("href", "/CSSDARK/examMyResults.css");
+		      localStorage.setItem("theme", "dark");
+		      if (themeToggleBtn) {
+		        themeToggleBtn.classList.add("dark"); // 버튼 이동 클래스 추가
+		      }
+		    } else {
+		      themeLink.setAttribute("href", "/css/examMyResults.css");
+		      localStorage.setItem("theme", "light");
+		      if (themeToggleBtn) {
+		        themeToggleBtn.classList.remove("dark"); // 기본 위치로 복귀
+		      }
+		    }
+		  }
+		});
+	</script>
+    
         <link rel="stylesheet" th:href="@{/css/header.css}">
     <link rel="stylesheet" th:href="@{/css/footer.css}">
     <meta name="csrf" th:content="${_csrf?.token}">

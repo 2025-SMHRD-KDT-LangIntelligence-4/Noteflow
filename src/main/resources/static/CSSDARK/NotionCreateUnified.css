@@ -263,8 +263,8 @@ body{
 /* 버튼 */
 .nc-btn { 
 	border:1px solid #e5e7eb; 
-	background:#fff; 
-	color:#111; 
+	background:#3e3e3e; 
+	color:white; 
 	padding:8px 12px; 
 	border-radius:8px; 
 	cursor:pointer;
@@ -276,9 +276,9 @@ body{
 	justify-content:space-between;
 	align-items:center;
 }
-.nc-primary { background:#96D0FF; color:#fff; border-color:#96D0FF; height:40px;}
-.nc-secondary { background:#10b981; color:#fff; border-color:#10b981;}
-.nc-btn:hover { background-color:#2FA1FF; color:#fff }
+.nc-primary { background:#3e3e3e; color:#fff; border-color:#3e3e3e; height:40px;}
+.nc-secondary { background:#3e3e3e; color:#fff; border-color:#3e3e3e;}
+.nc-btn:hover { background-color:#3e3e3e; color:#fff }
 .nc-btn:disabled { opacity:.5; cursor:not-allowed; }
 .nc-actions {
 	background-color:#1e1e1e;
@@ -319,8 +319,8 @@ body{
     min-height: 64px;
     width: 90%;
 }
-.nc-result-box .nc-warn { background:#fff3cd; color:#856404; padding:8px; border-radius:6px; margin-bottom:12px; }
-.nc-result-box .nc-error { background:#fdecea; color:#b00020; padding:8px; border-radius:6px; }
+.nc-result-box .nc-warn { background:#3e3e3e; color:#fff3cd; padding:8px; border-radius:6px; margin-bottom:12px; }
+.nc-result-box .nc-error { background:#3e3e3e; color:#fdecea; padding:8px; border-radius:6px; }
 .nc-result-box .nc-md { white-space: pre-wrap; font-size:14px; line-height:1.6; }
 
 /* 로딩 오버레이 */

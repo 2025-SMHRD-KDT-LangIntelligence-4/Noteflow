@@ -3,9 +3,10 @@
 
 body {
     font-family: 'Pretendard', sans-serif;
-    background: white;
+    background: #1e1e1e;
     margin: 0;
     padding: 0;
+    color:white;
 }
 
 .page-wrapper {
@@ -18,7 +19,7 @@ body {
 .explanation-container {
     width: 900px;
     margin: 0 auto;
-    background: white;
+    background: #1e1e1e;
     border-radius: 20px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     padding: 40px;
@@ -27,6 +28,7 @@ body {
     gap:20px;
     justify-content:center;
     height:auto;
+    border: 2px solid white;
 }
 
 /* 헤더 */
@@ -40,14 +42,14 @@ body {
 .question-number {
     font-size: 24px;
     font-weight: 700;
-    color: #4A90E2;
+    color: white;
 }
 
 .btn-back-result {
     padding: 10px 20px;
     border: 2px solid #4A90E2;
     border-radius: 8px;
-    background: white;
+    background: #3e3e3e;
     color: #4A90E2;
     font-size: 14px;
     font-weight: 600;
@@ -76,15 +78,15 @@ body {
     font-size: 18px;
     font-weight: 700;
     margin: 0 0 15px 0;
-    color: #333;
+    color: white;
 }
 
 .question-text {
     font-size: 18px;
     line-height: 1.8;
-    color: #333;
+    color: white;
     padding: 20px;
-    background: #F5F8FA;
+    background: #3e3e3e;
     border-radius: 10px;
     white-space: pre-wrap;
     height:75%
@@ -93,7 +95,7 @@ body {
 /* 답안 컨테이너 (읽기 전용) */
 .answer-container {
     padding: 20px;
-    background: #F5F8FA;
+    background: #3e3e3e;
     border-radius: 10px;
     height:75%;
 }
@@ -102,15 +104,15 @@ body {
     padding: 15px;
     margin-bottom: 10px;
     border-radius: 8px;
-    background: white;
-    border: 2px solid #E0E0E0;
+    background: #3e3e3e;
+    border: 2px solid white;
     font-size: 16px;
-    color: #333;
+    color: white;
 }
 
 .option-item.correct-answer {
     border-color: #4CAF50;
-    background: #E8F5E9;
+    background: #3e3e3e;
     font-weight: 700;
 }
 
@@ -139,8 +141,8 @@ body {
 }
 
 .user-answer-display.wrong {
-    background: #FFEBEE;
-    color: #C62828;
+    background: #3e3e3e;
+    color: #FFEBEE;
     border: 2px solid #EF5350;
 }
 
@@ -148,9 +150,9 @@ body {
 .explanation-text {
     font-size: 16px;
     line-height: 1.8;
-    color: #555;
+    color: #FFFDE7;
     padding: 20px;
-    background: #FFFDE7;
+    background: #3e3e3e;
     border-left: 4px solid #FFC107;
     border-radius: 10px;
     white-space: pre-wrap;
@@ -171,7 +173,7 @@ body {
     padding: 18px;
     border: none;
     border-radius: 10px;
-    background: #4A90E2;
+    background: #3e3e3e;
     color: white;
     font-size: 16px;
     font-weight: 700;

@@ -1,0 +1,474 @@
+@charset "UTF-8";
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+body {
+	background: #1e1e1e;
+	margin: 0px;
+	font-family: pretendard;
+	color:white;
+}
+
+.full-container {
+	position: relative;
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	width: 100%;
+	height: 100%;
+	top: 100px;
+	padding-bottom: 100px;
+}
+
+.full-location-container {
+	width: 1240px;
+	height: 100%;
+	display: flex;
+	justify-content: center;
+	flex-wrap: wrap;
+}
+
+/* 검색창 */
+.searchBar-container {
+	width: 100%;
+	display: flex;
+	justify-content: space-between; /* center → space-between */
+	align-items: center;
+	height: 50px;
+	border-radius: 10px;
+	background-color: #3e3e3e;
+	box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+	margin-bottom: 16px;
+	gap: 0; /* 8px → 0 */
+	padding: 0 12px; /* 양쪽 패딩 추가 */
+}
+
+.search-bar {
+	flex: 1; /* 남은 공간 전부 차지 */
+	padding: 10px;
+	font-size: 15px;
+	border: none;
+	outline: none;
+	background: #3e3e3e;
+	color:white;
+}
+
+.rec-search-btn {
+	padding: 10px 24px;
+	background: #3e3e3e;
+	color: white;
+	border: none;
+	border-radius: 8px;
+	font-size: 15px; /* 14px → 15px */
+	font-weight: 600; /* 500 → 600 */
+	cursor: pointer;
+	transition: background 0.2s;
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+.rec-search-btn:hover {
+	background: #1e1e1e;
+}
+
+/* 태그 버블 영역 */
+.tag-bubble-area {
+	width: 100%;
+	background: #3e3e3e;
+	padding: 16px;
+	border-radius: 10px;
+	margin-bottom: 20px;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+	min-height: 50px;
+	color:white;
+}
+
+.bubble-label {
+	font-weight: 600;
+	font-size: 14px;
+	color: white;
+	white-space: nowrap;
+}
+
+.tag-bubble-container {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	flex: 1;
+}
+
+.tag-bubble {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 14px;
+	background: #3e3e3e;
+	color: white;
+	border-radius: 16px;
+	font-size: 13px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.2s;
+	user-select: none;
+}
+
+.tag-bubble:hover {
+	background: #1e1e1e;
+	transform: translateY(-2px);
+	box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+.tag-bubble-remove {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 16px;
+	height: 16px;
+	background: rgba(255,255,255,0.3);
+	border-radius: 50%;
+	font-size: 14px;
+	font-weight: bold;
+	line-height: 1;
+}
+
+.tag-bubble-remove:hover {
+	background: rgba(255,255,255,0.5);
+}
+
+.clear-tags-btn {
+	padding: 6px 14px;
+	background: #3e3e3e;
+	color: white;
+	border: none;
+	border-radius: 16px;
+	font-size: 13px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: background 0.2s;
+}
+
+.clear-tags-btn:hover {
+	background: #1e1e1e;
+}
+
+/* 강의 리스트 컨테이너 */
+.lecture-list-container {
+	width: 100%;
+	height: 100%;
+	display: flex;
+	justify-content: center;
+	flex-wrap: wrap;
+	gap: 8px; /* 간격 줄임 */
+}
+
+/* 리스트 섹션 (세로 나열) */
+.rec-section {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: 8px; /* 간격 줄임 */
+}
+
+/* 강의 카드 (리스트형 - 더 얇게) */
+.lecture-list {
+	width: 100%;
+	height: auto;
+	background-color: #1e1e1e;
+	border: 1px solid white;
+	border-radius: 8px; /* 둥근 모서리 줄임 */
+	transition: all 0.3s;
+	display: flex;
+	flex-direction: column;
+	overflow:hidden;
+	color:white;
+}
+
+.lecture-list:hover {
+	box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+	transform: translateY(-1px);
+	border-color: #2563eb;
+}
+
+.lecture-img {
+	width: 100%;
+	height: 240px;
+	overflow: hidden;
+	border: 1px solid white;
+	border-radius: 8px;
+}
+
+/* 텍스트 박스로 재활용 (더 얇게) */
+.lecture-list .lecture-img.rec-textbox {
+	height: auto;
+	min-height: 40px; /* 60px → 40px */
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	padding: 12px 16px; /* 16px 20px → 12px 16px */
+	border: none;
+}
+
+.rec-title {
+	font-size: 15px; /* 16px → 15px */
+	font-weight: 600;
+	color: white;
+	line-height: 1.3; /* 1.4 → 1.3 */
+	margin-bottom: 4px; /* 6px → 4px */
+	overflow: hidden;
+	display: -webkit-box;
+	-webkit-line-clamp: 1; /* 2줄 → 1줄 */
+	-webkit-box-orient: vertical;
+}
+
+.rec-tags {
+	font-size: 12px; /* 13px → 12px */
+	color: white;
+	line-height: 1.3;
+	overflow: hidden;
+	display: -webkit-box;
+	-webkit-line-clamp: 1;
+	-webkit-box-orient: vertical;
+	width:95%;
+}
+
+.rec-row {
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+	padding: 8px 12px; /* 12px 16px → 8px 12px */
+	gap:10px;
+}
+
+.rec-openBtn {
+	padding: 6px 14px; /* 8px 16px → 6px 14px */
+	border: 1px solid #2563eb;
+	color: #2563eb;
+	background: #3e3e3e;
+	border-radius: 6px;
+	cursor: pointer;
+	font-size: 13px; /* 14px → 13px */
+	font-weight: 500;
+	transition: all 0.2s;
+}
+
+.rec-openBtn:hover {
+	background: #1e1e1e;
+	color: white;
+}
+/*  추가: 오프라인처리 */
+.offline-badge {
+	background-color: #3e3e3e;
+	color: white;
+	padding: 3px 8px;
+	border-radius: 4px;
+	font-size: 11px;
+	font-weight: bold;
+	margin-left: 8px;
+	vertical-align: middle;
+}
+
+/*  추가: 바로보기 버튼 스타일 */
+.rec-openBtn2 {
+	background-color: #3e3e3e;
+	color: white;
+	border: none;
+	padding: 6px 14px;
+	border-radius: 5px;
+	cursor: pointer;
+	font-size: 14px;
+	font-weight: bold;
+	margin-left: 10px;
+}
+
+.rec-openBtn2:hover {
+	background: #1e1e1e;
+	color: white;
+}
+.rec-openBtn2.enabled {
+	background-color: #3e3e3e;
+	color: white;
+	cursor: pointer;
+}
+
+.rec-openBtn2.enabled:hover {
+	background-color: #1e1e1e;
+}
+
+/* 바로보기 버튼 - 비활성화 */
+.rec-openBtn2.disabled,
+.rec-openBtn2:disabled {
+	background-color: #3e3e3e !important;
+	color: black !important;
+	cursor: not-allowed !important;
+	opacity: 0.6;
+}
+
+.rec-openBtn2.disabled:hover,
+.rec-openBtn2:disabled:hover {
+	background-color: #cccccc !important;
+}
+.lecture-title {
+	width: 95%;
+	height: 50px;
+	overflow: hidden;
+	display: flex;
+	align-items: center;
+	padding: 0 10px;
+}
+
+/* 빈 결과 / 에러 */
+.rec-empty, .rec-error {
+	width: 100%;
+	text-align: center;
+	padding: 60px 16px;
+	font-size: 15px;
+	color: white;
+}
+
+.rec-error {
+	color: #b91c1c;
+}
+/* 기존 CSS는 그대로 유지하고 아래 추가 */
+
+/* 페이징 컨테이너 */
+.pagination-container {
+	width: 100%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 16px;
+	margin-top: 32px;
+	margin-bottom: 32px;
+}
+
+.page-btn {
+	padding: 10px 20px;
+	background: #3e3e3e;
+	color: white;
+	border: none;
+	border-radius: 6px;
+	font-size: 14px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.2s;
+}
+
+.page-btn:hover:not(:disabled) {
+	background: #1e1e1e;
+	transform: translateY(-1px);
+}
+
+.page-btn:disabled {
+	background: #d1d5db;
+	cursor: not-allowed;
+}
+
+.page-info {
+	font-size: 15px;
+	font-weight: 500;
+	color: white;
+	min-width: 80px;
+	text-align: center;
+}
+.search-mode-toggle {
+	background-color: #3e3e3e;
+	border-radius: 8px;
+	padding: 12px 20px;
+}
+
+.search-mode-toggle label {
+	font-size: 14px;
+	font-weight: 500;
+	color: white;
+	transition: color 0.2s;
+}
+
+.search-mode-toggle label:hover {
+	color: #1e1e1e;
+}
+
+.search-mode-toggle input[type="radio"] {
+	width: 16px;
+	height: 16px;
+	cursor: pointer;
+}
+
+.search-mode-toggle input[type="radio"]:checked + span {
+	color: #007bff;
+	font-weight: 600;
+}
+
+/* ⭐ 추가: 비디오 모달 */
+.video-modal {
+	display: none;
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background-color: rgba(0, 0, 0, 0.95);
+	z-index: 10000;
+	overflow: auto;
+}
+
+.video-modal-content {
+	position: relative;
+	width: 90%;
+	max-width: 1400px;
+	height: 85vh;
+	margin: 3% auto;
+	background-color: #000;
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.video-modal-header {
+	background-color: #333;
+	color: white;
+	padding: 15px 20px;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	border-bottom: 2px solid #444;
+}
+
+.video-modal-header h3 {
+	margin: 0;
+	font-size: 18px;
+	font-weight: 600;
+}
+
+.video-modal-close {
+	background-color: #f44336;
+	color: white;
+	border: none;
+	padding: 8px 20px;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 16px;
+	font-weight: bold;
+	transition: background-color 0.3s;
+}
+
+.video-modal-close:hover {
+	background-color: #d32f2f;
+}
+
+.video-container {
+	width: 100%;
+	height: calc(100% - 60px);
+	background-color: #000;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.video-container video {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+}
+

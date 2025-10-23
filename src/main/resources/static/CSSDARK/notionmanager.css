@@ -1,0 +1,1054 @@
+@charset "UTF-8";
+
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+/* ========== 기본 레이아웃 (header/footer 고려) ========== */
+
+body {
+    font-family: 'Pretendard', sans-serif;
+    background: #1e1e1e;
+    margin: 0;
+    padding: 0;
+    color:white;
+}
+
+/* header 높이 110px (header-top 50px + header-bottom 60px) */
+/* footer 높이 150px */
+.page-wrapper {
+    margin-top: 110px; /* header 높이만큼 */
+    margin-bottom: 150px; /* footer 높이만큼 */
+    padding: 20px 0;
+    min-height: calc(100vh - 260px); /* 전체 화면 - header - footer */
+}
+
+.location-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* ========== 왼쪽: 노트/파일 리스트 ========== */
+
+.notion-list-container {
+    background-color: #1e1e1e;
+    width: 360px;
+    min-height: 820px;
+    border-radius: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    color:white;
+    border: 2px solid white;
+}
+
+/* 탭 */
+.tab-container {
+    display: flex;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.tab-button {
+    flex: 1;
+    padding: 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: white;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.tab-button.active {
+    color: white;
+    border-bottom-color: white;
+    font-weight: 600;
+}
+
+.tab-button:hover:not(.active) {
+    color: #1976D2;
+    background-color: #f5f5f5;
+}
+
+/* 검색창 스타일 */
+.search-container {
+    position: relative;
+    margin-bottom: 15px;
+}
+
+#searchInput {
+    width: 100%;
+    padding: 10px 40px 10px 15px;
+    border: 2px solid #c7c7c7;
+    border-radius: 10px;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.3s;
+    box-sizing: border-box;
+    background:#3e3e3e;
+}
+
+#searchInput:focus {
+    border-color: #2196F3;
+    box-shadow: 0 0 8px rgba(33, 150, 243, 0.2);
+}
+
+.clear-search-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #999;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    transition: background 0.2s;
+    display: none;
+}
+
+.clear-search-btn:hover {
+    background: #666;
+}
+
+/* 검색 결과 없음 메시지 */
+.empty-message {
+    text-align: center;
+    color: #999;
+    padding: 40px 20px;
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+/* 관리 버튼 */
+.management-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.management-buttons button {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid white;
+    background: #3e3e3e;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s ease;
+    color:white;
+}
+
+.management-buttons button:hover {
+    background-color: #f0f7ff;
+    border-color: #2196F3;
+    color: #2196F3;
+}
+
+/* 리스트 */
+.notion-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 0;
+    max-height: 550px; /* ✅ 최대 높이 지정 */
+    min-height: 400px;
+}
+
+/* 스크롤바 스타일링 */
+.notion-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.notion-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.notion-list::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+}
+
+.notion-list::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* ========== 트리 구조 스타일 ========== */
+
+.tree-container {
+    position: relative;
+}
+
+.folder-container {
+    margin-bottom: 4px;
+}
+
+/* 폴더 아이템 */
+.folder-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+    margin: 2px 0;
+    border-radius: 8px;
+    cursor: pointer;
+    background: #3e3e3e;
+    border: 1px solid white;
+    transition: all 0.2s ease;
+    gap: 8px;
+    color:white;
+}
+
+.folder-item:hover {
+    background: #4e4e4e;
+    border-color: white;
+    transform: translateX(3px);
+}
+
+.folder-item.selected {
+    background: #4e4e4e;
+    border-left: 3px solid white;
+    font-weight: 600;
+}
+
+.folder-item.drop-target {
+    background: #bbdefb !important;
+    border: 2px dashed #2196f3 !important;
+}
+
+/* 폴더 토글 아이콘 */
+.folder-toggle {
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.2s;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+.folder-toggle.expanded {
+    transform: rotate(90deg);
+}
+
+.folder-toggle.empty {
+    visibility: hidden;
+}
+
+/* 폴더 아이콘 */
+.item-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 폴더/파일 이름 */
+.folder-name,
+.file-name,
+.note-name,
+.note-title {
+    flex: 1;
+    font-size: 13px;
+    color:white;
+    white-space: nowrap;
+}
+.note-item-container{
+	font-size:13px;
+	align-items:center;
+	display:flex;
+	height:100%;
+}
+.note-item:hover .note-item-container{
+	animation: scroll-left 8s linear infinite;
+}
+.note-item.scroll-active .note-item-container:last-child {
+  position: absolute;
+  left: 100%;
+  animation-delay: 5s; /* 첫 번째 애니메이션보다 절반 뒤에 시작 */
+}
+
+/* 액션 버튼 (호버시만 표시) */
+.item-actions {
+    margin-left: auto;
+    display: none;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.folder-item:hover .item-actions,
+.file-item:hover .item-actions,
+.note-item:hover .item-actions {
+    display: flex;
+}
+
+.action-icon-btn {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+    font-size: 14px;
+}
+
+.action-icon-btn:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+/* 하위 항목 컨테이너 */
+.folder-children {
+    display: none;
+    margin-left: 20px;
+    padding-left: 10px;
+    border-left: 1px solid #d0d0d0;
+}
+
+.folder-children.expanded {
+    display: block;
+}
+
+/* 파일/노트 아이템 */
+.file-item,
+.note-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+    margin: 2px 0;
+    border-radius: 6px;
+    cursor: pointer;
+    background: #3e3e3e;
+    border: 1px solid #e9ecef;
+    transition: all 0.2s ease;
+    gap: 8px;
+    overflow:hidden;
+}
+
+.file-item:hover,
+.note-item:hover {
+    background: #4e4e4e;
+    border-color: white;
+    transform: translateX(3px);
+}
+
+.file-item.selected,
+.note-item.selected {
+    background: #4e4e4e;
+    border-color: white;
+    font-weight: 600;
+    overflow:hidden;
+}
+
+.file-item.dragging,
+.note-item.dragging {
+    opacity: 0.5;
+    transform: rotate(2deg);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* 체크박스 스타일 */
+.item-checkbox {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-right: 8px;
+    accent-color: #2196F3;
+}
+
+.multi-selected {
+    background-color: #e3f2fd !important;
+    border-left: 3px solid #2196F3 !important;
+    font-weight: 600;
+}
+
+/* ========== 오른쪽: 컨텐츠 영역 ========== */
+
+.notion-content-container {
+    background-color: #1e1e1e;
+    width: 830px;
+    min-height: 820px;
+    border-radius: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    position: relative;
+    color:white;
+    border: 2px solid white;
+}
+
+/* 제목 */
+.notion-title {
+    width: 100%;
+    height: 50px;
+    border-radius: 10px;
+    border: 2px solid #c7c7c7;
+    padding: 0 15px;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    outline: none;
+    background: #3e3e3e;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+}
+
+.notion-title:focus {
+    border-color: #2196F3;
+    background: white;
+}
+
+.notion-title[contenteditable="true"] {
+    border-color: white;
+    background: #3e3e3e;
+    cursor: text;
+}
+
+.notion-title.readonly {
+    background: #f8f9fa;
+    color: #666;
+    cursor: default;
+}
+
+/* 버튼 컨테이너 */
+.button-container {
+    display: flex;
+    gap: 10px;
+    padding: 10px 0;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+}
+
+.button-container button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-edit {
+    background-color: #3e3e3e;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.btn-edit:hover {
+    background-color: #4e4e4e;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.btn-save {
+    background-color: #3e3e3e;
+    color: white;
+	box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.btn-save:hover {
+    background-color: #4e4e4e;
+    transform: translateY(-2px);
+    color:white;
+}
+
+.btn-cancel {
+    background-color: #3e3e3e;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.btn-cancel:hover {
+    background-color: #4e4e4e;
+    transform: translateY(-2px);
+    color:white;   
+}
+#addCategoryBtn{
+    border: none;
+    padding: 5px 20px;
+    border-radius: 5px;
+    background: #3e3e3e;
+    color:white;
+}
+.btn-download {
+    background-color: #3e3e3e;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.btn-download:hover {
+    background-color: #4e4e4e;
+    transform: translateY(-2px);
+}
+
+.btn-delete {
+    background-color: #3e3e3e;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.btn-delete:hover {
+    background-color: #4e4e4e;
+    transform: translateY(-2px);
+}
+
+.btn-rename {
+    background-color: #3e3e3e;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.btn-rename:hover {
+    background-color: #4e4e4e;
+    transform: translateY(-2px);
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* 컨텐츠 영역 */
+.content-area {
+    flex: 1;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 400px;
+}
+/*  Textarea 스타일 */
+#itemContent {
+    width: 100%;
+    height: 70vh;
+    padding: 20px;
+    border: 2px solid #c7c7c7;
+    border-radius: 20px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    resize: none;
+    box-sizing: border-box;
+
+    /* ✅ 긴 텍스트 처리 */
+    white-space: pre-wrap !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+}
+
+#itemContent.readonly {
+    background-color: #3e3e3e;
+    cursor: default;
+}
+/* 텍스트 에디터 */
+.notion-content {
+    width: 100%;
+    height: 100%;
+    border-radius: 20px;
+    border: 2px solid #c7c7c7;
+    padding: 20px;
+    font-size: 14px;
+    line-height: 1.6;
+    resize: none;
+    outline: none;
+    font-family: inherit;
+    background: #3e3e3e;
+    overflow-y: auto;
+    box-sizing: border-box;
+    color:white;
+}
+
+.notion-content:focus {
+    border-color: white;
+}
+
+.notion-content.readonly {
+    background: #3e3e3e;
+    color: white;
+    cursor: default;
+}
+
+/* Toast UI Editor 영역  */
+#editorArea {
+    display: none;
+    width: 100%;
+    height: 510px;
+    margin-top: 20px;
+    overflow-y: scroll;
+    justify-content: center;
+    border: 2px solid #c7c7c7;
+    min-height: 600px;
+    background:#3e3e3e;
+}
+
+.toastui-editor-defaultUI {
+    min-height: 55vh !important;
+    border: 2px solid #c7c7c7;
+    border-radius: 20px;
+}
+
+/* 에디터 기본 스타일 */
+.toastui-editor-contents {
+    font-size: 16px !important;
+    line-height: 1.8;
+    padding: 20px !important;
+    background-color: #3e3e3e;
+    color:white;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    white-space: pre-wrap !important;
+}
+.toastui-editor-contents p, h2, h1, h3{
+	color:white !important;
+}
+/*  코드 블록 내부 텍스트 줄바꿈 */
+.toastui-editor-contents pre {
+    white-space: pre-wrap !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    max-width: 100%;
+    overflow-x: auto;
+    background:#3e3e3e !important;
+}
+.toastui-editor-contents code {
+    white-space: pre-wrap !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    color:green !important;
+}
+.toastui-editor .ProseMirror {
+	color:white !important;
+    background-color: #3e3e3e !important;
+    cursor: text !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    white-space: pre-wrap !important;
+}
+
+/* 읽기 전용 모드 스타일 */
+.readonly-editor .toastui-editor-toolbar {
+    pointer-events: none;
+    opacity: 0.5;
+}
+
+.readonly-editor .toastui-editor-contents {
+    background-color: #3e3e3e !important;
+}
+
+.readonly-editor .toastui-editor .ProseMirror {
+    background-color: #3e3e3e !important;
+    cursor: default !important;
+}
+/* 미리보기 영역 */
+#previewArea {
+    display: none;
+    width: 100%;
+    height: 70vh;
+    border: 2px solid white;
+    border-radius: 20px;
+    overflow: hidden;
+    background: 3e3e3e;
+}
+
+#pdfPreview,
+#imagePreview {
+    width: 100%;
+    height: 100%;
+    border: none;
+    object-fit: contain;
+}
+
+/* 스프레드시트 영역 */
+#spreadsheetContainer,
+#spreadsheetArea {
+    display: none;
+    width: 100%;
+    height: 100%;
+    border: 2px solid white;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+/* Excel 컨테이너 */
+.excel-container {
+    width: 100%;
+    height: 70vh;
+    border: 2px solid white;
+    border-radius: 20px;
+    background: #3e3e3e;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    color:white;
+}
+
+/* 시트 탭 컨테이너 */
+.sheet-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 10px;
+    background: #3e3e3e;
+    border-bottom: 2px solid white;
+    overflow-x: auto;
+    flex-shrink: 0;
+    color:white;
+}
+
+/* 시트 탭 버튼 */
+.sheet-tab {
+    padding: 8px 16px;
+    background: #3e3e3e;
+    border: 1px solid #ccc;
+    border-radius: 4px 4px 0 0;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    border-bottom: none;
+    color:white;
+}
+
+.sheet-tab:hover {
+    background: #4e4e4e;
+}
+
+.sheet-tab.active {
+    background: #3e3e3e;
+    border-bottom: 2px solid #fff;
+    color: white;
+    font-weight: 600;
+    margin-bottom: -2px;
+}
+
+/* 시트 내용 영역 */
+.sheet-content {
+    flex: 1;
+    padding: 10px 20px;
+    background: #3e3e3e;
+    overflow: auto;
+    color:white;
+}
+
+/* Excel 테이블 스타일 */
+.sheet-content table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 12px;
+}
+
+.sheet-content table td,
+.sheet-content table th {
+    border: 1px solid white;
+    padding: 6px 8px;
+    text-align: left;
+}
+
+.sheet-content table tr:nth-child(even) {
+    background-color: #3e3e3e;
+}
+
+.sheet-content table tr:hover {
+    background-color: #3e3e3e;
+}
+
+.sheet-content table th {
+    background-color: #3e3e3e;
+    color: white;
+    font-weight: bold;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+/* ========== CSV 테이블 스타일 ========== */
+.csv-table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 10px 0;
+}
+
+.csv-table th,
+.csv-table td {
+    border: 1px solid white;
+    padding: 8px;
+    text-align: left;
+    font-size: 13px;
+}
+
+.csv-table tr:nth-child(even) {
+    background-color: #3e3e3e;
+}
+
+.csv-table th {
+    background-color: #3e3e3e;
+    color: white;
+    font-weight: bold;
+    position: sticky;
+    top: 0;
+}
+
+.csv-table tr:hover {
+    background-color: #3e3e3e;
+}
+/* Welcome 메시지 */
+.welcome-message {
+    text-align: center;
+    margin-top: 100px;
+    color: white;
+}
+
+.welcome-message h2 {
+    font-size: 24px;
+    margin-bottom: 10px;
+    color: white;
+}
+
+.welcome-message p {
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+/* ========== 애니메이션 ========== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.notion-list > * {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* ========== 스크롤바 스타일 ========== */
+.notion-list::-webkit-scrollbar,
+.sheet-content::-webkit-scrollbar,
+.notion-content::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.notion-list::-webkit-scrollbar-track,
+.sheet-content::-webkit-scrollbar-track,
+.notion-content::-webkit-scrollbar-track {
+    background: #3e3e3e;
+    border-radius: 10px;
+    color:white;
+}
+
+.notion-list::-webkit-scrollbar-thumb,
+.sheet-content::-webkit-scrollbar-thumb,
+.notion-content::-webkit-scrollbar-thumb {
+    background: #3e3e3e;
+    border-radius: 10px;
+    color:white;
+}
+
+.notion-list::-webkit-scrollbar-thumb:hover,
+.sheet-content::-webkit-scrollbar-thumb:hover,
+.notion-content::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* ========== 반응형 ========== */
+@media (max-width: 1200px) {
+    .location-container {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .notion-list-container,
+    .notion-content-container {
+        width: 100%;
+        max-width: 800px;
+    }
+}
+
+@media (max-width: 768px) {
+    .search-container {
+        margin-bottom: 10px;
+    }
+
+    #searchInput {
+        font-size: 13px;
+        padding: 8px 35px 8px 12px;
+    }
+
+    .clear-search-btn {
+        width: 20px;
+        height: 20px;
+        font-size: 12px;
+    }
+
+    .excel-container,
+    #editorArea,
+    #previewArea {
+        height: 60vh;
+    }
+}
+/* 루트 드롭존 */
+
+.root-drop-zone {
+    border: 2px dashed #bbb; border-radius: 8px;
+    padding: 10px 12px; margin: 8px 12px; color: #666;
+}
+.root-drop-zone.drop-target {
+    border-color: #3b82f6; background: #3e3e3e; color: #1d4ed8;
+}
+
+.root-drop-zone.active {
+    display: block;  /* 드래그 중에만 표시 */
+}
+
+.root-drop-zone.drop-target {
+    border-color: #4a90e2;
+    background: #3e3e3e;
+}
+
+.root-drop-hint {
+    color: white;
+    font-size: 14px;
+}
+
+
+/* 태그 입력 영역 */
+#tagInputArea {
+    background: #3e3e3e;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #e1e4e8;
+}
+
+#tagList {
+    min-height: 32px;
+}
+
+/* 태그 칩 스타일 */
+.tag-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 10px;
+    background: #1e1e1e;
+    color: white;
+    border-radius: 16px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin: 0;
+}
+
+.tag-chip:hover {
+    background: #3e3e3e;
+    transform: scale(1.05);
+}
+
+.tag-chip .remove-tag {
+    font-weight: bold;
+    margin-left: 3px;
+}
+
+#tagInput {
+    font-size: 14px;
+    margin-top: 10px;
+    width: 300px;
+    display:flex;
+    gap:10px;
+}
+.tag-input-wrapper{
+	display:flex;
+	gap:10px;
+	flex-wrap:wrap;
+}
+.tag-display {
+	display:flex;
+	gap:10px;
+}
+.toastui-editor-defaultUI{
+	height:500px !important;
+	width:100%;
+}
+.toastui-editor-main-container{
+	height:400px !important;
+}
+
+/* 문제은행 버튼 */
+.btn-exam {
+    background-color: #3e3e3e;
+    color:white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.btn-exam:hover {
+    background-color: #3e3e3e;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* HWP 프리뷰 스타일 */
+.hwp-preview {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background: #3e3e3e;
+    color:white;
+}
+
+.hwp-container {
+    width: 100%;
+    min-height: 600px;
+    padding: 20px;
+    background: #3e3e3e;
+    overflow-y: auto;
+    color:white;
+}
+
+/* hwp.js가 생성하는 요소 스타일 */
+.hwp-container .hwp-page {
+    background: 3e3e3e;
+    margin: 0 auto 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    padding: 40px;
+    max-width: 800px;
+    color:white;
+}
+
+/* 슬라이드 효과 */
+@keyframes scroll-left {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}

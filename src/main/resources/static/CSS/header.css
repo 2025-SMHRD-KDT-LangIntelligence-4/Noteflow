@@ -7,8 +7,7 @@
     font-display: swap;
 }
 body {
-    font-family: 'Pretendard';
-    background: white;          
+    font-family: 'Pretendard';         
 }
 .header-wrapper {
   position: fixed;
@@ -476,3 +475,46 @@ body {
  	justify-content:center;
  	overflow:hidden;
  }
+ .mode-changeBtn {
+  position: relative;
+  width: 60px;
+  height: 30px;
+  background-color: #f0f0f0;
+  border-radius: 30px;
+  border: none;
+  cursor: pointer;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 3px;
+  transition: background-color 0.4s ease;
+}
+
+/* 버튼 안의 원 */
+.mode-changeBtn::before {
+  content: "☀️";
+  position: absolute;
+  left: 3px;
+  width: 24px;
+  height: 24px;
+  background: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: left 0.4s ease, transform 0.3s ease;
+}
+
+/* 다크모드 시 이동 + 배경 변경 */
+.mode-changeBtn.dark::before {
+  content: "🌙";
+  left: 33px; /* 오른쪽으로 이동 */
+  transform: rotate(360deg);
+  background:#3e3e3e
+}
+
+.mode-changeBtn.dark {
+  background-color:#1e1e1e;
+}

@@ -9,35 +9,49 @@
 <link rel="stylesheet" id="theme-css" th:href="@{/css/notioncomplete.css}" />
 <link rel="stylesheet" th:href="@{/css/footer.css}" />
 <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const themeLink = document.getElementById("theme-css");
-      const themeToggleBtn = document.getElementById("theme-toggle-btn");
-
-      // 저장된 모드 복원 (localStorage 사용)
-      const savedTheme = localStorage.getItem("theme") || "light";
-      applyTheme(savedTheme);
-
-      themeToggleBtn.addEventListener("click", () => {
-        const current = localStorage.getItem("theme") || "light";
-        const next = current === "light" ? "dark" : "light";
-        applyTheme(next);
-      });
-
-      function applyTheme(mode) {
-        if (mode === "dark") {
-          themeLink.setAttribute("th:href", "@{/CSSDARK/notioncomplete.css}");
-          themeLink.setAttribute("href", "/CSSDARK/notioncomplete.css"); // 실질적 적용
-          localStorage.setItem("theme", "dark");
-          themeToggleBtn.textContent = "☀️";
-        } else {
-          themeLink.setAttribute("th:href", "@{/css/notioncomplete.css}");
-          themeLink.setAttribute("href", "/css/notioncomplete.css");
-          localStorage.setItem("theme", "light");
-          themeToggleBtn.textContent = "🌙";
-        }
-      }
-    });
-  </script>    
+		document.addEventListener("DOMContentLoaded", () => {
+		  const themeLink = document.getElementById("theme-css");
+		  const themeToggleBtn = document.getElementById("theme-toggle-btn");
+		
+		  // 저장된 모드 불러오기
+		  const savedTheme = localStorage.getItem("theme") || "light";
+		
+		  // 로그인 여부 확인 (버튼이 없으면 로그아웃 상태로 판단)
+		  const isLoggedIn = !!themeToggleBtn;
+		
+		  if (isLoggedIn) {
+		    // 로그인 상태에서는 저장된 테마 적용
+		    applyTheme(savedTheme);
+		
+		    // 버튼 클릭 시 다크모드 전환
+		    themeToggleBtn.addEventListener("click", () => {
+		      const current = localStorage.getItem("theme") || "light";
+		      const next = current === "light" ? "dark" : "light";
+		      applyTheme(next);
+		    });
+		  } else {
+		    // 로그아웃 상태에서는 항상 라이트모드 적용
+		    applyTheme("light");
+		  }
+		
+		  // ✅ 테마 적용 함수
+		  function applyTheme(mode) {
+		    if (mode === "dark") {
+		      themeLink.setAttribute("href", "/CSSDARK/notionComplete.css");
+		      localStorage.setItem("theme", "dark");
+		      if (themeToggleBtn) {
+		        themeToggleBtn.classList.add("dark"); // 버튼 이동 클래스 추가
+		      }
+		    } else {
+		      themeLink.setAttribute("href", "/css/notionComplete.css");
+		      localStorage.setItem("theme", "light");
+		      if (themeToggleBtn) {
+		        themeToggleBtn.classList.remove("dark"); // 기본 위치로 복귀
+		      }
+		    }
+		  }
+		});
+	</script> 
 </head>
 <body>
 <!-- 헤더 -->
