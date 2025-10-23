@@ -18,7 +18,14 @@
 		<div class="quick-add-row">
 			<textarea id="qaDesc" placeholder="설명/내용 (선택)"></textarea>
 		</div>
-
+		<!-- ✅ 반복 일정 옵션: 하루종일 체크박스 옆에 배치 -->
+		<div class="quick-add-row small-row justify-between">
+			<label> <span class="icon-clock">🕒</span> <input
+				id="qaAllDay" type="checkbox" /> 하루종일
+			</label> <label id="repeatOptionLabel" style="font-size: 0.9em;"> <input
+				id="qaRepeat" type="checkbox" /> 선택 기간 동안 매일 동일 시간 적용
+			</label>
+		</div>
 		<div class="quick-add-row time-rows">
 			<div class="time-col">
 				<label>시작 날짜</label> <input id="qaStartDate" type="date" /> <input
@@ -28,14 +35,6 @@
 				<label>종료 날짜</label> <input id="qaEndDate" type="date" /> <input
 					id="qaEndTime" type="time" step="600" />
 			</div>
-		</div>
-		<!-- ✅ 반복 일정 옵션: 하루종일 체크박스 옆에 배치 -->
-		<div class="quick-add-row small-row justify-between">
-			<label> <span class="icon-clock">🕒</span> <input
-				id="qaAllDay" type="checkbox" /> 하루종일
-			</label> <label id="repeatOptionLabel" style="font-size: 0.9em;"> <input
-				id="qaRepeat" type="checkbox" /> 선택 기간 동안 매일 동일 시간 적용
-			</label>
 		</div>
 
 		<!-- ✅ 반복 일정 경고 멘트: 초기에는 숨겨진 상태로 배치 -->
@@ -127,6 +126,9 @@
 	</div>
 </div>
 
+<!-- //////////////////////////////////////////////////////////////////////////////
+							에딧 모드
+/////////////////////////////////////////////////////////////////////////////////// -->
 
 <div th:fragment="editModal" id="editModal"
 	class="quick-add-modal hidden" role="dialog" aria-hidden="true">

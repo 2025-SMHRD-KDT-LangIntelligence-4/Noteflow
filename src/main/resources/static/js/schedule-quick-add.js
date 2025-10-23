@@ -402,12 +402,14 @@ function handleEscClose(e) {
 // 모달 외부 클릭 핸들러 (임시 저장 로직 제거)
 function handleOutsideClick(e) {
 	if (quickModal.classList.contains('hidden')) return;
-
+	// 1) 지도 모달이 열려있으면 바깥 클릭 닫기 비활성화
+	if (window.__MAP_MODAL_OPEN) return;
+	// 2) 클릭 타깃이 지도 모달 내부면 무시
+	const inMapModal = e.target.closest && e.target.closest('#kakaoMapModal');
+	if (inMapModal) return;
+	// 3) 진짜 바깥 클릭만 닫기
 	const isClickOutside = !quickModal.contains(e.target);
-
-	if (isClickOutside) {
-		closeQuickAddModal(); // 임시 저장 로직 없이 바로 닫기
-	}
+	if (isClickOutside) closeQuickAddModal();
 }
 
 

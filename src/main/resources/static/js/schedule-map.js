@@ -39,7 +39,8 @@ function loadKakaoSdkOnce() {
 
 	return kakaoReadyPromise;
 }
-
+// 전역 열림 플래그
+window.__MAP_MODAL_OPEN = window.__MAP_MODAL_OPEN ?? false;
 export async function openMapModal(targetLocationInput) {
 	try {
 		await loadKakaoSdkOnce(); // ✅ SDK 로드 보장
@@ -67,10 +68,17 @@ export async function openMapModal(targetLocationInput) {
 	        </div>
 	      </div>`;
 		document.body.appendChild(mapModal);
+
+		// 지도 모달 내부 클릭은 버블링 차단
+		mapModal.addEventListener('click', (e) => e.stopPropagation());
+		const content = mapModal.querySelector('.map-modal-content');
+		if (content) content.addEventListener('click', (e) => e.stopPropagation());
+
 	}
 
 	// CSS가 flex 기준이므로 flex로 열기
 	mapModal.style.display = 'flex';
+	window.__MAP_MODAL_OPEN = true;
 
 	// 2. DOM 참조
 	const mapContainer = mapModal.querySelector('#map');
@@ -156,9 +164,11 @@ export async function openMapModal(targetLocationInput) {
 			targetLocationInput.value = selectedAddress;
 		}
 		mapModal.style.display = 'none';
+		window.__MAP_MODAL_OPEN = false;
 	};
 
 	closeBtn.onclick = () => {
 		mapModal.style.display = 'none';
+		window.__MAP_MODAL_OPEN = false;
 	};
 }

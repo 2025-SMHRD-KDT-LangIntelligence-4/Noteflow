@@ -413,3 +413,34 @@
 .kakao-map-modal { z-index: 11000; }      /* 지도 모달(최상단) */
 .kakao-map-modal .map-modal-content { position: relative; z-index: 1; }
 
+/* 선택 체크 뱃지 위치/레이어 보장 */
+.fc-event .sel-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 3;
+  background: #fff;
+  border-radius: 4px;
+  padding: 2px 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.12) inset;
+}
+.fc-event .sel-badge input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+}
+
+/* 선택 삭제 배지(가시성 강화) */
+.sel-badge{
+  position:absolute; top:4px; right:4px;
+  width:18px; height:18px; border-radius:4px;
+  background:rgba(255,255,255,.15);
+  border:1px solid rgba(255,255,255,.9);
+  display:inline-flex; align-items:center; justify-content:center;
+  cursor:pointer; z-index:3; backdrop-filter:blur(2px);
+}
+.sel-badge input[type="checkbox"]{ width:14px; height:14px; margin:0; pointer-events:none; }
+.fc-event{ position:relative; }

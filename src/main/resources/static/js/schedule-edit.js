@@ -461,10 +461,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	// 모달 외부 클릭 닫기 (schedule-quick-add.js와 동일하게 구현)
 	document.addEventListener('click', (e) => {
-		if (editModal && !editModal.classList.contains('hidden')) {
-			const isClickOutside = !editModal.contains(e.target);
-			if (isClickOutside) closeEditModal();
-		}
+		if (!editModal || editModal.classList.contains('hidden')) return;
+		// 지도 모달 열림 시 무시
+		if (window.__MAP_MODAL_OPEN) return;
+		// 지도 모달 내부면 무시
+		const inMapModal = e.target.closest && e.target.closest('#kakaoMapModal');
+		if (inMapModal) return;
+		const isClickOutside = !editModal.contains(e.target);
+		if (isClickOutside) closeEditModal();
 	});
 
 	// ✅ 초기 상태 설정

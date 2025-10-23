@@ -56,18 +56,17 @@ function initCalendar() {
 			center: 'title',
 			right: 'dayGridMonth,timeGridWeek,timeGridDay'
 		},
-		datesSet: async () => {
-			// 월 이동 시에도 플러스 버튼 재주입
-			setTimeout(() => injectPlusButtons(), 0);
-		},
+		datesSet: () => setTimeout(() => injectPlusButtons(), 0),
+		// 선택 모드일 때는 클릭이 '선택 토글', 평소엔 수정 모달 열기
 		eventClick: (info) => {
-			// 일정 클릭 -> 수정 모달
 			if (!info || !info.event || !info.event.id) return;
+			if (_selectionModeOn) return; // 선택 모드에선 클릭 토글만(decorate 쪽에서 처리)
 			openEditModal(info.event.id);
 		},
-		eventDidMount: () => {
-			// 날짜 셀 그려진 후 플러스 버튼 다시 주입
+		eventDidMount: (info) => {
 			setTimeout(() => injectPlusButtons(), 0);
+			// 🔴 체크박지/선택 뱃지 주입
+			decorateEventForSelection(info);
 		}
 	});
 
@@ -195,11 +194,11 @@ function wireSearchBox() {
 
 // ------------------ 초기화 ------------------
 document.addEventListener('DOMContentLoaded', async () => {
-  initCalendar();
-  await refreshEvents();
-  wireSearchBox();
-  // 플러스 버튼 주입(최초)
-  setTimeout(() => injectPlusButtons(), 0);
+	initCalendar();
+	await refreshEvents();
+	wireSearchBox();
+	// 플러스 버튼 주입(최초)
+	setTimeout(() => injectPlusButtons(), 0);
 });
 
 
@@ -301,4 +300,389 @@ export const refreshEvents = async () => {
 	}
 };
 window.refreshEvents = refreshEvents;
+// ================== 삭제 센터 ==================
+let _selectionModeOn = false;
+let _selectedEventIds = new Set();
 
+// ① 선택삭제 모드 ON/OFF
+function enableSelectionMode() {
+	if (_selectionModeOn) return;
+	_selectionModeOn = true;
+	_selectedEventIds.clear();
+
+	// ✅ 완전 재마운트: remove → addEventSource로 eventDidMount 재실행 보장
+	if (calendar) {
+		const current = _allEvents || [];
+		calendar.batchRendering(() => {
+			calendar.removeAllEvents();
+			calendar.addEventSource(current);
+		});
+	}
+	showSelectionBar();
+	Swal.fire({
+		icon: 'info',
+		title: '선택 삭제 모드',
+		html: '삭제할 일정을 클릭해서 선택하세요.<br>완료 후 <b>선택 n개 삭제</b> 버튼을 눌러주세요.',
+		timer: 2000,
+		showConfirmButton: false
+	});
+}
+
+function disableSelectionMode() {
+	_selectionModeOn = false;
+	_selectedEventIds.clear();
+	// 체크박스/선택 표시 제거
+	document.querySelectorAll('.fc-event .sel-badge').forEach(n => n.remove());
+	if (calendar) {
+		const current = _allEvents || [];
+		calendar.batchRendering(() => {
+			calendar.removeAllEvents();
+			calendar.addEventSource(current);
+		});
+	}
+	hideSelectionBar();
+}
+
+// eventDidMount에서 체크박스/뱃지 주입
+function decorateEventForSelection(info) {
+	if (!_selectionModeOn) return;
+	// 중복 주입 방지
+	if (info.el.querySelector('.sel-badge')) return;
+	info.el.style.position = 'relative';
+	const wrap = document.createElement('label');
+	wrap.className = 'sel-badge';
+	wrap.title = _selectedEventIds.has(info.event.id) ? '선택됨' : '선택';
+	const cb = document.createElement('input');
+	cb.type = 'checkbox';
+	cb.checked = _selectedEventIds.has(info.event.id);
+	wrap.appendChild(cb);
+	info.el.appendChild(wrap);
+
+	const toggle = (e) => {
+		if (!_selectionModeOn) return;
+		e.preventDefault();
+		e.stopPropagation();
+		if (_selectedEventIds.has(info.event.id)) {
+			_selectedEventIds.delete(info.event.id);
+			cb.checked = false;
+			wrap.title = '선택';
+		} else {
+			_selectedEventIds.add(info.event.id);
+			cb.checked = true;
+			wrap.title = '선택됨';
+
+		}
+		updateSelectedCountLabel();
+	};
+	wrap.addEventListener('click', toggle);
+	info.el.addEventListener('click', (e) => { if (_selectionModeOn) toggle(e); }, true);
+}
+
+// ② 필터 일괄 삭제
+async function openFilterDeleteDialog() {
+  const { value: formValues } = await Swal.fire({
+    title: '필터 조건으로 일괄 삭제',
+    html: `
+      <div style="display:flex;flex-direction:column;gap:8px;text-align:left">
+        <label>기간</label>
+        <input type="date" id="delStart" class="swal2-input" style="width:100%" placeholder="시작일">
+        <input type="date" id="delEnd" class="swal2-input" style="width:100%" placeholder="종료일">
+        <label>키워드(제목+내용)</label>
+        <input type="text" id="delKeyword" class="swal2-input" placeholder="예: java, 회의">
+        <label>카테고리(쉼표로 여러개)</label>
+        <input type="text" id="delCats" class="swal2-input" placeholder="예: java,study">
+      </div>
+    `,
+    focusConfirm: false,
+    preConfirm: () => {
+      return {
+        start: (document.getElementById('delStart').value || '').trim(),
+        end: (document.getElementById('delEnd').value || '').trim(),
+        keyword: (document.getElementById('delKeyword').value || '').trim().toLowerCase(),
+        cats: (document.getElementById('delCats').value || '')
+          .split(',').map(v => v.trim().toLowerCase()).filter(Boolean),
+      };
+    },
+    showCancelButton: true,
+    confirmButtonText: '미리보기',
+    cancelButtonText: '취소',
+  });
+  if (!formValues) return;
+
+  // 미리보기(클라 계산)
+  const ids = _allSchedulesRaw
+    .filter(s => {
+      // 기간
+      const inRange = (() => {
+        if (!formValues.start && !formValues.end) return true;
+        const sdt = new Date(s.start_time);
+        const sD  = formValues.start ? new Date(formValues.start + 'T00:00:00') : null;
+        const eD  = formValues.end   ? new Date(formValues.end   + 'T23:59:59') : null;
+        if (sD && sdt < sD) return false;
+        if (eD && sdt > eD) return false;
+        return true;
+      })();
+      if (!inRange) return false;
+
+      // 키워드
+      const kw = formValues.keyword;
+      if (kw) {
+        const title = (s.title || '').toLowerCase();
+        const desc  = (s.description || '').toLowerCase();
+        if (!title.includes(kw) && !desc.includes(kw)) return false;
+      }
+
+      // 카테고리
+      if (formValues.cats.length) {
+        const cats = (s.category || '').toLowerCase().split(',').map(v => v.trim());
+        const hit = formValues.cats.some(c => cats.includes(c));
+        if (!hit) return false;
+      }
+      return true;
+    })
+    .map(s => s.schedule_id);
+
+  if (ids.length === 0) {
+    Swal.fire({ icon: 'info', text: '삭제 대상이 없습니다.' });
+    return;
+  }
+
+  const { isConfirmed } = await Swal.fire({
+    icon: 'warning',
+    title: `총 ${ids.length}개 일정 삭제`,
+    html: `아래 입력창에 <b>삭제</b> 를 입력하면 진행됩니다.`,
+    input: 'text',
+    inputPlaceholder: '삭제',
+    showCancelButton: true,
+    confirmButtonText: '진짜 삭제',
+    // ⚠️ 여기!
+    inputValidator: (v) => (v === '삭제' ? undefined : '삭제 를 정확히 입력하세요'),
+  });
+  if (!isConfirmed) return;
+
+  try {
+    const resp = await fetchWithCsrf('/api/schedule/bulk-delete', {
+      method: 'POST',
+      body: JSON.stringify(ids.map(Number)),
+    });
+    await refreshEvents();
+    Swal.fire({ icon: 'success', text: resp?.message || '삭제되었습니다.' });
+  } catch (err) {
+    console.error('필터 삭제 실패:', err);
+    Swal.fire({ icon: 'error', text: `삭제 실패: ${err?.message || '알 수 없는 오류'}` });
+  }
+}
+
+// ③ 최근 생성분 빠른 삭제
+// ③ 최근 생성분 빠른 삭제 (미리보기 개수 포함)
+async function openRecentDeleteDialog() {
+  const { value: minutes } = await Swal.fire({
+    title: '최근 생성 일정 빠른 삭제',
+    input: 'range',
+    inputAttributes: { min: 1, max: 10, step: 1 },
+    inputValue: 5,
+    inputLabel: '분',
+    showCancelButton: true,
+    confirmButtonText: '다음',
+  });
+  if (!minutes) return;
+
+  // 1) 백엔드에서 미리보기 개수 가져오기
+  let previewCount = 0;
+  try {
+    const preview = await fetchWithCsrf(`/api/schedule/bulk-delete-recent/preview?minutes=${Number(minutes)}`);
+    previewCount = Number(preview?.count || 0);
+  } catch (err) {
+    console.error('미리보기 조회 실패:', err);
+    Swal.fire({ icon: 'error', text: `미리보기 실패: ${err?.message || '알 수 없는 오류'}` });
+    return;
+  }
+
+  // 2) 삭제 대상 없으면 안내 후 종료
+  if (!previewCount) {
+    Swal.fire({ icon: 'info', text: `최근 ${minutes}분 내 생성된 일정이 없습니다.` });
+    return;
+  }
+
+  // 3) 컨펌 모달 (입력 검증은 inputValidator로 → isConfirmed만 확인)
+  const { isConfirmed } = await Swal.fire({
+    icon: 'warning',
+    title: `최근 ${minutes}분 내 생성 일정 삭제`,
+    html: `총 <b>${previewCount}</b>개가 삭제됩니다.<br>진행하려면 <b>삭제</b> 를 입력하세요.`,
+    input: 'text',
+    showCancelButton: true,
+    confirmButtonText: '삭제',
+    inputValidator: (v) => (v === '삭제' ? undefined : '삭제 를 정확히 입력하세요'),
+  });
+  if (!isConfirmed) return;
+
+  // 4) 실제 삭제 호출
+  try {
+    const resp = await fetchWithCsrf(`/api/schedule/bulk-delete-recent?minutes=${Number(minutes)}`, {
+      method: 'POST',
+    });
+    await refreshEvents();
+    Swal.fire({ icon: 'success', text: resp?.message || '삭제되었습니다.' });
+  } catch (err) {
+    console.error('최근 삭제 실패:', err);
+    Swal.fire({ icon: 'error', text: `삭제 실패: ${err?.message || '알 수 없는 오류'}` });
+  }
+}
+
+// ④ 선택삭제 실제 실행
+async function deleteSelectedNow() {
+  if (!_selectedEventIds.size) {
+    Swal.fire({ icon: 'info', text: '선택한 일정이 없습니다.' });
+    return;
+  }
+  const count = _selectedEventIds.size;
+
+  const { isConfirmed } = await Swal.fire({
+    icon: 'warning',
+    title: `선택 ${count}개 삭제`,
+    html: `진행하려면 <b>삭제</b> 입력`,
+    input: 'text',
+    showCancelButton: true,
+    // ⚠️ 여기! inputValidator로 검사만 하고, 통과 시 isConfirmed=true가 된다.
+    inputValidator: (v) => (v === '삭제' ? undefined : '삭제 를 정확히 입력하세요'),
+  });
+  if (!isConfirmed) return;
+
+  try {
+    const ids = Array.from(_selectedEventIds).map(Number);
+    const resp = await fetchWithCsrf('/api/schedule/bulk-delete', {
+      method: 'POST',
+      body: JSON.stringify(ids),
+    });
+    disableSelectionMode();
+    await refreshEvents();
+    Swal.fire({ icon: 'success', text: resp?.message || '삭제되었습니다.' });
+  } catch (err) {
+    console.error('선택 삭제 실패:', err);
+    Swal.fire({ icon: 'error', text: `삭제 실패: ${err?.message || '알 수 없는 오류'}` });
+  }
+}
+
+// 메인: 삭제 센터 모달
+function openDeleteCenter() {
+	Swal.fire({
+		title: '삭제 옵션 선택',
+		html: `
+		<div style="display:grid;grid-template-columns:1fr;gap:10px;text-align:left">
+		        <button id="optSel" class="btn danger" style="width:100%;">① 체크박스 기반 선택 삭제</button>
+		        <button id="optFilter" class="btn danger" style="width:100%;">② 기간·키워드·카테고리로 일괄 삭제</button>
+		        <button id="optRecent" class="btn danger" style="width:100%;">③ 최근 생성분 빠른 삭제</button>
+		      </div>
+    `,
+		showConfirmButton: false,
+		didOpen: () => {
+			const $ = (sel) => Swal.getHtmlContainer().querySelector(sel);
+			$('#optSel').onclick = () => {
+				enableSelectionMode();
+				Swal.close(); // 팝업은 닫고, 플로팅 패널로 제어
+			};
+			$('#optFilter').onclick = openFilterDeleteDialog;
+			$('#optRecent').onclick = openRecentDeleteDialog;
+			$('#selDeleteBtn').onclick = deleteSelectedNow;
+			$('#selCancelBtn').onclick = () => {
+				disableSelectionMode();
+				const panel = $('#selActions');
+				if (panel) panel.style.display = 'none';
+			};
+		}
+	});
+}
+
+// 복구(휴지통)
+async function openTrash() {
+	// 서버에서 휴지통 목록 가져오기 (간단 버전)
+	const trash = await fetchWithCsrf('/api/schedule/trash'); // [{id,title,start,end,updatedAt}, ...]
+	if (!trash || !trash.length) { Swal.fire({ icon: 'info', text: '복구 가능한 항목이 없습니다.' }); return; }
+
+	// 간단 선택 UI
+	const html = ['<div style="text-align:left;max-height:300px;overflow:auto">'];
+	trash.forEach(t => {
+		html.push(`<label style="display:flex;gap:8px;align-items:center;margin:4px 0">
+      <input type="checkbox" class="restoreBox" value="${t.schedule_id}">
+      <span>${t.start_time?.slice(0, 16) || ''} ${t.title || '(제목 없음)'}</span>
+    </label>`);
+	});
+	html.push('</div>');
+
+	const { isConfirmed } = await Swal.fire({
+		title: '복구할 항목 선택',
+		html: html.join(''),
+		showCancelButton: true,
+		confirmButtonText: '선택 복구',
+		didOpen: () => { }
+	});
+	if (!isConfirmed) return;
+
+	const boxes = Swal.getHtmlContainer().querySelectorAll('.restoreBox:checked');
+	const ids = Array.from(boxes).map(b => Number(b.value));
+	if (!ids.length) return;
+
+	await fetchWithCsrf('/api/schedule/bulk-restore', { method: 'POST', body: JSON.stringify(ids) });
+	await refreshEvents();
+	Swal.fire({ icon: 'success', text: '복구되었습니다.' });
+}
+
+// 버튼 와이어링
+document.addEventListener('DOMContentLoaded', () => {
+	const delBtn = document.getElementById('openDeleteCenterBtn');
+	const trashBtn = document.getElementById('openTrashBtn');
+	if (delBtn) delBtn.onclick = openDeleteCenter;
+	if (trashBtn) trashBtn.onclick = openTrash;
+});
+// ----- 선택 모드 전용 플로팅 패널 -----
+let _selBarEl = null;
+
+function createSelectionBar() {
+	if (_selBarEl) return _selBarEl;
+	const bar = document.createElement('div');
+	bar.id = 'selectionDeleteBar';
+	bar.style.position = 'fixed';
+	bar.style.right = '24px';
+	bar.style.bottom = '24px';
+	bar.style.zIndex = '2147483000';
+	bar.style.background = 'rgba(33, 33, 33, 0.92)';
+	bar.style.color = '#fff';
+	bar.style.padding = '12px 14px';
+	bar.style.borderRadius = '14px';
+	bar.style.boxShadow = '0 6px 24px rgba(0,0,0,0.25)';
+	bar.style.display = 'none';
+	bar.style.gap = '10px';
+	bar.style.alignItems = 'center';
+	bar.style.minWidth = '280px';
+
+	bar.innerHTML = `
+    <span id="selCountLabel" style="font-weight:600">선택 0개</span>
+    <span style="flex:1"></span>
+    <button id="selBarDelete" class="btn danger" style="padding:6px 10px;border-radius:10px;">삭제</button>
+    <button id="selBarCancel" class="btn secondary" style="padding:6px 10px;border-radius:10px;">취소</button>
+  `;
+
+	document.body.appendChild(bar);
+	_selBarEl = bar;
+
+	// 이벤트 바인딩
+	bar.querySelector('#selBarDelete').onclick = deleteSelectedNow;
+	bar.querySelector('#selBarCancel').onclick = disableSelectionMode;
+
+	return bar;
+}
+
+function showSelectionBar() {
+	const bar = createSelectionBar();
+	bar.style.display = 'flex';
+	updateSelectedCountLabel(); // 숫자 즉시 반영
+}
+
+function hideSelectionBar() {
+	if (_selBarEl) _selBarEl.style.display = 'none';
+}
+
+function updateSelectedCountLabel() {
+	const label = _selBarEl?.querySelector('#selCountLabel');
+	if (label) label.textContent = `선택 ${_selectedEventIds.size}개`;
+}
