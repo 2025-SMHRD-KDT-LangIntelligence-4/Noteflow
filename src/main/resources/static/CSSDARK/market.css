@@ -1,7 +1,7 @@
 @charset "UTF-8";
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 body {
-	background: white; 
+	background: #1e1e1e; 
 	margin:0px;
 	width:100%;
 	height:100%;
@@ -118,8 +118,8 @@ body {
 .temp-btn{
 	width:290px;
 	height:350px;
-	background-color:white;
-
+	background-color:#3e3e3e;
+	border-radius:10px;
 	display:flex;
 	justify-content:center;
 	flex-wrap:wrap;
@@ -146,6 +146,7 @@ body {
 	align-items:center;
 	gap:15px;
 	padding-top:15px;
+	color:white;
 }
 .profile-img{
 	width:20px;

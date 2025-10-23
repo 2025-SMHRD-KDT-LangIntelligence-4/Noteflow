@@ -58,8 +58,9 @@ body {
 }
 
 .btn-back-result:hover {
-    background: #4A90E2;
+    background: #1e1e1e;
     color: white;
+    border: 2px solid white;
 }
 
 /* 각 섹션 공통 스타일 */
@@ -118,7 +119,7 @@ body {
 
 .subjective-answer {
     padding: 15px;
-    background: white;
+    background: #3e3e3e;
     border: 2px solid #4CAF50;
     border-radius: 8px;
     font-size: 16px;
