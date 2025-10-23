@@ -1,0 +1,162 @@
+
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+    /* 출력 애니메이션1 */
+ @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        body {
+            font-family: 'Pretendard';
+            background-color:#1e1e1e;
+            color: white;
+            margin:0px;
+ 
+        }
+		.location-container{
+			display:flex;
+			justify-content:center;
+			position:relative;
+			top:100px;
+			padding-bottom:150px;
+		}
+        .mypage-container {
+            width: 800px;
+            background: #1e1e1e;
+            border-radius: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding:20px 0px;
+            animation: fadeIn 1s ease;
+            border:2px solid white;
+        }
+
+        .title {
+        	height:60px;
+            font-size: 30px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: solid 2px;
+    		border-color: #C7C7C7;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            padding:0 40px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+            background: #3e3e3e;
+            color:white;
+        }
+
+        .button-container {
+            text-align: center;
+            margin-top: 10px;
+            padding-bottom:10px;
+        }
+
+        .info-save-button, .info-cancel-button, .info-delete-button, .check-id-button, #file-upload-button {
+            background-color: #3e3e3e;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 15px;
+            cursor: pointer;
+            margin: 5px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            color:white;
+        }
+
+        .info-save-button:hover, .info-cancel-button:hover, .info-delete-button:hover, .check-id-button:hover, #file-upload-button:hover {
+            background-color: #96D0FF;
+            color: white;
+        }
+        
+
+        .profile-image-container {
+            text-align: center;
+        }
+
+        .profile-image-container img {
+            border-radius: 50%;
+            border: 2px solid #ddd;
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            margin-bottom: 10px;
+        }
+
+        .user-info-container {
+        	gap: 10px;
+		    display: flex;
+		    justify-content: center;
+		    flex-wrap: wrap;
+		    padding: 0 100px;
+        }
+        #bio {
+        	outline:none;
+        	border: 1px solid #ddd;
+        	resize:none;
+        	border-radius:6px;
+        	font-size:14px;
+        	height:50px;
+        	padding:10px;
+        	background: #3e3e3e;
+        	color:white;
+        }
+        /* user-info-item로 각 필드 감싸고 flex column 적용 */
+.user-info-item {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin-bottom: 15px;
+}
+
+/* 이메일+버튼 가로 배치 */
+.email-check-container {
+    display: flex;
+    gap: 10px;
+}
+
+.email-check-container input {
+    flex: 1;
+}
+
+/* 프로필 이미지 영역 */
+.profile-image-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+/* 버튼 너비 최소화 및 margin */
+.button-container button {
+    min-width: 120px;
+    margin: 5px;
+}
+
+/* 필요시 폼 요소 높이 통일 */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+textarea {
+    box-sizing: border-box;
+}
+        
