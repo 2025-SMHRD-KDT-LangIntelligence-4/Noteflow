@@ -42,6 +42,8 @@ public interface TestItemRepository extends JpaRepository<TestItem, Long> {
 
 	Optional<TestResult> findByTestAndTestSource(Test test, TestSource testSource);
 	
+	boolean existsByTestTestIdxAndTestSourceTestSourceIdx(Long testIdx, Long testSourceIdx);
+
     
     List<TestItem> findByTestOrderBySequenceAsc(Test test);
     

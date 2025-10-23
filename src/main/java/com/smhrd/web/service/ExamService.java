@@ -97,15 +97,25 @@ public class ExamService {
         // TestItem 생성
         int sequence = 1;
         int defaultScore = scorePerQuestion != null ? scorePerQuestion : 1;
-
         for (TestSource question : allQuestions) {
+            // ⭐ 중복 체크 추가 (문제 2 해결) ⭐
+            boolean alreadyExists = testItemRepository.existsByTestTestIdxAndTestSourceTestSourceIdx(
+                test.getTestIdx(), 
+                question.getTestSourceIdx()
+            );
+            
+            if (alreadyExists) {
+                log.warn("중복 문제 스킵: testIdx={}, testSourceIdx={}", 
+                    test.getTestIdx(), question.getTestSourceIdx());
+                continue; // 중복이면 건너뛰기
+            }
+            
             TestItem item = TestItem.builder()
-                    .test(test)
-                    .testSource(question)
-                    .sequence(sequence++)
-                    .score(defaultScore)
-                    .build();
-
+                .test(test)
+                .testSource(question)
+                .sequence(sequence++)
+                .score(defaultScore)
+                .build();
             testItemRepository.save(item);
         }
 

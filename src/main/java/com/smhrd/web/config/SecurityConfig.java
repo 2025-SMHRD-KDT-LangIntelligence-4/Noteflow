@@ -11,6 +11,8 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
@@ -50,7 +52,11 @@ public class SecurityConfig {
             .csrf(csrf -> csrf
                     // 벡터 테스트 API는 CSRF 체크 제외
                     .ignoringRequestMatchers("/admin/vector-test/**")
-                )
+                    .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                    .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+                
+            		
+            		)
             // URL 접근 제어
             .authorizeHttpRequests(auth -> auth
                 // 로그인/회원가입 페이지 및 정적 자원 접근 허용

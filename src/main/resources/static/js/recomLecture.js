@@ -186,8 +186,8 @@
 				'Accept': 'application/json'
 			};
 
-			const csrf = document.querySelector('meta[name="csrf"]');
-			const csrfHeader = document.querySelector('meta[name="csrfheader"]');
+			const csrf = document.querySelector('meta[name="_csrf"]');
+			const csrfHeader = document.querySelector('meta[name="_csrf_header"]');
 			if (csrf && csrfHeader) {
 				headers[csrfHeader.getAttribute('content')] = csrf.getAttribute('content');
 			}
