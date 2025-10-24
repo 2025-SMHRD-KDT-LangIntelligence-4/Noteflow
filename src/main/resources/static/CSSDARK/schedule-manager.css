@@ -524,3 +524,61 @@ input[type="time" i]{
 #openTrashBtn:hover{
 	background:#96d0ff;
 }
+/* ================== 하이라이트 (달력 숫자 위 아웃라인 도형) [DARK] ================== */
+
+/* 공통 변수 — 라이트와 동일 값 유지(원하면 값만 조절) */
+:root {
+  --hl-size: 40px;   /* 숫자 가림 최소화 선에서 크기 조절 */
+  --hl-stroke: 1px;  /* 현재는 stroke-width를 SVG 뷰박스 기준으로 제어하므로 참고용 */
+}
+
+/* 숫자 z-index 보장 */
+.fc-daygrid-day-number {
+  position: relative;
+  z-index: 2;
+}
+
+/* 핀(도형) 베이스 */
+.day-highlight-pin {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--hl-size);
+  height: var(--hl-size);
+  transform: translate(-50%, -50%);
+  display: inline-block;
+  pointer-events: auto;
+  z-index: 1;
+  color: currentColor; /* stroke=currentColor 상속 */
+}
+
+/* 색상 키워드 클래스 (다크 배경 대비 살짝 톤 조정 가능) */
+.color-red    { color:#ef4444; }  /* 밝은 레드 */
+.color-yellow { color:#facc15; }  /* 밝은 옐로 */
+.color-blue   { color:#60a5fa; }  /* 밝은 블루 */
+.color-orange { color:#fb923c; }  /* 밝은 오렌지 */
+
+/* inline SVG 공통 */
+.day-highlight-pin svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.day-highlight-pin svg [data-outline]{
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 9;            /* viewBox=100 기준 → --hl-size 40px에서 적절 */
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 2 1.5;    /* 크레파스 질감 */
+}
+
+/* 별/세모만 반투명 → 숫자 가독성 ↑ */
+.symbol-star svg [data-outline],
+.symbol-triangle svg [data-outline]{
+  stroke-opacity: 0.72;       /* 0.65~0.8 구간에서 취향대로 */
+}
+
+/* (이전 background-image 방식 비활성화 안전장치) */
+.symbol-triangle, .symbol-star { background-image: none !important; }
+.symbol-circle, .symbol-square { border: none !important; }

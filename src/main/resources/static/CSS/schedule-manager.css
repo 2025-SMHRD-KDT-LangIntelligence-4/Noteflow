@@ -560,7 +560,6 @@ input[type="time" i]{
 .symbol-triangle svg [data-outline]{
   stroke-opacity: 0.72;  /* ✔️ 0.65~0.8 사이에서 취향대로 조절 */
 }
-/* 더 이상 사용 안 함: 배경이미지 방식
+/* 더 이상 사용 안 함: 배경이미지 방식*/
 .symbol-triangle, .symbol-star { background-image: none !important; }
 .symbol-circle, .symbol-square { border: none !important; }
-*/
