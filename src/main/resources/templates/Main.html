@@ -99,6 +99,30 @@ document.addEventListener("DOMContentLoaded", () => {
 				<span>노트정리와 문제풀기까지 한번에! 새김AI와 함께하세요!</span>
 			</div>
 		</div>
+		<div class="ad-banner1-wrapper">
+			<div class="ad-banner1">
+				<div class="note-box">
+					<img th:src="@{/images/note.jpg}" class="calander-img"/>
+					
+				</div>
+				<div class="AI-comment-box">
+					<div class="comment-box">
+						<div class="note-alarm">
+    						<span th:if="${nickname != null and nickname != ''}" th:text="|${nickname}님 |"></span>
+    						<span th:if="${nickname == null or nickname == ''}"></span>
+    						<span>오늘의 학습내용을</span>
+    						<span>정리 해보세요</span>
+						</div>
+						<a th:href="@{/notion/create}" class="goNoteCreate-btn">노트 작성하러가기</a>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="moto-text-container">
+			<div class="moto-text-box">
+				<span>개인일정도 학습일정도 새김AI와 함께하세요!</span>
+			</div>
+		</div>
 		<div class="ad-banner2-wrapper">
 			<div class="ad-banner2">
 				<div class="AI-comment-box">
@@ -118,6 +142,11 @@ document.addEventListener("DOMContentLoaded", () => {
 				</div>
 			</div>
 		</div>
+		<div class="moto-text-container2">
+			<div class="moto-text-box">
+				<span>마켓에서 다양한 템플릿을 확인해보세요!</span>
+			</div>
+		</div>
 		<div class="ad-banner3-wrapper">
 			<div class="ad-banner3">
 				<div class="market-img-box">
@@ -127,7 +156,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				<div class="ad-temMarket">
 					<div class="ad-temMarket-comment-box">
 						<div class="ad-temMarket-comment">
-							<span>다양한 템플릿을</span>
+							<span>취향에 맞는 템플릿을</span>
 							<span>구매할 수 있어요!</span>
 						</div>
 						<a th:href="@{/schedule}" class="goSchedule-btn">템플릿 마켓가기</a>
@@ -138,6 +167,11 @@ document.addEventListener("DOMContentLoaded", () => {
 						<div class="slide-btn"></div>
 					</div>
 				</div>
+			</div>
+		</div>
+		<div class="moto-text-container">
+			<div class="moto-text-box">
+				<span>새김AI와 학습의 질을 높여보세요!</span>
 			</div>
 		</div>
 	</div>

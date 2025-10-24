@@ -244,7 +244,6 @@ body {
 	width:100%;
 	height:500px;
 	position: relative;
-    top: 120px;
     margin-bottom:100px;
 }
 .ad-banner3{
@@ -352,7 +351,7 @@ body {
 .dot.active, .dot:hover {
   background-color: #717171;
 }
-.moto-text-container{
+.moto-text-container,.moto-text-container2 {
 	margin-top:50px;
 	width:100%;
 	height:180px;
@@ -370,4 +369,50 @@ body {
 	display:flex;
 	justify-content:center;
 	align-items:center;
+}
+.ad-banner1-wrapper{
+	width:100%;
+	height:500px;
+	display:flex;
+	justify-content:center;
+	position: relative; 
+}
+.ad-banner1{
+	width:100%;
+	height:100%;
+	gap:40px;
+	display:flex;
+	justify-content:center;
+	flex-wrap:wrap;
+	align-items:center;
+}
+.goNoteCreate-btn{
+	width:200px;
+	font-size:20px;
+	padding:10px;
+	background-color:white;
+	display:flex;
+	justify-content:center;
+	border-radius:10px;
+	text-decoration: none;
+	color:black;
+	box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.goNoteCreate-btn:hover{
+	background-color:#96d0ff;
+	color:white;
+}
+.note-alarm{
+	width:100%;
+	font-size:50px;
+	display:flex;
+	flex-wrap:wrap;
+	gap:10px;
+}
+.note-box{
+	display:flex;
+	flex-wrap:wrap;
+	width: 500px;
+    height: auto;
+    justify-content:center;
 }
