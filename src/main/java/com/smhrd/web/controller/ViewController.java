@@ -150,7 +150,7 @@ public class ViewController {
     @GetMapping("/lecture")
     public String lecturePage(Model model, @AuthenticationPrincipal UserDetails userDetails) {
         model.addAttribute("pageTitle", "강의목록"); 
-        model.addAttribute("activeMenu", "lecture");
+        model.addAttribute("activeMenu", "recomLecture");
         if (userDetails != null) {
             // userDetails에서 닉네임 가져오기 (예: CustomUserDetails 사용)
         	String nickname = ((CustomUserDetails) userDetails).getNickname();

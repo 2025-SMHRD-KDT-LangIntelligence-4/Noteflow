@@ -77,84 +77,153 @@ public class LLMUnifiedService {
 		this.fileParseService = fileParseService;
 	}
 
-	// ====== 고급 요약 메서드 ======
+	// ✅ 새 메서드 추가: promptId로 직접 조회
+	public SummaryResult summarizeLongDocument(long userIdx, Long promptId, String original) throws Exception {
+	    String compact = compactText(original);
+	    int bytes = byteLen(compact);
+	    int estimatedTokens = estimateTokens(compact);
+	    
+	    log.info("문서 크기: {} bytes, 예상 토큰: {}", bytes, estimatedTokens);
+	    
+	    // ✅ promptId로 조회
+	    Prompt prompt = promptRepository.findById(promptId)
+	        .orElseThrow(() -> new IllegalArgumentException("프롬프트를 찾을 수 없습니다: " + promptId));
+	    
+	    String instruction = prompt.getContent();
+	    
+	    // 3500 토큰 이하 → SIMPLE
+	    if (estimatedTokens <= 3500) {
+	        log.info("전략: SIMPLE (토큰: {})", estimatedTokens);
+	        try {
+	            String md = runPromptMarkdownWithInstruction(userIdx, instruction, compact);
+	            SummaryResult result = SummaryResult.normal(md);
+	            result.setMode("simple");
+	            return result;
+	        } catch (Exception e) {
+	            log.warn("SIMPLE 실패, RECURSIVE로 전환: {}", e.getMessage());
+	            return summarizeWithRecursiveChunking(userIdx, instruction, compact);
+	        }
+	    }
+	    
+	    // Recursive Chunking
+	    if (estimatedTokens <= 15000) {
+	        log.info("전략: RECURSIVE (토큰: {})", estimatedTokens);
+	        return summarizeWithRecursiveChunking(userIdx, instruction, compact);
+	    }
+	    
+	    // Semantic Chunking
+	    log.info("전략: SEMANTIC (토큰: {})", estimatedTokens);
+	    return summarizeWithSemanticChunking(userIdx, instruction, compact);
+	}
 
+	// ✅ instruction을 직접 받는 헬퍼 메서드 추가
+	private String runPromptMarkdownWithInstruction(long userIdx, String instruction, String original) throws Exception {
+	    return runPromptMarkdownWithInstruction(userIdx, instruction, original, null, null, null);
+	}
+
+	private String runPromptMarkdownWithInstruction(long userIdx, String instruction, String original, 
+	                                                 String systemOverride, Integer maxTok, Double temp) throws Exception {
+	    userRepository.findByUserIdx(userIdx)
+	        .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+	    
+	    String systemMsg = systemOverride != null ? systemOverride : 
+	        "너는 사용자의 문서를 요약하거나 노트로 정리하는 비서다.\n\n" + instruction;
+	    
+	    String userMsg = original != null ? original : "vLLM 테스트";
+	    
+	    int maxTokensVal = maxTok != null ? maxTok : computeSafeMaxTokens(userMsg);
+	    double temperatureVal = temp != null ? temp : this.temperature;
+	    
+	    Map<String, Object> req = new HashMap<>();
+	    req.put("model", modelName);
+	    req.put("max_tokens", maxTokensVal);
+	    req.put("temperature", temperatureVal);
+	    req.put("stream", false);
+	    
+	    List<Map<String, String>> messages = new ArrayList<>();
+	    messages.add(Map.of("role", "system", "content", systemMsg));
+	    messages.add(Map.of("role", "user", "content", userMsg));
+	    req.put("messages", messages);
+	    
+	    try {
+	        String resp = vllmWebClient.post()
+	            .uri("/v1/chat/completions")
+	            .bodyValue(req)
+	            .retrieve()
+	            .bodyToMono(String.class)
+	            .block();
+	        
+	        return fixFences(extractAnyContent(resp));
+	    } catch (Exception e) {
+	        log.error("vLLM 호출 실패: {}", e.getMessage());
+	        throw new RuntimeException("AI 요약 실패: " + e.getMessage(), e);
+	    }
+	}
+
+	// ✅ 기존 메서드는 deprecated 처리 (하위 호환성)
+	@Deprecated
 	public SummaryResult summarizeLongDocument(long userIdx, String promptTitle, String original) throws Exception {
-		String compact = compactText(original);
-		int bytes = byteLen(compact);
-		int estimatedTokens = estimateTokens(compact);
-
-		log.info("문서 크기: {} bytes, 예상 토큰: {}", bytes, estimatedTokens);
-
-		// ✅ 토큰이 3500 이하면 SIMPLE (context limit 8192의 절반 이하)
-		if (estimatedTokens < 3500) {
-			log.info("전략: SIMPLE (토큰: {})", estimatedTokens);
-			try {
-				String md = runPromptMarkdown(userIdx, promptTitle, compact);
-				SummaryResult result = SummaryResult.normal(md);
-				result.setMode("simple");
-				return result;
-			} catch (Exception e) {
-				log.warn("SIMPLE 실패, RECURSIVE로 전환");
-				return summarizeWithRecursiveChunking(userIdx, promptTitle, compact);
-			}
-		}
-
-		// 중간 크기: Recursive Chunking
-		if (estimatedTokens < 15000) {
-			log.info("전략: RECURSIVE (토큰: {})", estimatedTokens);
-			return summarizeWithRecursiveChunking(userIdx, promptTitle, compact);
-		}
-
-		// 대용량: Semantic Chunking
-		log.info("전략: SEMANTIC (토큰: {})", estimatedTokens);
-		return summarizeWithSemanticChunking(userIdx, promptTitle, compact);
+	    // title로 첫 번째 프롬프트 조회
+	    List<Prompt> prompts = promptRepository.findAll().stream()
+	        .filter(p -> p.getTitle().equals(promptTitle))
+	        .collect(Collectors.toList());
+	    
+	    if (prompts.isEmpty()) {
+	        throw new IllegalArgumentException("프롬프트를 찾을 수 없습니다: " + promptTitle);
+	    }
+	    
+	    Long promptId = prompts.get(0).getPromptId();
+	    if (prompts.size() > 1) {
+	        log.warn("⚠️ 중복된 promptTitle='{}' 발견: {}개, 첫 번째(promptId={}) 사용", 
+	                 promptTitle, prompts.size(), promptId);
+	    }
+	    
+	    return summarizeLongDocument(userIdx, promptId, original);
 	}
 
-	private SummaryResult summarizeWithRecursiveChunking(long userIdx, String promptTitle, String text) throws Exception {
-		int chunkSize = 4000;
-		int overlap = 500;
-
-		List<String> chunks = splitWithOverlap(text, chunkSize, overlap);
-		log.info("Recursive: {} 청크", chunks.size());
-
-		List<String> summaries = new ArrayList<>();
-		for (int i = 0; i < chunks.size(); i++) {
-			String prompt = String.format("[%d/%d]\n\n%s", i + 1, chunks.size(), chunks.get(i));
-			String summary = runPromptMarkdown(userIdx, promptTitle, prompt, null, 600, 0.3);
-			summaries.add(summary);
-		}
-
-		String combined = String.join("\n\n", summaries);
-		String finalSummary = runPromptMarkdown(userIdx, promptTitle, "통합:\n\n" + combined, null, 2000, 0.3);
-
-		SummaryResult result = SummaryResult.normal(finalSummary);
-		result.setMode("recursive");
-		result.setMessage(chunks.size() + "개 청크 분할");
-		return result;
+	private SummaryResult summarizeWithRecursiveChunking(long userIdx, String instruction, String text) throws Exception {
+	    int chunkSize = 4000;
+	    int overlap = 500;
+	    List<String> chunks = splitWithOverlap(text, chunkSize, overlap);
+	    log.info("Recursive: {} 청크", chunks.size());
+	    
+	    List<String> summaries = new ArrayList<>();
+	    for (int i = 0; i < chunks.size(); i++) {
+	        String prompt = String.format("%d/%d 청크:\n%s", i + 1, chunks.size(), chunks.get(i));
+	        String summary = runPromptMarkdownWithInstruction(userIdx, instruction, prompt, null, 600, 0.3);
+	        summaries.add(summary);
+	    }
+	    
+	    String combined = String.join("\n\n", summaries);
+	    String finalSummary = runPromptMarkdownWithInstruction(userIdx, instruction, combined, null, 2000, 0.3);
+	    
+	    SummaryResult result = SummaryResult.normal(finalSummary);
+	    result.setMode("recursive");
+	    result.setMessage(chunks.size() + "청크");
+	    return result;
 	}
 
-	private SummaryResult summarizeWithSemanticChunking(long userIdx, String promptTitle, String text) throws Exception {
-		List<String> paragraphs = splitIntoParagraphs(text);
-		log.info("문단: {} 개", paragraphs.size());
-
-		List<List<Float>> embeddings = getParagraphEmbeddings(paragraphs);
-		List<SemanticChunk> chunks = mergeSemanticChunks(paragraphs, embeddings, 0.75);
-		log.info("의미 청크: {} 개", chunks.size());
-
-		List<String> summaries = new ArrayList<>();
-		for (int i = 0; i < chunks.size(); i++) {
-			String prompt = String.format("[섹션 %d/%d]\n\n%s", i + 1, chunks.size(), chunks.get(i).getText());
-			String summary = runPromptMarkdown(userIdx, promptTitle, prompt, null, 800, 0.3);
-			summaries.add(summary);
-		}
-
-		String finalSummary = hierarchicalReduce(userIdx, promptTitle, summaries);
-
-		SummaryResult result = SummaryResult.economy(finalSummary, extractTopKeywords(text, 50));
-		result.setMode("semantic");
-		result.setMessage(chunks.size() + " 섹션 분석");
-		return result;
+	private SummaryResult summarizeWithSemanticChunking(long userIdx, String instruction, String text) throws Exception {
+	    List<String> paragraphs = splitIntoParagraphs(text);
+	    log.info("단락 개수: {}", paragraphs.size());
+	    
+	    List<List<Float>> embeddings = getParagraphEmbeddings(paragraphs);
+	    List<SemanticChunk> chunks = mergeSemanticChunks(paragraphs, embeddings, 0.75);
+	    log.info("청크 개수: {}", chunks.size());
+	    
+	    List<String> summaries = new ArrayList<>();
+	    for (int i = 0; i < chunks.size(); i++) {
+	        String prompt = String.format("청크 %d/%d:\n%s", i + 1, chunks.size(), chunks.get(i).getText());
+	        String summary = runPromptMarkdownWithInstruction(userIdx, instruction, prompt, null, 800, 0.3);
+	        summaries.add(summary);
+	    }
+	    
+	    String finalSummary = hierarchicalReduce(userIdx, instruction, summaries);
+	    
+	    SummaryResult result = SummaryResult.economy(finalSummary, extractTopKeywords(text, 50));
+	    result.setMode("semantic");
+	    result.setMessage(chunks.size() + "청크");
+	    return result;
 	}
 
 	// ====== 보조 메서드 ======
@@ -257,22 +326,24 @@ public class LLMUnifiedService {
 		return chunks;
 	}
 
-	private String hierarchicalReduce(long userIdx, String promptTitle, List<String> summaries) throws Exception {
-		if (summaries.size() <= 3) {
-			String combined = String.join("\n\n", summaries);
-			return runPromptMarkdown(userIdx, promptTitle, "통합:\n\n" + combined, null, 2000, 0.3);
-		}
-
-		List<String> intermediate = new ArrayList<>();
-		for (int i = 0; i < summaries.size(); i += 3) {
-			List<String> batch = summaries.subList(i, Math.min(i + 3, summaries.size()));
-			String combined = String.join("\n\n", batch);
-			String summary = runPromptMarkdown(userIdx, promptTitle, "통합:\n\n" + combined, null, 1000, 0.3);
-			intermediate.add(summary);
-		}
-		return hierarchicalReduce(userIdx, promptTitle, intermediate);
+	private String hierarchicalReduce(long userIdx, String instruction, List<String> summaries) throws Exception {
+	    if (summaries.size() <= 3) {
+	        String combined = String.join("\n\n", summaries);
+	        return runPromptMarkdownWithInstruction(userIdx, instruction, combined, null, 2000, 0.3);
+	    }
+	    
+	    List<String> intermediate = new ArrayList<>();
+	    for (int i = 0; i < summaries.size(); i += 3) {
+	        List<String> batch = summaries.subList(i, Math.min(i + 3, summaries.size()));
+	        String combined = String.join("\n\n", batch);
+	        String summary = runPromptMarkdownWithInstruction(userIdx, instruction, combined, null, 1000, 0.3);
+	        intermediate.add(summary);
+	    }
+	    
+	    return hierarchicalReduce(userIdx, instruction, intermediate);
 	}
 
+	
 	@Data
 	private static class SemanticChunk {
 		private final String text;

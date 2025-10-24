@@ -1,8 +1,9 @@
 package com.smhrd.web.controller;
 
 import com.smhrd.web.entity.User;
-import com.smhrd.web.security.CustomUserDetails; // [추가]
+import com.smhrd.web.security.CustomUserDetails;
 import com.smhrd.web.service.UserService;
+import com.smhrd.web.service.EmailService; // ✅ 추가
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +24,7 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
+    private final EmailService emailService; // ✅ 추가
 
     // --------------------------
     // 회원가입 폼
@@ -31,11 +33,11 @@ public class UserController {
     public String signupForm(Model model) {
         model.addAttribute("pageTitle", "회원가입");
         model.addAttribute("user", new User());
-        return "signup"; // signup.html
+        return "signup";
     }
 
     // --------------------------
-    // 회원가입 처리
+    // 회원가입 처리 (이메일 인증 안내 추가) ✅
     // --------------------------
     @PostMapping("/signup")
     public String signup(@ModelAttribute User user,
@@ -47,14 +49,14 @@ public class UserController {
 
         try {
             userService.signup(user);
+            // ✅ 이메일 인증 안내 메시지로 변경
+            return "redirect:/login?signupSuccess=true&needEmailVerification=true";
         } catch (IllegalArgumentException e) {
             if (e.getMessage().contains("이메일")) {
                 return "redirect:/signup?error=emailDuplicate";
             }
             return "redirect:/signup?error=duplicate";
         }
-
-        return "redirect:/login?signupSuccess";
     }
 
     // --------------------------
@@ -71,22 +73,37 @@ public class UserController {
     // --------------------------
     @GetMapping("/check-email")
     @ResponseBody
-    public Map<String, Boolean> checkEmail(@RequestParam("email") String email) {
-        boolean available = !userService.isEmailDuplicate(email);
-        Map<String, Boolean> result = new HashMap<>();
-        result.put("available", available);
-        return result;
+    public ResponseEntity<Map<String, Boolean>> checkEmail(@RequestParam("email") String email) {
+        try {
+            boolean available = !userService.isEmailDuplicate(email);
+            Map<String, Boolean> result = new HashMap<>();
+            result.put("available", available);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            // 로그 출력 후 기본값 반환
+            System.err.println("이메일 중복 체크 오류: " + e.getMessage());
+            Map<String, Boolean> result = new HashMap<>();
+            result.put("available", false);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
+        }
     }
+
     // --------------------------
     // 닉네임 중복 체크 (AJAX)
     // --------------------------
     @GetMapping("/check-nickname")
     @ResponseBody
-    public Map<String, Boolean> checkNick(@RequestParam("nickname") String nickname) {
-        boolean available = !userService.isNickNameDuplicate(nickname);
-        Map<String, Boolean> result = new HashMap<>();
-        result.put("available", available);
-        return result;
+    public ResponseEntity<Map<String, Boolean>> checkNickname(@RequestParam("nickname") String nickname) {
+        try {
+            boolean available = !userService.isNickNameDuplicate(nickname);
+            Map<String, Boolean> result = new HashMap<>();
+            result.put("available", available);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            Map<String, Boolean> result = new HashMap<>();
+            result.put("available", false);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
+        }
     }
     // --------------------------
     // 현재 비밀번호 확인 (AJAX)
@@ -96,8 +113,8 @@ public class UserController {
     public Map<String, Boolean> verifyPassword(Authentication authentication,
                                                @RequestParam("currentPw") String currentPw) {
 
-        Long userIdx = ((CustomUserDetails) authentication.getPrincipal()).getUserIdx(); // [수정]
-        boolean valid = userService.verifyPassword(userIdx, currentPw);               // [수정]
+        Long userIdx = ((CustomUserDetails) authentication.getPrincipal()).getUserIdx();
+        boolean valid = userService.verifyPassword(userIdx, currentPw);
 
         Map<String, Boolean> result = new HashMap<>();
         result.put("valid", valid);
@@ -105,33 +122,52 @@ public class UserController {
     }
 
     // --------------------------
-    // 계정 삭제 (AJAX)
+    // 계정 삭제 요청 (이메일 발송) ✅ 수정
     // --------------------------
-    @PostMapping("/delete-account")
+    @PostMapping("/request-account-deletion")
     @ResponseBody
-    public ResponseEntity<Void> deleteAccount(Authentication authentication) {
-
-        Long userIdx = ((CustomUserDetails) authentication.getPrincipal()).getUserIdx(); // [수정]
+    public ResponseEntity<Map<String, String>> requestAccountDeletion(Authentication authentication) {
+        
+        Long userIdx = ((CustomUserDetails) authentication.getPrincipal()).getUserIdx();
+        Map<String, String> response = new HashMap<>();
+        
         try {
-            userService.deleteUserAccount(userIdx);                                   // [수정]
-            return ResponseEntity.ok().build();
+            User user = userService.getUserInfo(userIdx)
+                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+            
+            // 계정 삭제 확인 이메일 발송
+            emailService.sendAccountDeletionEmail(user.getEmail(), user.getNickname());
+            
+            response.put("status", "success");
+            response.put("message", "계정 삭제 확인 이메일을 발송했습니다. 메일함을 확인해주세요.");
+            return ResponseEntity.ok(response);
+            
         } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            response.put("status", "error");
+            response.put("message", "이메일 발송 중 오류가 발생했습니다.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 
+    // ✅ 기존 즉시 삭제 메서드는 주석 처리 (또는 삭제)
+    /*
+    @PostMapping("/delete-account")
+    @ResponseBody
+    public ResponseEntity<Void> deleteAccount(Authentication authentication) {
+        // 이메일 인증 방식으로 대체됨
+    }
+    */
+
     // --------------------------
-    // 마이페이지
+    // 마이페이지 (기존 코드 유지)
     // --------------------------
     @GetMapping("/mypage")
-    public String mypageGet(Authentication authentication, Model model,@AuthenticationPrincipal UserDetails userDetails) {
+    public String mypageGet(Authentication authentication, Model model, @AuthenticationPrincipal UserDetails userDetails) {
 
-        Long userIdx = ((CustomUserDetails) authentication.getPrincipal()).getUserIdx(); // [수정]
-        userService.getUserInfo(userIdx)                                             // [수정]
-                   .ifPresent(user -> model.addAttribute("user", user));
+        Long userIdx = ((CustomUserDetails) authentication.getPrincipal()).getUserIdx();
+        userService.getUserInfo(userIdx)
+                .ifPresent(user -> model.addAttribute("user", user));
         if (userDetails != null) {
-            // userDetails에서 닉네임 가져오기 (예: CustomUserDetails 사용)
             String nickname = ((CustomUserDetails) userDetails).getNickname();
             model.addAttribute("nickname", nickname);
             String email = ((CustomUserDetails) userDetails).getEmail();
@@ -146,18 +182,17 @@ public class UserController {
     }
 
     // --------------------------
-    // 마이페이지 수정 폼
+    // 마이페이지 수정 폼 (기존 코드 유지)
     // --------------------------
     @GetMapping("/editMypage")
-    public String editMypage(Authentication authentication, Model model,@AuthenticationPrincipal CustomUserDetails userDetails) {
+    public String editMypage(Authentication authentication, Model model, @AuthenticationPrincipal CustomUserDetails userDetails) {
 
-        Long userIdx = ((CustomUserDetails) authentication.getPrincipal()).getUserIdx(); // [수정]
-        User user = userService.getUserInfo(userIdx).orElse(new User());            // [수정]
+        Long userIdx = ((CustomUserDetails) authentication.getPrincipal()).getUserIdx();
+        User user = userService.getUserInfo(userIdx).orElse(new User());
 
-        model.addAttribute("user", user); // 항상 null-safe 보장
+        model.addAttribute("user", user);
         if (userDetails != null) {
-            // userDetails에서 닉네임 가져오기 (예: CustomUserDetails 사용)
-        	String nickname = ((CustomUserDetails) userDetails).getNickname();
+            String nickname = ((CustomUserDetails) userDetails).getNickname();
             model.addAttribute("nickname", nickname);
             String email = ((CustomUserDetails) userDetails).getEmail();
             model.addAttribute("email", email);
@@ -166,7 +201,7 @@ public class UserController {
     }
 
     // --------------------------
-    // 마이페이지 수정 처리
+    // 마이페이지 수정 처리 (기존 코드 유지)
     // --------------------------
     @PostMapping("/editMypage")
     public String editMypage(Authentication authentication,
@@ -179,11 +214,11 @@ public class UserController {
                              @RequestParam(value = "deleteProfileImage", required = false) Boolean deleteProfileImage,
                              RedirectAttributes redirectAttributes) {
 
-        Long userIdx = ((CustomUserDetails) authentication.getPrincipal()).getUserIdx(); // [수정]
+        Long userIdx = ((CustomUserDetails) authentication.getPrincipal()).getUserIdx();
 
         try {
             userService.updateUserInfo(userIdx, nickname, userEmail, userPw,
-                    interestArea, learningArea, profileImage, deleteProfileImage);          // [수정]
+                    interestArea, learningArea, profileImage, deleteProfileImage);
             redirectAttributes.addFlashAttribute("message", "회원 정보가 성공적으로 수정되었습니다.");
         } catch (Exception e) {
             e.printStackTrace();

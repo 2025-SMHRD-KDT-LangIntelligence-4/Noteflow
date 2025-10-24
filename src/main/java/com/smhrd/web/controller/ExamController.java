@@ -97,7 +97,7 @@ public class ExamController {
             model.addAttribute("nickname", userDetails.getNickname());
             model.addAttribute("email", userDetails.getEmail());
             model.addAttribute("pageTitle", "시험 생성");
-            model.addAttribute("activeMenu", "exam");
+            model.addAttribute("activeMenu", "quizCreate");
 
             // 세션에서 사전 선택 정보 가져오기
             Long preselectedNoteIdx = (Long) session.getAttribute("preselectedNoteIdx");
@@ -239,14 +239,15 @@ public class ExamController {
         try {
             Long noteIdx = request.get("noteIdx") != null ?
                     Long.parseLong(request.get("noteIdx").toString()) : null;
-
+            
+            
             List<String> keywords = (List<String>) request.get("keywords");
             String title = (String) request.get("title");
             String difficulty = (String) request.get("difficulty");
             Integer questionCount = (Integer) request.get("questionCount");
             Integer scorePerQuestion = (Integer) request.get("scorePerQuestion");
             Boolean adaptiveDifficulty = (Boolean) request.getOrDefault("adaptiveDifficulty", false);
-
+           
             if (keywords == null || keywords.isEmpty()) {
                 response.put("success", false);
                 response.put("message", "키워드를 최소 1개 이상 입력해주세요.");
@@ -284,12 +285,13 @@ public class ExamController {
         if (userDetails != null) {
             model.addAttribute("nickname", userDetails.getNickname());
             model.addAttribute("email", userDetails.getEmail());
+            
         }
 
         Page<Test> testPage = examService.getExamList(page, size);
 
         model.addAttribute("pageTitle", "시험 목록");
-        model.addAttribute("activeMenu", "exam");
+        model.addAttribute("activeMenu", "examList");
         model.addAttribute("tests", testPage.getContent());
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", testPage.getTotalPages());
@@ -310,6 +312,7 @@ public class ExamController {
             model.addAttribute("nickname", userDetails.getNickname());
             model.addAttribute("email", userDetails.getEmail());
             model.addAttribute("userIdx", userDetails.getUserIdx());
+            model.addAttribute("activeMenu", "quizCreate");
         }
 
         Map<String, Object> examData = examService.getExamWithQuestions(testIdx);
@@ -442,6 +445,7 @@ public class ExamController {
         if (userDetails != null) {
             model.addAttribute("nickname", userDetails.getNickname());
             model.addAttribute("email", userDetails.getEmail());
+            model.addAttribute("activeMenu", "examList");
         }
         
         Long userIdx = userDetails.getUserIdx();
@@ -496,7 +500,7 @@ public class ExamController {
         
         // ===== Model에 데이터 추가 =====
         model.addAttribute("pageTitle", "시험 결과");
-        model.addAttribute("activeMenu", "exam");
+        model.addAttribute("activeMenu", "examList");
         model.addAttribute("result", result);
         model.addAttribute("userAnswers", userAnswers);
         model.addAttribute("subjectStats", subjectStats);
@@ -626,7 +630,7 @@ public class ExamController {
         }
         
         model.addAttribute("pageTitle", "시험 해설");
-        model.addAttribute("activeMenu", "exam");
+        model.addAttribute("activeMenu", "examList");
         model.addAttribute("resultIdx", resultIdx);
         model.addAttribute("explanationData", explanationList);
         
@@ -688,7 +692,7 @@ public class ExamController {
                 .collect(Collectors.toList());
         
         model.addAttribute("pageTitle", "내 시험 기록");
-        model.addAttribute("activeMenu", "exam");
+        model.addAttribute("activeMenu", "examList");
         model.addAttribute("results", resultList);
         model.addAttribute("currentPage", page);
         model.addAttribute("hasMore", results.size() >= size);
@@ -731,7 +735,7 @@ public class ExamController {
                 .collect(Collectors.toList());
 
         model.addAttribute("pageTitle", "오답노트");
-        model.addAttribute("activeMenu", "exam");
+        model.addAttribute("activeMenu", "examList");
         model.addAttribute("wrongAnswers", wrongList);
         model.addAttribute("selectedCategory", category);
 
@@ -755,7 +759,7 @@ public class ExamController {
         Map<String, Object> stats = examService.getUserStatistics(userDetails.getUserIdx());
 
         model.addAttribute("pageTitle", "학습 통계");
-        model.addAttribute("activeMenu", "exam");
+        model.addAttribute("activeMenu", "examList");
         model.addAttribute("stats", stats);
 
         return "examStatistics";

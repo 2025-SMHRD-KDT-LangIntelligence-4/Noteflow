@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>이메일 인증 실패</title>
+    <style>
+        body { font-family: 'Pretendard', Arial, sans-serif; text-align: center; margin: 50px; }
+        .error-container { max-width: 500px; margin: 0 auto; padding: 40px; 
+                         background: #f8f9fa; border-radius: 10px; }
+        .error-icon { font-size: 48px; color: #dc3545; margin-bottom: 20px; }
+        .error-message { font-size: 18px; color: #333; margin-bottom: 30px; }
+        .home-link { color: #96D0FF; text-decoration: none; font-weight: 500; 
+                    padding: 10px 20px; border: 1px solid #96D0FF; border-radius: 5px; }
+        .home-link:hover { background: #96D0FF; color: white; }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="error-icon">❌</div>
+        <div class="error-message" th:text="${error}">
+            유효하지 않거나 만료된 인증 링크입니다.
+        </div>
+        <a href="/signup" class="home-link">회원가입 다시 하기</a>
+    </div>
+</body>
+</html>

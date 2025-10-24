@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>계정 삭제 확인</title>
+    <style>
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif; }
+        .header { background: #e74c3c; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { padding: 30px; background: #f9f9f9; border-radius: 0 0 8px 8px; }
+        .button { 
+            display: inline-block; 
+            background: #e74c3c; 
+            color: white; 
+            padding: 15px 30px; 
+            text-decoration: none; 
+            border-radius: 5px; 
+            margin: 20px 0;
+        }
+        .warning { color: #e74c3c; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>계정 삭제 확인</h1>
+        </div>
+        <div class="content">
+            <p>안녕하세요, <strong th:text="${nickname}">사용자</strong>님!</p>
+            <p class="warning">⚠️ 계정 삭제 요청이 접수되었습니다.</p>
+            <p>계정을 삭제하면 다음과 같은 데이터가 영구적으로 삭제됩니다:</p>
+            <ul>
+                <li>모든 학습 노트 및 자료</li>
+                <li>시험 기록 및 성적</li>
+                <li>업로드된 파일</li>
+                <li>개인 설정 정보</li>
+            </ul>
+            
+            <p><strong>정말로 계정을 삭제하시겠습니까?</strong></p>
+            
+            <p style="text-align: center;">
+                <a th:href="${deletionLink}" class="button">계정 삭제 확인</a>
+            </p>
+            
+            <p><small>이 링크는 30분 후에 만료됩니다.</small></p>
+            <p><small>계정 삭제를 원하지 않으시면 이 이메일을 무시하세요.</small></p>
+        </div>
+    </div>
+</body>
+</html>

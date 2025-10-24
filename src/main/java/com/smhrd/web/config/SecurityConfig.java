@@ -1,5 +1,6 @@
 package com.smhrd.web.config;
 
+import com.smhrd.web.security.LoginSuccessHandler;
 import com.smhrd.web.service.CustomUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,14 +20,16 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 @EnableWebSecurity
 @Configuration
 public class SecurityConfig {
-
+	private final LoginSuccessHandler loginSuccessHandler; // 추가
+    
     private final CustomUserDetailsService userDetailsService;
     private final PasswordEncoder passwordEncoder;
-
+    
     public SecurityConfig(CustomUserDetailsService userDetailsService,
-                          PasswordEncoder passwordEncoder) {
+                          PasswordEncoder passwordEncoder, LoginSuccessHandler loginSuccessHandler) {
         this.userDetailsService = userDetailsService;
         this.passwordEncoder = passwordEncoder;
+        this.loginSuccessHandler = loginSuccessHandler;
     }
 
     // ---------------------------------------------------
@@ -62,21 +65,40 @@ public class SecurityConfig {
                 // 로그인/회원가입 페이지 및 정적 자원 접근 허용
                 .requestMatchers(HttpMethod.GET, "/login", "/signup").permitAll()
                 .requestMatchers(HttpMethod.POST, "/login", "/signup").permitAll()
-                .requestMatchers("/main","/css/**", "/js/**", "/images/**", "/fonts/**", "/static/**", "/", "/webjars/**","/templates/fragments/**","/admin/vector-test/**","/api/video/stream/**").permitAll()
+                .requestMatchers("/auth/**","/signup","/main","/css/**", "/js/**", "/images/**", "/fonts/**", "/static/**", "/", "/webjars/**","/templates/fragments/**","/admin/vector-test/**","/api/video/stream/**","/checkId",  "/check-email", "/check-nickname", "/error").permitAll()
                 // 그 외 요청은 인증 필요
                 .anyRequest().authenticated()
             )
 
             // 폼 로그인 설정
             .formLogin(form -> form
-                .loginPage("/login")                          // 커스텀 로그인 페이지
-                .loginProcessingUrl("/perform_login")                 // 로그인 POST 처리 URL
-                .usernameParameter("user_id")                 // HTML form input name
-                .passwordParameter("user_pw")                 // HTML form input name
-                .defaultSuccessUrl("/main", true)             // 로그인 성공 시 이동 경로
-                .failureUrl("/login?error")                   // 실패 시 리다이렉트 경로
-                .permitAll()
-            )
+            	    .loginPage("/login")
+            	    .loginProcessingUrl("/perform_login")
+            	    .usernameParameter("user_id")
+            	    .passwordParameter("user_pw")
+            	    .defaultSuccessUrl("/main", true)
+            	    .successHandler(loginSuccessHandler)
+            	    // ✅ 세밀한 오류 처리 추가
+            	    .failureHandler((request, response, exception) -> {
+            	        String errorParam = "error";
+            	        String message = exception.getMessage();
+            	        
+            	        if (message != null) {
+            	            if (message.contains("이메일 인증")) {
+            	                errorParam = "emailNotVerified";
+            	            } else if (message.contains("비활성화")) {
+            	                errorParam = "accountDisabled";
+            	            } else if (message.contains("정지")) {
+            	                errorParam = "accountSuspended";
+            	            } else if (message.contains("사용자 없음")) {
+            	                errorParam = "userNotFound";
+            	            }
+            	        }
+            	        
+            	        response.sendRedirect("/login?" + errorParam);
+            	    })
+            	    .permitAll()
+            	)
             // 세션 관리
             .sessionManagement(session -> session
                     .maximumSessions(1)  // 동시 세션 1개로 제한

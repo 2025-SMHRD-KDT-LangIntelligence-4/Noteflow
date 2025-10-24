@@ -157,3 +157,13 @@ h1 {
   from { transform: translateY(20px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
+
+/* ✅ 다중 버튼 지원 */
+.login-popup button + button {
+    margin-left: 8px;
+}
+
+/* ✅ 재발송 버튼 스타일 */
+.login-popup button:first-of-type {
+    background-color: #FFA500;
+}
