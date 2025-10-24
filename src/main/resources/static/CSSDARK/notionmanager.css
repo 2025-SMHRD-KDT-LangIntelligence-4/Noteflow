@@ -825,12 +825,16 @@ body {
     text-align: center;
     margin-top: 100px;
     color: white;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
 }
 
 .welcome-message h2 {
     font-size: 24px;
     margin-bottom: 10px;
     color: white;
+    width:100%;
 }
 
 .welcome-message p {

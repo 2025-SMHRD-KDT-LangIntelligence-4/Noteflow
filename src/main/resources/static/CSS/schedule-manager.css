@@ -1,24 +1,33 @@
 /* schedule-manager.css (수정 및 추가 반영) */
 
 /* 기존 calendar-wrapper를 중앙 정렬 및 최대 너비 설정 */
-
+body{
+	margin:0;
+}
 /* 전체 레이아웃 관리를 위한 래퍼 */
 .location-container {
-    padding: 20px 15px;
-    max-width: 1400px; /* 사이드바 공간 확보를 위해 최대 너비 증가 */
-    margin: 0 auto;
+	margin-top:100px;
+    width: 100%; /* 사이드바 공간 확보를 위해 최대 너비 증가 */
+	height:auto;
+	display:flex;
+	justify-content:center;
+	align-items:center;
+	flex-wrap:wrap;
 }
 
 .main-content-wrapper {
     display: flex;
     gap: 20px; /* 달력과 사이드바 사이의 간격 */
     align-items: flex-start; /* 상단 정렬 */
+    width:1240px;
 }
 
 /* -------------------- 캘린더 영역 스타일 -------------------- */
 .calendar-wrapper {
     flex: 1; /* 남은 공간을 모두 차지 (사이드바 제외) */
     min-width: 700px; /* 캘린더가 너무 작아지지 않도록 최소 너비 설정 */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-radius:10px;
 }
 
 .calendar-title-only {
@@ -26,6 +35,7 @@
     font-weight: 700;
     color: #333;
     margin-bottom: 15px;
+    padding-left:20px;
 }
 
 /* 캘린더 컨테이너 스타일 */
@@ -33,7 +43,7 @@
 	background: #fff;
 	padding: 20px;
 	border-radius: 12px;
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+	
 }
 /* 캘린더 날짜 셀 상단 컨테이너에 Flexbox 적용 */
 .fc-daygrid-day-top {
@@ -58,16 +68,20 @@
 	position: fixed;
 	left: 50%;
 	/* [수정]: 모달의 위치를 화면 상단으로 더 올립니다. */
-	top: 5%; 
+	top: 0; 
 	transform: translateX(-50%); 
 	z-index: 9999;
 	display: flex;
 	justify-content: center;
 	align-items: center;
+	background: rgba(0, 0, 0, 0.5);
+	opacity: 1;
+	width:100%;
+	height:100%;
 }
 
 .quick-add-card {
-	width: 480px;
+	width: 490px;
 	max-width: 92vw;
 	background: #fff;
 	border-radius: 14px;
@@ -75,19 +89,35 @@
 	box-shadow: 0 16px 36px rgba(0, 0, 0, 0.08);
 	border: 1px solid rgba(0, 0, 0, 0.05);
 	animation: fadeIn 0.3s ease;
-	
+	overflow: auto;
 	/* [추가]: 모달 카드에 최대 높이를 설정하고 스크롤을 허용하여 화면을 벗어나지 않도록 합니다. */
 	max-height: 90vh; /* 뷰포트 높이의 90%로 제한 */
-	overflow-y: auto; /* 내용이 넘칠 경우 스크롤 */
 }
-
+.quick-add-card::-webkit-scrollbar{
+	width: 0px;
+    background: transparent; /* Optional: 배경도 투명 */
+}
+.quick-add-row label[for="qaFileUploader"]{
+	width:70px;
+}
 .quick-add-row {
 	margin-bottom: 12px;
 	display: flex;
 	align-items: center;
 	gap: 8px;
 }
-
+input[type="date" i]{
+	padding:5px;
+	border: 1px solid #dce0e8;
+	border-radius:10px;
+	outline:none;
+}
+input[type="time" i]{
+	padding:5px;
+	border: 1px solid #dce0e8;
+	border-radius:10px;
+	outline:none;
+}
 /* [추가]: 옵션 토글 버튼 위치 조정 */
 .quick-add-row.justify-end {
 	justify-content: flex-end;
@@ -112,11 +142,13 @@
 	border-radius: 10px;
 	border: 1px solid #dce0e8;
 	font-size: 14px;
+	outline:none;
 }
 
 .quick-add-row textarea {
 	min-height: 56px;
-	resize: vertical;
+	resize: none;
+	height:120px;
 }
 
 .time-rows {
@@ -144,6 +176,9 @@
 	border: none;
 	cursor: pointer;
 	font-weight: 600;
+	background:white;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	border: 1px solid #dce0f0;
 }
 
 .btn.primary {
@@ -152,21 +187,34 @@
 }
 
 .btn.secondary {
-	background: #f3f6fb;
-	color: #223;
+	background: white;
 	border: 1px solid #dce0f0;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .btn.small {
 	padding: 4px 8px;
 	font-size: 13px;
+	display: flex;
+    justify-content: center;
 }
 
 .icon-clock, .icon-location {
 	font-size: 16px;
 	margin-right: 6px;
 }
-
+.icon-btn{
+	background:white;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	border:none;
+	border-radius:5px;
+	width:40px;
+	
+}
+.icon-btn:hover{
+	background:#96d0ff;
+	transform: translateY(-2px);
+}
 /* + 버튼 스타일 */
 .day-plus-btn {
     position: static;
@@ -203,10 +251,10 @@
 /* -------------------- 사이드바 스타일 -------------------- */
 .schedule-sidebar {
     width: 300px; /* 사이드바 고정 너비 */
-    background: #f8f9fa; /* 배경색으로 구분 */
+    background: white; /* 배경색으로 구분 */
     padding: 20px;
     border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     /* [개선]: 스크롤 시에도 사이드바가 일정 위치에 고정되도록 설정 */
     position: sticky; 
     top: 20px; /* 헤더 아래에서 20px 떨어진 위치 */
@@ -238,8 +286,15 @@
     border: 1px solid #ccc;
     border-radius: 8px;
     font-size: 14px;
+    outline:none;
 }
-
+.fc-button-group button{
+	background: #96d0ff !important;
+    border: none !important;
+}
+#catCustomInput{
+	outline:none;
+}
 /* 필터 섹션 */
 .filter-category-list {
     display: flex;
@@ -251,12 +306,14 @@
     border-radius: 16px;
     font-size: 13px;
     cursor: pointer;
-    background-color: #e9ecef; /* 기본 회색 */
+    background-color: white; /* 기본 회색 */
     color: #495057;
     transition: background-color 0.2s, color 0.2s;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    
 }
 .category-tag:hover {
-    background-color: #dee2e6;
+    background-color: #96d0ff;
 }
 .category-tag.active {
     background-color: #2b6ef6; /* 파란색 활성화 */
@@ -406,7 +463,6 @@
 .fc .fc-event.hl-warning  { border-left: 4px solid #f59e0b; box-shadow: inset 0 0 0 1px rgba(245,158,11,.15); }
 .fc .fc-event.hl-success  { border-left: 4px solid #10b981; box-shadow: inset 0 0 0 1px rgba(16,185,129,.15); }
 .fc .fc-event.hl-info     { border-left: 4px solid #0ea5e9; box-shadow: inset 0 0 0 1px rgba(14,165,233,.15); }
-.fc .fc-event.hl-none     { }
 
 /* 모달 계층 고정: 지도 모달이 최상단 */
 .quick-add-modal { z-index: 10000; }     /* 기존 일정 생성/수정 모달 */
@@ -444,3 +500,91 @@
 }
 .sel-badge input[type="checkbox"]{ width:14px; height:14px; margin:0; pointer-events:none; }
 .fc-event{ position:relative; }
+
+#openDeleteCenterBtn:hover{
+	background:#96d0ff;
+}
+#openTrashBtn:hover{
+	background:#96d0ff;
+}
+.day-highlight-pin{
+  font-size: 14px;
+  line-height: 1;
+  display: inline-block;
+  user-select: none;
+}
+/* 색 */
+.color-red    { color:#e53935; }
+.color-yellow { color:#fbc02d; }
+.color-blue   { color:#1e88e5; }
+.color-orange { color:#fb8c00; }
+/* 공통 변수 */
+:root {
+  --hl-size: 22px;     /* 도형 한 변(또는 지름) */
+  --hl-stroke: 2px;    /* 테두리 두께 */
+}
+
+.fc-daygrid-day-number {
+  position: relative; /* pin이 이걸 기준으로 정중앙 */
+  z-index: 2;         /* 숫자 최상위 */
+}
+
+/* 하이라이트 핀 공통 */
+.day-highlight-pin {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--hl-size);
+  height: var(--hl-size);
+  transform: translate(-50%, -50%);
+  display: inline-block;
+  pointer-events: auto;
+  z-index: 1;                 /* 숫자보다 아래 */
+  color: currentColor;        /* SVG에서 stroke=currentColor 를 쓰기 위함 */
+}
+
+/* 색상(필요 색만 남겨 써) */
+.color-red    { color:#e53935; }
+.color-yellow { color:#fbc02d; }
+.color-blue   { color:#1e88e5; }
+.color-orange { color:#fb8c00; }
+
+/* 2-1) 원: 속 투명, 테두리만 */
+.symbol-circle {
+  border: var(--hl-stroke) solid currentColor;
+  border-radius: 50%;
+  background: transparent;
+}
+
+/* 2-2) 네모: 속 투명, 테두리만 */
+.symbol-square {
+  border: var(--hl-stroke) solid currentColor;
+  border-radius: 4px;      /* 각진 네모면 0으로 */
+  background: transparent;
+}
+
+/* 2-3) 세모(외곽선만) – SVG data-URI로 stroke만 표시 */
+.symbol-triangle {
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  background-image:
+    url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>\
+<polygon points='50,8 92,92 8,92' fill='none' stroke='currentColor' stroke-width='10' stroke-linejoin='round'/>\
+</svg>");
+}
+
+/* 2-4) 별(외곽선만) – SVG data-URI로 stroke만 표시 */
+.symbol-star {
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  background-image:
+    url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>\
+<path d='M50 8 L61 38 L93 38 L66 56 L76 87 L50 68 L24 87 L34 56 L7 38 L39 38 Z' \
+fill='none' stroke='currentColor' stroke-width='10' stroke-linejoin='round'/>\
+</svg>");
+}
+

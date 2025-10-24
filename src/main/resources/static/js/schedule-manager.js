@@ -1,4 +1,4 @@
-import { fetchWithCsrf, alertError } from './schedule-utils.js';
+import { fetchWithCsrf, alertError, alertSuccess } from './schedule-utils.js';
 import { initDropdowns, initColorDropdown } from './schedule-ui-dropdown.js';
 // [개선]: schedule-quick-add.js에서 export한 함수들을 import하여 사용
 import { injectPlusButtons, openQuickAddModal, closeQuickAddModal } from './schedule-quick-add.js';
@@ -6,7 +6,223 @@ import { openEditModal } from './schedule-edit.js';
 let calendar;
 let _allSchedulesRaw = [];  // 서버 원본(일정 배열)
 let _allEvents = [];        // fullcalendar 이벤트 배열 (현재 렌더 기준)
+let _hlByDate = {}; // {'yyyy-MM-dd': {symbol,color,note}}
+// ------------------ 임시 저장 사이드바 ------------------
+const tempContainer = document.getElementById('tempScheduleContainer');
 
+// 임시 일정 목록 로드 & 칩 렌더
+async function loadTempDrafts() {
+	if (!tempContainer) return;
+	try {
+		const temps = await fetchWithCsrf('/api/temp-schedule/list');
+		tempContainer.innerHTML = '';
+		if (!temps || temps.length === 0) {
+			tempContainer.innerHTML = `<div class="no-temp-schedules">저장된 임시 일정이 없습니다.</div>`;
+			return;
+		}
+		// 최대 10개 표시(원하면 조절)
+		temps.slice(0, 10).forEach(t => {
+			const tag = document.createElement('div');
+			tag.className = 'temp-tag';
+			tag.dataset.id = t.temp_id;
+			tag.title = t.title || '(제목 없음)';
+			tag.style.display = 'flex';
+			tag.style.alignItems = 'center';
+			tag.style.gap = '8px';
+			tag.style.padding = '6px 10px';
+			tag.style.borderRadius = '14px';
+			tag.style.background = '#276EF1'; // 파란 배경
+			tag.style.color = '#fff';         // 흰 글자
+			tag.style.border = 'none';
+			tag.style.cursor = 'pointer';
+			tag.style.fontWeight = '600';
+			tag.style.fontSize = '12px';
+			tag.style.boxShadow = '0 2px 6px rgba(0,0,0,0.12)';
+			// hover 효과(선택)
+			tag.addEventListener('mouseenter', () => { tag.style.filter = 'brightness(0.95)'; });
+			tag.addEventListener('mouseleave', () => { tag.style.filter = 'none'; });
+			tag.innerHTML = `
+			  <span class="temp-tag-title" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px;">
+			    ${t.title || '(제목 없음)'}
+			  </span>
+			  <span class="temp-tag-close" title="삭제" style="
+			    margin-left:auto;
+			    cursor:pointer;
+			    font-weight:700;
+			    opacity:.9;
+			  ">✕</span>
+			`;
+			tempContainer.appendChild(tag);
+
+			tag.addEventListener('click', async (e) => {
+				// X 눌렀을 때는 삭제
+				if (e.target && e.target.classList.contains('temp-tag-close')) {
+					e.stopPropagation();
+					try {
+						await fetchWithCsrf(`/api/temp-schedule/${t.temp_id}`, { method: 'DELETE' });
+						alertSuccess('임시 일정이 삭제되었습니다.');
+						loadTempDrafts();
+						if (window.refreshTempBadges) await window.refreshTempBadges();
+					} catch (err) {
+						console.error(err);
+						alertError('임시 일정 삭제 실패');
+					}
+					return;
+				}
+				// 칩 클릭 -> 드래프트를 불러와 빠른 등록 모달에 채우기
+				try {
+					const draft = await fetchWithCsrf(`/api/temp-schedule/${t.temp_id}`);
+					// 모달 열고 내용 채우기 (quick-add.js에 헬퍼를 노출시키는 게 깔끔하지만
+					// import 순환 이슈가 있으면 아래처럼 이벤트로 통신해도 됨)
+					window.dispatchEvent(new CustomEvent('OPEN_QUICK_ADD_WITH_DRAFT', { detail: draft }));
+				} catch (err) {
+					console.error(err);
+					alertError('임시 일정 불러오기 실패');
+				}
+			});
+		});
+	} catch (err) {
+		console.error('임시 목록 로드 실패', err);
+		tempContainer.innerHTML = `<div class="no-temp-schedules">목록 로드 오류.</div>`;
+	}
+}
+window.loadTempDrafts = loadTempDrafts;
+
+// quick-add 쪽에서 이벤트를 받아 모달 채우게끔 브릿지
+window.addEventListener('OPEN_QUICK_ADD_WITH_DRAFT', (e) => {
+	// quick-add가 export한 openQuickAddModal/ fill... 를 활용하고 싶다면,
+	// 거기서 window에 핸들러를 등록해두는 방식이 충돌이 적음.
+	if (window.openQuickAddFromDraft) {
+		window.openQuickAddFromDraft(e.detail);
+	} else {
+		// fallback: 그냥 모달 열기 이벤트만 날려도 되고…
+	}
+});
+
+// ------------------ 달력 + 버튼 옆 임시 뱃지 ------------------
+let _tempDateCounts = {}; // {'yyyy-MM-dd': 2, ...}
+
+async function refreshTempBadges() {
+	if (!calendar) return;
+	const view = calendar.view;
+	// view.activeStart ~ view.activeEnd 기준
+	const start = new Date(view.activeStart);
+	const end = new Date(view.activeEnd);
+	// ISO 로 변환
+	const toIso = (d) => new Date(+d - d.getTimezoneOffset() * 60000).toISOString(); // tz 보정
+	const counts = await fetchWithCsrf(`/api/temp-schedule/date-counts?start=${toIso(start)}&end=${toIso(end)}`);
+	_tempDateCounts = counts || {};
+	drawTempBadgesOnDays();
+}
+window.refreshTempBadges = refreshTempBadges;
+
+// 하이라이트 
+async function refreshDayHighlights() {
+	if (!calendar) return;
+	const view = calendar.view;
+	const start = new Date(view.activeStart);
+	const end = new Date(view.activeEnd);
+	const toDate = (d) => new Date(+d - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+	const data = await fetchWithCsrf(`/api/day-highlights?start=${toDate(start)}&end=${toDate(end)}`);
+	_hlByDate = (data && data.items) || {};
+	drawHighlightsOnDays();
+}
+
+function drawTempBadgesOnDays() {
+	document.querySelectorAll('.fc-daygrid-day').forEach(dayCell => {
+		const dateStr = dayCell.getAttribute('data-date'); // yyyy-MM-dd
+		if (!dateStr) return;
+		// 기존 배지 제거
+		const old = dayCell.querySelector('.day-draft-badge');
+		if (old) old.remove();
+		const cnt = _tempDateCounts[dateStr];
+		if (cnt > 0) {
+			const top = dayCell.querySelector('.fc-daygrid-day-top');
+			if (!top) return;
+			const btn = document.createElement('button');
+			btn.className = 'day-draft-badge';
+			btn.textContent = `📝${cnt}`;
+			btn.title = '임시 저장된 일정 불러오기';
+			btn.style.marginLeft = '6px';
+			btn.style.fontSize = '11px';
+			btn.style.padding = '0 6px';
+			btn.style.borderRadius = '10px';
+			btn.style.border = '1px solid #ddd';
+			btn.style.background = '#fff';
+			btn.style.cursor = 'pointer';
+			btn.addEventListener('click', async (e) => {
+				e.stopPropagation();
+				try {
+					// 해당 날짜의 임시들만 간단 선택 UI로 노출
+					const list = await fetchWithCsrf('/api/temp-schedule/list');
+					const only = (list || []).filter(x => (x.start_time || '').startsWith(dateStr));
+					if (!only.length) { alertError('해당 날짜에 임시 일정이 없습니다.'); return; }
+					const html = ['<div style="text-align:left;max-height:260px;overflow:auto">'];
+					only.forEach(t => {
+						html.push(`
+              <label style="display:flex;gap:8px;align-items:center;margin:4px 0">
+                <input type="radio" name="pickDraft" value="${t.temp_id}">
+                <span>${(t.start_time || '').slice(11, 16)} ${t.title || '(제목 없음)'}</span>
+              </label>
+            `);
+					});
+					html.push('</div>');
+					const { isConfirmed } = await Swal.fire({
+						title: '임시 일정 선택',
+						html: html.join(''),
+						showCancelButton: true,
+						confirmButtonText: '불러오기'
+					});
+					if (!isConfirmed) return;
+					const picked = Swal.getHtmlContainer().querySelector('input[name="pickDraft"]:checked');
+					if (!picked) return;
+					const draft = await fetchWithCsrf(`/api/temp-schedule/${picked.value}`);
+					window.dispatchEvent(new CustomEvent('OPEN_QUICK_ADD_WITH_DRAFT', { detail: draft }));
+				} catch (err) {
+					console.error(err);
+					alertError('임시 일정 불러오기 실패');
+				}
+			});
+			top.appendChild(btn);
+		}
+	});
+}
+
+
+
+function drawHighlightsOnDays() {
+	document.querySelectorAll('.fc-daygrid-day').forEach(dayCell => {
+		const dateStr = dayCell.getAttribute('data-date'); // yyyy-MM-dd
+		if (!dateStr) return;
+		// 기존 표시 제거
+		const old = dayCell.querySelector('.day-highlight-pin');
+		if (old) old.remove();
+		const item = _hlByDate[dateStr];
+		if (!item) return;
+
+		const numEl = dayCell.querySelector('.fc-daygrid-day-number');
+		if (!numEl) return;
+		const pin = document.createElement('span');
+		pin.className = `day-highlight-pin symbol-${item.symbol} color-${item.color}`;
+		pin.title = item.note || '특별한 날';
+		pin.addEventListener('click', (e) => {
+		  e.stopPropagation();
+		  openHighlightPicker(dateStr);
+		});
+		numEl.style.position = 'relative';           // 숫자 컨테이너를 기준으로
+		numEl.appendChild(pin);      
+	});
+}
+
+function symbolToChar(symbol) {
+	switch (symbol) {
+		case 'star': return '★';
+		case 'square': return '■';
+		case 'triangle': return '▲';
+		case 'circle':
+		default: return '●';
+	}
+}
 // ------------------ 카테고리 필터 ------------------
 function filterEventsByCategory(categoryFilter) {
 	const f = (categoryFilter || '').toLowerCase();
@@ -24,6 +240,85 @@ function filterEventsByCategory(categoryFilter) {
 		e.setProp('display', cats.includes(f) ? 'block' : 'none');
 	});
 }
+
+// 하이라이트
+function wireDayNumberClick() {
+  document.querySelectorAll('.fc-daygrid-day-number').forEach(numEl => {
+    // 중복 바인딩 방지
+    if (numEl.dataset.hlBound === '1') return;
+    numEl.dataset.hlBound = '1';
+    numEl.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const dayCell = numEl.closest('.fc-daygrid-day');
+      const dateStr = dayCell?.getAttribute('data-date');
+      if (!dateStr) return;
+      openHighlightPicker(dateStr);
+    });
+  });
+}
+
+// 하이라이트 편집창 함수
+async function openHighlightPicker(dateStr) {
+  const cur = _hlByDate[dateStr] || { symbol:'circle', color:'red', note:'' };
+
+  const html = `
+    <div style="text-align:left;display:flex;flex-direction:column;gap:10px">
+      <div><b>${dateStr}</b> 특별 표시</div>
+      <div>
+        <div style="margin-bottom:6px">기호</div>
+        <label><input type="radio" name="hlSymbol" value="circle"  ${cur.symbol==='circle'?'checked':''}> ● (동그라미)</label><br/>
+        <label><input type="radio" name="hlSymbol" value="star"    ${cur.symbol==='star'?'checked':''}> ★ (별)</label><br/>
+        <label><input type="radio" name="hlSymbol" value="square"  ${cur.symbol==='square'?'checked':''}> ■ (네모)</label><br/>
+        <label><input type="radio" name="hlSymbol" value="triangle" ${cur.symbol==='triangle'?'checked':''}> ▲ (세모)</label>
+      </div>
+      <div>
+        <div style="margin-bottom:6px">색상</div>
+        <label><input type="radio" name="hlColor" value="red"    ${cur.color==='red'?'checked':''}> 빨강</label>
+        <label><input type="radio" name="hlColor" value="yellow" ${cur.color==='yellow'?'checked':''} style="margin-left:10px"> 노랑</label>
+        <label><input type="radio" name="hlColor" value="blue"   ${cur.color==='blue'?'checked':''} style="margin-left:10px"> 파랑</label>
+        <label><input type="radio" name="hlColor" value="orange" ${cur.color==='orange'?'checked':''} style="margin-left:10px"> 주황</label>
+      </div>
+      <div>
+        <div style="margin-bottom:6px">메모(옵션)</div>
+        <input id="hlNote" class="swal2-input" placeholder="툴팁으로 표시될 메모" value="${cur.note?.replace(/"/g,'&quot;')||''}" />
+      </div>
+    </div>
+  `;
+
+  const { isConfirmed, isDenied } = await Swal.fire({
+    title: '하이라이트',
+    html,
+    showDenyButton: !!_hlByDate[dateStr],
+    denyButtonText: '삭제',
+    showCancelButton: true,
+    confirmButtonText: '저장'
+  });
+
+  if (isDenied) {
+    await fetchWithCsrf(`/api/day-highlights/${dateStr}`, { method: 'DELETE' });
+    delete _hlByDate[dateStr];
+    drawHighlightsOnDays();
+    Swal.fire({ icon:'success', text:'삭제되었습니다.' });
+    return;
+  }
+  if (!isConfirmed) return;
+
+  const container = Swal.getHtmlContainer();
+  const symbol = container.querySelector('input[name="hlSymbol"]:checked')?.value || 'circle';
+  const color  = container.querySelector('input[name="hlColor"]:checked')?.value  || 'red';
+  const note   = container.querySelector('#hlNote')?.value || '';
+
+  await fetchWithCsrf(`/api/day-highlights/${dateStr}`, {
+    method: 'PUT',
+    body: JSON.stringify({ symbol, color, note })
+  });
+
+  _hlByDate[dateStr] = { symbol, color, note };
+  drawHighlightsOnDays();
+  Swal.fire({ icon:'success', text:'저장되었습니다.' });
+}
+
 // ------------------ 검색(제목+내용) ------------------
 function applyClientSearch(keyword) {
 	const q = (keyword || '').trim().toLowerCase();
@@ -56,7 +351,18 @@ function initCalendar() {
 			center: 'title',
 			right: 'dayGridMonth,timeGridWeek,timeGridDay'
 		},
-		datesSet: () => setTimeout(() => injectPlusButtons(), 0),
+		datesSet: async () => {
+			setTimeout(() => injectPlusButtons(), 0);
+			// 임시저장 뱃지 갱신
+			if (typeof refreshTempBadges === 'function') {
+				try { await refreshTempBadges(); } catch (e) { /* noop */ }
+			}
+			try { await refreshDayHighlights(); } catch (e) { console.warn(e); }
+			// 날짜 숫자 클릭 바인딩(한 번만)
+			wireDayNumberClick();
+
+		},
+
 		// 선택 모드일 때는 클릭이 '선택 토글', 평소엔 수정 모달 열기
 		eventClick: (info) => {
 			if (!info || !info.event || !info.event.id) return;
@@ -67,6 +373,7 @@ function initCalendar() {
 			setTimeout(() => injectPlusButtons(), 0);
 			// 🔴 체크박지/선택 뱃지 주입
 			decorateEventForSelection(info);
+
 		}
 	});
 
@@ -196,73 +503,12 @@ function wireSearchBox() {
 document.addEventListener('DOMContentLoaded', async () => {
 	initCalendar();
 	await refreshEvents();
+	await loadTempDrafts();        // 사이드바 임시 저장 칩 갱신
+	await refreshTempBadges();     // 달력 날짜 뱃지 갱신
 	wireSearchBox();
 	// 플러스 버튼 주입(최초)
 	setTimeout(() => injectPlusButtons(), 0);
 });
-
-
-const tempContainer = document.getElementById('tempScheduleContainer');
-// [추가]: 임시 저장 목록을 UI에 표시
-// [수정]: 임시 저장 목록을 UI에 표시
-/*
-export const loadTempSchedules = async () => {
-	if (!tempContainer) return;
-
-	try {
-		const temps = await fetchWithCsrf('/api/schedule/temp-list');
-	    
-		tempContainer.innerHTML = ''; // 기존 내용 초기화
-	    
-		if (temps && temps.length > 0) {
-			temps.slice(0, 5).forEach(temp => { // 최대 5개 표시
-				const tag = document.createElement('div');
-				tag.className = 'temp-tag';
-				tag.dataset.id = temp.temp_id; 
-				tag.title = temp.title;
-			    
-				tag.innerHTML = `
-					<span class="temp-tag-title">${temp.title || '(제목 없음)'}</span>
-					<span class="temp-tag-close" data-action="delete">X</span>
-				`;
-			    
-				tempContainer.appendChild(tag);
-    
-				tag.addEventListener('click', (e) => {
-					if (e.target.dataset.action === 'delete') {
-						e.stopPropagation(); // 삭제 버튼 클릭 시 이벤트 전파 방지
-						deleteTempSchedule(temp.temp_id);
-					} else {
-						// TODO: 임시 일정 내용을 모달에 로드하는 로직 구현 (openEditModal 사용 예정)
-						alertSuccess(`ID ${temp.temp_id}의 임시 일정 불러오기 (로직 추가 필요)`);
-					}
-				});
-			});
-		} else {
-			// 임시 일정이 없을 경우 메시지 표시
-			 tempContainer.innerHTML = `<div class="no-temp-schedules">저장된 임시 일정이 없습니다.</div>`;
-		}
-
-	} catch (err) {
-		console.error('임시 일정 불러오기 실패:', err);
-		 tempContainer.innerHTML = `<div class="no-temp-schedules">목록 로드 오류.</div>`;
-	}
-};
-
-
-// [추가]: 임시 일정 삭제 API 호출 (UI에서도 사용 가능)
-const deleteTempSchedule = async (tempId) => {
-	try {
-		// [가정]: 임시 저장 삭제 API 엔드포인트는 '/api/schedule/temp-delete/{id}' 입니다.
-		await fetchWithCsrf(`/api/schedule/temp-delete/${tempId}`, { method: 'DELETE' });
-		alertSuccess('임시 일정이 삭제되었습니다.');
-		loadTempSchedules(); // 목록 새로고침
-	} catch (err) {
-		console.error('임시 일정 삭제 실패:', err);
-		alertError('임시 일정 삭제에 실패했습니다.');
-	}
-};
-*/
 
 // ------------------ 데이터 로드 & 렌더 ------------------
 export const refreshEvents = async () => {
@@ -380,9 +626,9 @@ function decorateEventForSelection(info) {
 
 // ② 필터 일괄 삭제
 async function openFilterDeleteDialog() {
-  const { value: formValues } = await Swal.fire({
-    title: '필터 조건으로 일괄 삭제',
-    html: `
+	const { value: formValues } = await Swal.fire({
+		title: '필터 조건으로 일괄 삭제',
+		html: `
       <div style="display:flex;flex-direction:column;gap:8px;text-align:left">
         <label>기간</label>
         <input type="date" id="delStart" class="swal2-input" style="width:100%" placeholder="시작일">
@@ -393,174 +639,174 @@ async function openFilterDeleteDialog() {
         <input type="text" id="delCats" class="swal2-input" placeholder="예: java,study">
       </div>
     `,
-    focusConfirm: false,
-    preConfirm: () => {
-      return {
-        start: (document.getElementById('delStart').value || '').trim(),
-        end: (document.getElementById('delEnd').value || '').trim(),
-        keyword: (document.getElementById('delKeyword').value || '').trim().toLowerCase(),
-        cats: (document.getElementById('delCats').value || '')
-          .split(',').map(v => v.trim().toLowerCase()).filter(Boolean),
-      };
-    },
-    showCancelButton: true,
-    confirmButtonText: '미리보기',
-    cancelButtonText: '취소',
-  });
-  if (!formValues) return;
+		focusConfirm: false,
+		preConfirm: () => {
+			return {
+				start: (document.getElementById('delStart').value || '').trim(),
+				end: (document.getElementById('delEnd').value || '').trim(),
+				keyword: (document.getElementById('delKeyword').value || '').trim().toLowerCase(),
+				cats: (document.getElementById('delCats').value || '')
+					.split(',').map(v => v.trim().toLowerCase()).filter(Boolean),
+			};
+		},
+		showCancelButton: true,
+		confirmButtonText: '미리보기',
+		cancelButtonText: '취소',
+	});
+	if (!formValues) return;
 
-  // 미리보기(클라 계산)
-  const ids = _allSchedulesRaw
-    .filter(s => {
-      // 기간
-      const inRange = (() => {
-        if (!formValues.start && !formValues.end) return true;
-        const sdt = new Date(s.start_time);
-        const sD  = formValues.start ? new Date(formValues.start + 'T00:00:00') : null;
-        const eD  = formValues.end   ? new Date(formValues.end   + 'T23:59:59') : null;
-        if (sD && sdt < sD) return false;
-        if (eD && sdt > eD) return false;
-        return true;
-      })();
-      if (!inRange) return false;
+	// 미리보기(클라 계산)
+	const ids = _allSchedulesRaw
+		.filter(s => {
+			// 기간
+			const inRange = (() => {
+				if (!formValues.start && !formValues.end) return true;
+				const sdt = new Date(s.start_time);
+				const sD = formValues.start ? new Date(formValues.start + 'T00:00:00') : null;
+				const eD = formValues.end ? new Date(formValues.end + 'T23:59:59') : null;
+				if (sD && sdt < sD) return false;
+				if (eD && sdt > eD) return false;
+				return true;
+			})();
+			if (!inRange) return false;
 
-      // 키워드
-      const kw = formValues.keyword;
-      if (kw) {
-        const title = (s.title || '').toLowerCase();
-        const desc  = (s.description || '').toLowerCase();
-        if (!title.includes(kw) && !desc.includes(kw)) return false;
-      }
+			// 키워드
+			const kw = formValues.keyword;
+			if (kw) {
+				const title = (s.title || '').toLowerCase();
+				const desc = (s.description || '').toLowerCase();
+				if (!title.includes(kw) && !desc.includes(kw)) return false;
+			}
 
-      // 카테고리
-      if (formValues.cats.length) {
-        const cats = (s.category || '').toLowerCase().split(',').map(v => v.trim());
-        const hit = formValues.cats.some(c => cats.includes(c));
-        if (!hit) return false;
-      }
-      return true;
-    })
-    .map(s => s.schedule_id);
+			// 카테고리
+			if (formValues.cats.length) {
+				const cats = (s.category || '').toLowerCase().split(',').map(v => v.trim());
+				const hit = formValues.cats.some(c => cats.includes(c));
+				if (!hit) return false;
+			}
+			return true;
+		})
+		.map(s => s.schedule_id);
 
-  if (ids.length === 0) {
-    Swal.fire({ icon: 'info', text: '삭제 대상이 없습니다.' });
-    return;
-  }
+	if (ids.length === 0) {
+		Swal.fire({ icon: 'info', text: '삭제 대상이 없습니다.' });
+		return;
+	}
 
-  const { isConfirmed } = await Swal.fire({
-    icon: 'warning',
-    title: `총 ${ids.length}개 일정 삭제`,
-    html: `아래 입력창에 <b>삭제</b> 를 입력하면 진행됩니다.`,
-    input: 'text',
-    inputPlaceholder: '삭제',
-    showCancelButton: true,
-    confirmButtonText: '진짜 삭제',
-    // ⚠️ 여기!
-    inputValidator: (v) => (v === '삭제' ? undefined : '삭제 를 정확히 입력하세요'),
-  });
-  if (!isConfirmed) return;
+	const { isConfirmed } = await Swal.fire({
+		icon: 'warning',
+		title: `총 ${ids.length}개 일정 삭제`,
+		html: `아래 입력창에 <b>삭제</b> 를 입력하면 진행됩니다.`,
+		input: 'text',
+		inputPlaceholder: '삭제',
+		showCancelButton: true,
+		confirmButtonText: '진짜 삭제',
+		// ⚠️ 여기!
+		inputValidator: (v) => (v === '삭제' ? undefined : '삭제 를 정확히 입력하세요'),
+	});
+	if (!isConfirmed) return;
 
-  try {
-    const resp = await fetchWithCsrf('/api/schedule/bulk-delete', {
-      method: 'POST',
-      body: JSON.stringify(ids.map(Number)),
-    });
-    await refreshEvents();
-    Swal.fire({ icon: 'success', text: resp?.message || '삭제되었습니다.' });
-  } catch (err) {
-    console.error('필터 삭제 실패:', err);
-    Swal.fire({ icon: 'error', text: `삭제 실패: ${err?.message || '알 수 없는 오류'}` });
-  }
+	try {
+		const resp = await fetchWithCsrf('/api/schedule/bulk-delete', {
+			method: 'POST',
+			body: JSON.stringify(ids.map(Number)),
+		});
+		await refreshEvents();
+		Swal.fire({ icon: 'success', text: resp?.message || '삭제되었습니다.' });
+	} catch (err) {
+		console.error('필터 삭제 실패:', err);
+		Swal.fire({ icon: 'error', text: `삭제 실패: ${err?.message || '알 수 없는 오류'}` });
+	}
 }
 
 // ③ 최근 생성분 빠른 삭제
 // ③ 최근 생성분 빠른 삭제 (미리보기 개수 포함)
 async function openRecentDeleteDialog() {
-  const { value: minutes } = await Swal.fire({
-    title: '최근 생성 일정 빠른 삭제',
-    input: 'range',
-    inputAttributes: { min: 1, max: 10, step: 1 },
-    inputValue: 5,
-    inputLabel: '분',
-    showCancelButton: true,
-    confirmButtonText: '다음',
-  });
-  if (!minutes) return;
+	const { value: minutes } = await Swal.fire({
+		title: '최근 생성 일정 빠른 삭제',
+		input: 'range',
+		inputAttributes: { min: 1, max: 10, step: 1 },
+		inputValue: 5,
+		inputLabel: '분',
+		showCancelButton: true,
+		confirmButtonText: '다음',
+	});
+	if (!minutes) return;
 
-  // 1) 백엔드에서 미리보기 개수 가져오기
-  let previewCount = 0;
-  try {
-    const preview = await fetchWithCsrf(`/api/schedule/bulk-delete-recent/preview?minutes=${Number(minutes)}`);
-    previewCount = Number(preview?.count || 0);
-  } catch (err) {
-    console.error('미리보기 조회 실패:', err);
-    Swal.fire({ icon: 'error', text: `미리보기 실패: ${err?.message || '알 수 없는 오류'}` });
-    return;
-  }
+	// 1) 백엔드에서 미리보기 개수 가져오기
+	let previewCount = 0;
+	try {
+		const preview = await fetchWithCsrf(`/api/schedule/bulk-delete-recent/preview?minutes=${Number(minutes)}`);
+		previewCount = Number(preview?.count || 0);
+	} catch (err) {
+		console.error('미리보기 조회 실패:', err);
+		Swal.fire({ icon: 'error', text: `미리보기 실패: ${err?.message || '알 수 없는 오류'}` });
+		return;
+	}
 
-  // 2) 삭제 대상 없으면 안내 후 종료
-  if (!previewCount) {
-    Swal.fire({ icon: 'info', text: `최근 ${minutes}분 내 생성된 일정이 없습니다.` });
-    return;
-  }
+	// 2) 삭제 대상 없으면 안내 후 종료
+	if (!previewCount) {
+		Swal.fire({ icon: 'info', text: `최근 ${minutes}분 내 생성된 일정이 없습니다.` });
+		return;
+	}
 
-  // 3) 컨펌 모달 (입력 검증은 inputValidator로 → isConfirmed만 확인)
-  const { isConfirmed } = await Swal.fire({
-    icon: 'warning',
-    title: `최근 ${minutes}분 내 생성 일정 삭제`,
-    html: `총 <b>${previewCount}</b>개가 삭제됩니다.<br>진행하려면 <b>삭제</b> 를 입력하세요.`,
-    input: 'text',
-    showCancelButton: true,
-    confirmButtonText: '삭제',
-    inputValidator: (v) => (v === '삭제' ? undefined : '삭제 를 정확히 입력하세요'),
-  });
-  if (!isConfirmed) return;
+	// 3) 컨펌 모달 (입력 검증은 inputValidator로 → isConfirmed만 확인)
+	const { isConfirmed } = await Swal.fire({
+		icon: 'warning',
+		title: `최근 ${minutes}분 내 생성 일정 삭제`,
+		html: `총 <b>${previewCount}</b>개가 삭제됩니다.<br>진행하려면 <b>삭제</b> 를 입력하세요.`,
+		input: 'text',
+		showCancelButton: true,
+		confirmButtonText: '삭제',
+		inputValidator: (v) => (v === '삭제' ? undefined : '삭제 를 정확히 입력하세요'),
+	});
+	if (!isConfirmed) return;
 
-  // 4) 실제 삭제 호출
-  try {
-    const resp = await fetchWithCsrf(`/api/schedule/bulk-delete-recent?minutes=${Number(minutes)}`, {
-      method: 'POST',
-    });
-    await refreshEvents();
-    Swal.fire({ icon: 'success', text: resp?.message || '삭제되었습니다.' });
-  } catch (err) {
-    console.error('최근 삭제 실패:', err);
-    Swal.fire({ icon: 'error', text: `삭제 실패: ${err?.message || '알 수 없는 오류'}` });
-  }
+	// 4) 실제 삭제 호출
+	try {
+		const resp = await fetchWithCsrf(`/api/schedule/bulk-delete-recent?minutes=${Number(minutes)}`, {
+			method: 'POST',
+		});
+		await refreshEvents();
+		Swal.fire({ icon: 'success', text: resp?.message || '삭제되었습니다.' });
+	} catch (err) {
+		console.error('최근 삭제 실패:', err);
+		Swal.fire({ icon: 'error', text: `삭제 실패: ${err?.message || '알 수 없는 오류'}` });
+	}
 }
 
 // ④ 선택삭제 실제 실행
 async function deleteSelectedNow() {
-  if (!_selectedEventIds.size) {
-    Swal.fire({ icon: 'info', text: '선택한 일정이 없습니다.' });
-    return;
-  }
-  const count = _selectedEventIds.size;
+	if (!_selectedEventIds.size) {
+		Swal.fire({ icon: 'info', text: '선택한 일정이 없습니다.' });
+		return;
+	}
+	const count = _selectedEventIds.size;
 
-  const { isConfirmed } = await Swal.fire({
-    icon: 'warning',
-    title: `선택 ${count}개 삭제`,
-    html: `진행하려면 <b>삭제</b> 입력`,
-    input: 'text',
-    showCancelButton: true,
-    // ⚠️ 여기! inputValidator로 검사만 하고, 통과 시 isConfirmed=true가 된다.
-    inputValidator: (v) => (v === '삭제' ? undefined : '삭제 를 정확히 입력하세요'),
-  });
-  if (!isConfirmed) return;
+	const { isConfirmed } = await Swal.fire({
+		icon: 'warning',
+		title: `선택 ${count}개 삭제`,
+		html: `진행하려면 <b>삭제</b> 입력`,
+		input: 'text',
+		showCancelButton: true,
+		// ⚠️ 여기! inputValidator로 검사만 하고, 통과 시 isConfirmed=true가 된다.
+		inputValidator: (v) => (v === '삭제' ? undefined : '삭제 를 정확히 입력하세요'),
+	});
+	if (!isConfirmed) return;
 
-  try {
-    const ids = Array.from(_selectedEventIds).map(Number);
-    const resp = await fetchWithCsrf('/api/schedule/bulk-delete', {
-      method: 'POST',
-      body: JSON.stringify(ids),
-    });
-    disableSelectionMode();
-    await refreshEvents();
-    Swal.fire({ icon: 'success', text: resp?.message || '삭제되었습니다.' });
-  } catch (err) {
-    console.error('선택 삭제 실패:', err);
-    Swal.fire({ icon: 'error', text: `삭제 실패: ${err?.message || '알 수 없는 오류'}` });
-  }
+	try {
+		const ids = Array.from(_selectedEventIds).map(Number);
+		const resp = await fetchWithCsrf('/api/schedule/bulk-delete', {
+			method: 'POST',
+			body: JSON.stringify(ids),
+		});
+		disableSelectionMode();
+		await refreshEvents();
+		Swal.fire({ icon: 'success', text: resp?.message || '삭제되었습니다.' });
+	} catch (err) {
+		console.error('선택 삭제 실패:', err);
+		Swal.fire({ icon: 'error', text: `삭제 실패: ${err?.message || '알 수 없는 오류'}` });
+	}
 }
 
 // 메인: 삭제 센터 모달
