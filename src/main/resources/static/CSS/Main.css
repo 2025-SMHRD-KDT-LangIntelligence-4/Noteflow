@@ -25,20 +25,92 @@ body {
   height: 100%;
   width:100%;
 }
-
+.smhrd-link{
+	position:absolute;
+	top:75%;
+	left:80%;
+	width:200px;
+	height:50px;
+	background:linear-gradient(300deg, #1E9AFF 0, #96d0ff 100%);;
+	border-radius:20px;
+	text-decoration:none;
+	display:flex;
+	justify-content:center;
+	align-items:center;
+	font-size:20px;
+	color:white;
+	font-weight:bold;
+}
+.smhrd-link:hover{
+	background:linear-gradient(300deg, #1E9AFF 0, #96d0ff 100%);;
+	transform: translateY(1px);
+	color:white;
+}
+.ad2-link{
+	width:200px;
+	height:50px;
+	position:absolute;
+	background:#FF7D21;
+	color:white;
+	font-weight:bold;
+	font-size:20px;
+	left:43%;
+	top:71%;
+	display:flex;
+	justify-content:center;
+	align-items:center;
+	text-decoration:none;
+}
 .ad-banner-img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
-
+.ad3-link{
+	position:absolute;
+	top:75%;
+	left:80%;
+	width:200px;
+	height:50px;
+	background:linear-gradient(300deg, #1E9AFF 0, #96d0ff 100%);;
+	border-radius:20px;
+	text-decoration:none;
+	display:flex;
+	justify-content:center;
+	align-items:center;
+	font-size:20px;
+	color:white;
+	font-weight:bold;
+}
 /* 슬라이드 숨김 */
 .ad-slide {
   display: none;
   width: 100%;
   height: 100%;
+  aspect-ratio: 2/1;
+  justify-content:flex-start;
+  
 }
-
+.ad-pre{
+	display: flex;
+    flex-wrap: wrap;
+    height: 150px;
+    justify-content: flex-end;
+    width:400px;
+    position:absolute;
+    top:30%;
+    left:65%;
+}
+.ad-slide span{
+	font-size: 20px;
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;;
+}
+.ad-pre-title{
+	font-size:50px;
+	width:100px;
+}
 /* 페이드 애니메이션 */
 .fade {
   animation: fadeEffect 1s;
@@ -122,6 +194,16 @@ body {
 .schedule-alarm{
 	width:100%;
 	font-size:50px;
+	display:flex;
+	flex-wrap:wrap;
+	gap:10px;
+}
+.ad-temMarket-comment{
+	width:100%;
+	font-size:50px;
+	display:flex;
+	flex-wrap:wrap;
+	gap:10px;
 }
 .schedule-alarm2{
 	width:100%;
