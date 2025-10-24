@@ -18,7 +18,7 @@
 		        <!-- 카테고리 메뉴 -->
 		        <div class="categori-container">
 		            <a th:href="@{/main}" th:classappend="${activeMenu == 'main'} ? ' active' : ''">메인화면</a>
-		            <a th:href="@{/notion/create}" th:classappend="${activeMenu == 'notionCreate'} ? ' active' : ''">노트작성</a>
+		            <a th:href="@{/notion/precreate}" th:classappend="${activeMenu == 'notionCreate'} ? ' active' : ''">노트작성</a>
 		            <a th:href="@{/notion/manage}" th:classappend="${activeMenu == 'notionManage'} ? ' active' : ''">노트관리</a>
 		            <a th:href="@{/exam/create}" th:classappend="${activeMenu == 'quizCreate'} ? ' active' : ''">문제생성</a>
 		            <a th:href="@{/exam/my-results}" th:classappend="${activeMenu == 'examList'} ? ' active' : ''">시험목록</a>
@@ -38,8 +38,7 @@
 	            	<div class="out-user-name" th:text="${nickname} + '님 환영합니다.'">OOO님 환영합니다.</div>
 	            	<div class="userProfile-container">
 						  <button class="userProfile-btn" id="profileBtn">
-						    <!-- 프로필 버튼의 이미지 -->
-						    <img th:src="${user.profileImage != null ? user.profileImage : '/images/default-profile.png'}" alt="프로필 이미지" class="user-image-container" />
+						    <img th:src="@{/images/default-profile.png}" alt="프로필 이미지" class="user-image-container" />
 						  </button>
 	
 						  <!-- ▼ 클릭 시 나타날 드롭다운 -->
@@ -47,10 +46,9 @@
 						  		<div class="user-location-container">
 						  			<div class="email-container" th:text="${email}"> </div>
 						  			<div class="profile-img-location-container">
-								  		<!-- 드롭다운 내부의 이미지 (클래스 이름: profile-image) -->
-								  		<img th:src="${user.profileImage != null ? user.profileImage : '/images/default-profile.png'}" alt="프로필 이미지" class="profile-image"/>
+								  		<img th:src="@{/images/default-profile.png}" alt="프로필 이미지" class="profile-image" />
 						  			</div>
-							  		<div class="user-name" th:text="${user.nickname} + '님 환영합니다.'">OOO님 환영합니다.</div>
+							  		<div class="user-name" th:text="${nickname} + '님 환영합니다.'">OOO님 환영합니다.</div>
 							  		<div class="point-container">
 								  		<div class="user-credit" th:text="9999"></div><div>🪙</div>
 								  		<div class="user-gold" th:text="9999 "></div><div>💎</div>
