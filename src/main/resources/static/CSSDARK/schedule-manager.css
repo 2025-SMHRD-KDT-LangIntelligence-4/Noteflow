@@ -192,8 +192,12 @@ input[type="time" i]{
 	background:#3e3e3e;
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 	border: 1px solid #dce0f0;
+	color:white;
 }
-
+.fc-button-group button{
+	background: #96d0ff !important;
+    border: none !important;
+}
 .btn.primary {
 	background: #2b6ef6;
 	color: #fff;
@@ -303,10 +307,6 @@ input[type="time" i]{
     font-size: 14px;
     outline:none;
     background: #3e3e3e;
-}
-.fc-button-group button{
-	background: #3e3e3e !important;
-    border: none !important;
 }
 #catCustomInput{
 	outline:none;

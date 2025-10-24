@@ -71,8 +71,14 @@ document.addEventListener("DOMContentLoaded", () => {
 		      >
 		      <a href="https://overwatch.blizzard.com/ko-kr/" target="_blank" class="ad2-link">소집에 응답하기</a>
 		    </div>
-		    <div class="ad-slide fade">
-		      <img class="ad-banner-img" th:src="@{/images/logo2.png}" alt="광고3">
+		    <div class="ad-slide fade" style="background:white;">
+		      <img class="ad-banner-img" th:src="@{/images/qnet.jpg}" alt="광고3" style="background:white; width:70%">
+		      <div class="ad-pre">
+			      <span style="font-size:50px; font-weight:bold;">국가자격증</span>
+			      <span>원서 접수부터</span>
+			      <span>자격증 발급까지!</span>
+		      </div>
+		      <a href="https://www.q-net.or.kr/man001.do?gSite=Q&gIntro=Y" target="_blank" class="ad3-link">큐넷 바로가기</a>
 		    </div>
 		
 		    <!-- 좌우 버튼 -->
@@ -145,7 +151,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		  slideIndex++;
 		  if (slideIndex > slides.length) { slideIndex = 1; }
 		
-		  slides[slideIndex - 1].style.display = "block";
+		  slides[slideIndex - 1].style.display = "flex";
 		  dots[slideIndex - 1].classList.add("active");
 		
 		  setTimeout(showSlides, 4000); // 4초마다 자동 전환
@@ -170,7 +176,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		  slides.forEach(s => s.style.display = "none");
 		  dots.forEach(d => d.classList.remove("active"));
 		
-		  slides[slideIndex - 1].style.display = "block";
+		  slides[slideIndex - 1].style.display = "flex";
 		  dots[slideIndex - 1].classList.add("active");
 		}
 	</script>
