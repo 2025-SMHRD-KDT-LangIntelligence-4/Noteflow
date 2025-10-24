@@ -7,6 +7,58 @@ let calendar;
 let _allSchedulesRaw = [];  // 서버 원본(일정 배열)
 let _allEvents = [];        // fullcalendar 이벤트 배열 (현재 렌더 기준)
 let _hlByDate = {}; // {'yyyy-MM-dd': {symbol,color,note}}
+
+// ── 하이라이트 SVG 렌더러 (모든 도형을 inline SVG로 통일) ─────────────────
+function renderHighlightSVG(containerEl, symbol) {
+  // 기존 내용 제거
+  containerEl.innerHTML = '';
+
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 100 100');
+  svg.setAttribute('aria-hidden', 'true');
+
+  let shape;
+  if (symbol === 'circle') {
+    shape = document.createElementNS(SVG_NS, 'circle');
+    shape.setAttribute('cx', '50');
+    shape.setAttribute('cy', '50');
+    shape.setAttribute('r',  '36'); // 숫자 가림 최소화
+  } else if (symbol === 'square') {
+    shape = document.createElementNS(SVG_NS, 'rect');
+    shape.setAttribute('x', '14');
+    shape.setAttribute('y', '14');
+    shape.setAttribute('width',  '72');
+    shape.setAttribute('height', '72');
+    shape.setAttribute('rx', '12'); // 살짝 둥글게
+  } else if (symbol === 'triangle') {
+    shape = document.createElementNS(SVG_NS, 'polygon');
+    shape.setAttribute('points', '50,10 90,88 10,88');
+  } else if (symbol === 'star') {
+    shape = document.createElementNS(SVG_NS, 'path');
+    // 가독성과 숫자 가림 최소화를 고려한 별 경로
+    shape.setAttribute('d', 'M50 8 L61 38 L92 38 L66 56 L76 88 L50 70 L24 88 L34 56 L8 38 L39 38 Z');
+  } else {
+    // 알 수 없는 심볼은 렌더 생략
+    return;
+  }
+
+  // 공통 스타일 플래그 (CSS에서 잡아줌)
+  shape.setAttribute('data-outline', '1');
+
+  svg.appendChild(shape);
+  containerEl.appendChild(svg);
+}
+
+
+
+
+
+
+
+
+
+
 // ------------------ 임시 저장 사이드바 ------------------
 const tempContainer = document.getElementById('tempScheduleContainer');
 
@@ -191,28 +243,51 @@ function drawTempBadgesOnDays() {
 
 
 function drawHighlightsOnDays() {
-	document.querySelectorAll('.fc-daygrid-day').forEach(dayCell => {
-		const dateStr = dayCell.getAttribute('data-date'); // yyyy-MM-dd
-		if (!dateStr) return;
-		// 기존 표시 제거
-		const old = dayCell.querySelector('.day-highlight-pin');
-		if (old) old.remove();
-		const item = _hlByDate[dateStr];
-		if (!item) return;
+  document.querySelectorAll('.fc-daygrid-day').forEach(dayCell => {
+    const dateStr = dayCell.getAttribute('data-date'); // yyyy-MM-dd
+    if (!dateStr) return;
 
-		const numEl = dayCell.querySelector('.fc-daygrid-day-number');
-		if (!numEl) return;
-		const pin = document.createElement('span');
-		pin.className = `day-highlight-pin symbol-${item.symbol} color-${item.color}`;
-		pin.title = item.note || '특별한 날';
-		pin.addEventListener('click', (e) => {
-		  e.stopPropagation();
-		  openHighlightPicker(dateStr);
-		});
-		numEl.style.position = 'relative';           // 숫자 컨테이너를 기준으로
-		numEl.appendChild(pin);      
-	});
+    // 기존 표시 제거
+    const old = dayCell.querySelector('.day-highlight-pin');
+    if (old) old.remove();
+
+    const item = _hlByDate[dateStr];
+    if (!item) return;
+
+    const numEl = dayCell.querySelector('.fc-daygrid-day-number');
+    if (!numEl) return;
+
+    // 핀 생성 (색상 클래스 또는 HEX 대응)
+    const pin = document.createElement('span');
+    pin.className = `day-highlight-pin symbol-${item.symbol}`;
+
+    // color: 키워드(red|yellow|blue|orange)면 클래스, 그 외(HEX 등)는 style.color로 직접 지정
+    const color = (item.color || '').toLowerCase();
+    if (['red', 'yellow', 'blue', 'orange'].includes(color)) {
+      pin.classList.add(`color-${color}`);
+    } else if (color) {
+      pin.style.color = color; // ex) #ff66cc
+    } else {
+      pin.classList.add('color-red'); // fallback
+    }
+
+    pin.title = item.note || '특별한 날';
+
+    // 클릭 시 편집창 열기
+    pin.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openHighlightPicker(dateStr);
+    });
+
+    // inline SVG로 심볼 렌더
+    renderHighlightSVG(pin, item.symbol);
+
+    // 숫자 컨테이너 기준으로 배치 (숫자 z-index가 더 높아서 항상 보임)
+    numEl.style.position = 'relative';
+    numEl.appendChild(pin);
+  });
 }
+
 
 function symbolToChar(symbol) {
 	switch (symbol) {

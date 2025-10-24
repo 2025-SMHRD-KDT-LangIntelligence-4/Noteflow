@@ -507,29 +507,21 @@ input[type="time" i]{
 #openTrashBtn:hover{
 	background:#96d0ff;
 }
-.day-highlight-pin{
-  font-size: 14px;
-  line-height: 1;
-  display: inline-block;
-  user-select: none;
-}
-/* 색 */
-.color-red    { color:#e53935; }
-.color-yellow { color:#fbc02d; }
-.color-blue   { color:#1e88e5; }
-.color-orange { color:#fb8c00; }
-/* 공통 변수 */
+
+/* ================== 하이라이트 (달력 숫자 위 아웃라인 도형) ================== */
+
+/* 공통 변수 — 살짝 키움 */
 :root {
-  --hl-size: 22px;     /* 도형 한 변(또는 지름) */
-  --hl-stroke: 2px;    /* 테두리 두께 */
+  --hl-size: 40px;   /* 기존 22px → 26px 로 아주 약간만 확대 */
+  --hl-stroke: 2px;/* 윤곽선 두께 소폭 증가 (2px → 2.5px) */
 }
 
 .fc-daygrid-day-number {
-  position: relative; /* pin이 이걸 기준으로 정중앙 */
-  z-index: 2;         /* 숫자 최상위 */
+  position: relative; /* pin의 기준점 */
+  z-index: 2;         /* 숫자가 위에 보이도록 */
 }
 
-/* 하이라이트 핀 공통 */
+/* 핀 자체 레이어: 숫자보다 아래(z-index 1)라 숫자는 항상 보임 */
 .day-highlight-pin {
   position: absolute;
   left: 50%;
@@ -539,52 +531,34 @@ input[type="time" i]{
   transform: translate(-50%, -50%);
   display: inline-block;
   pointer-events: auto;
-  z-index: 1;                 /* 숫자보다 아래 */
-  color: currentColor;        /* SVG에서 stroke=currentColor 를 쓰기 위함 */
+  z-index: 1;
+  color: currentColor; /* SVG stroke=currentColor 상속용 */
 }
 
-/* 색상(필요 색만 남겨 써) */
+/* 색상 클래스 (키워드일 때 사용) */
 .color-red    { color:#e53935; }
 .color-yellow { color:#fbc02d; }
 .color-blue   { color:#1e88e5; }
 .color-orange { color:#fb8c00; }
 
-/* 2-1) 원: 속 투명, 테두리만 */
-.symbol-circle {
-  border: var(--hl-stroke) solid currentColor;
-  border-radius: 50%;
-  background: transparent;
+/* inline SVG 공통 규칙 */
+.day-highlight-pin svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.day-highlight-pin svg [data-outline]{
+  fill: none;                  /* 속 비우기 */
+  stroke: currentColor;        /* 부모의 color 상속 → .color-xxx 또는 style.color */
+  stroke-width: 10;            /* viewBox(0~100) 기준 선두께: 10이 26px 크기에 적당 */
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
-/* 2-2) 네모: 속 투명, 테두리만 */
-.symbol-square {
-  border: var(--hl-stroke) solid currentColor;
-  border-radius: 4px;      /* 각진 네모면 0으로 */
-  background: transparent;
-}
+/* (선택) 거친 질감 효과를 주고 싶다면 아래 하나만 켜면 됨 */
+.day-highlight-pin svg [data-outline] { stroke-dasharray: 2 1; }
 
-/* 2-3) 세모(외곽선만) – SVG data-URI로 stroke만 표시 */
-.symbol-triangle {
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: contain;
-  background-image:
-    url("data:image/svg+xml;utf8,\
-<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>\
-<polygon points='50,8 92,92 8,92' fill='none' stroke='currentColor' stroke-width='10' stroke-linejoin='round'/>\
-</svg>");
-}
-
-/* 2-4) 별(외곽선만) – SVG data-URI로 stroke만 표시 */
-.symbol-star {
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: contain;
-  background-image:
-    url("data:image/svg+xml;utf8,\
-<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>\
-<path d='M50 8 L61 38 L93 38 L66 56 L76 87 L50 68 L24 87 L34 56 L7 38 L39 38 Z' \
-fill='none' stroke='currentColor' stroke-width='10' stroke-linejoin='round'/>\
-</svg>");
-}
-
+/* 더 이상 사용 안 함: 배경이미지 방식
+.symbol-triangle, .symbol-star { background-image: none !important; }
+.symbol-circle, .symbol-square { border: none !important; }
+*/

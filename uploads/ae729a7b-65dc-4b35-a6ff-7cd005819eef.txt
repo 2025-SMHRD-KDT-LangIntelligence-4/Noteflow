@@ -1,0 +1,116 @@
+7월 16일 수
+
+GitHub
+온라인으로 여러 사용자들이 컴퓨터 파일을 공유하도록 도움을 준다.
+
+깃헙 토큰 키
+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
+///////////////////////////////////////////////////////////////////////////////
+
+깃헙 연결해보자
+windows > Perspective > Open Perspective > Other....
+Git >> open 
+
+<Git Repositories> 열림
+
+////////////////////////////////////////////////////////////////////////
+
+생성 : Clone a Git repository
+
+Git hub에서 팀들어가서 
+[코드 <>] 클릭  >> url 복사 
+Source git repository 의 url에 붙여넣기
+
+User : 본인 이메일
+Password : 저장해둔 토큰 키 
+[ next ] 
+
+////////////////////////////////////////////////////////////////////////
+브런치 : 코드 분리 하는거
+[ next ] [ finish ]
+///////////////////////////////////////////////////////////////////////////
+
+공간 :
+Git <> local repo <> Code ( 연결시켜줘야 함 )
+
+코드가 들어가는 곳
+C:\Users\smart\git\Team_Cloud
+
+실제 코드 작성하는 곳 
+C:\Users\smart\Documents\workspace-spring-tools-for-eclipse-4.31.0.RELEASE
+
+///////////////////////////////////////////////////////////////////////
+
+코드 전송 :
+프로젝트 우클릭> team > share Project > 설정해주고 finish
+//////////////////////////////
+///  localpc <> 서버   ///
+///  Push <> Pull	      ///
+////////////////////////////
+프로젝트 우클릭 > team > origin push
+
+Git Staging 작성요령
+++ 아이콘 클릭
+commit message : 무슨 작업을 했는지
+Commit and Push > close
+>> 깃헙에 반영됨ㅇㅇ
+
+////////////////////////////////////////////////////////////////
+
+java 아이콘 >> 코드로 이동
+git 아이콘 >> git 관리 
+
+팀원이 코드 받을 때도
+[ Clone a Git repository ] 
+
+Git hub에서 팀들어가서 
+[코드 <>] 클릭  >> url 복사 
+Source git repository 의 url에 붙여넣기
+
+User : 본인 이메일
+Password : 저장해둔 토큰 키 
+[ next ] [ Finish ]
+** 에러 : 같은 경로에 같은 이름의 파일 있으면 finish 안됨
+** 기존 파일 지워서ㄱㄱ ( 근데 스프링 켜져 있으면 지울 수 없음ㅇㅇ )
+** 이름 바꾸기로도 가능함
+
+Package Explorer 창 안에서
+우클릭 > Import > Import
+Git 폴더 > Projects from Git > Existing local repository > 선택
+[ next ]
+import as general project 체크
+[ next ] [ finish ]
+
+그럼 Package Explorer 안에 팀 프로젝트 파일 뜸
+/////////////////////////////////////////////////////////////////////////////
+
+동시에 Push 하면 에러남!!
+한명씩 push하고 pull 받고 반복
+
+Git 아이콘>
+Git Staging 탭
+Unstaged Changes ( 아직 적용안된 수정 )
+++( 모든 변경사항을 GitHub에 추가 )
+Commit Message 작성하고
+Commit and Push
+
+/////////////////////////////////////////////////////////////////////////
+
+Pull 받는 방법
+프로젝트 우클릭 > team
+또는 Git repositories 우클릭 
+>> pull
+
+////////////////////////////////////////////////////////////////////////
+※ 주의 사항
+// 같은 파일 같은 줄( 동일한 코드 라인에 작성하면 ) 
+GIT HUB 에러 나서 서로 힘들다~
+
+// 애초에 파일 분리 하는 것이 좋고
+설령 같은 파일이어도 다른 줄에..
+
+꼭 지켜야 하는 규칙
+1. 수정할 때 같은 파일 동시에 수정하지 않기
+2. pull, push 작업시 꼭 commit을 통해서 local repository 최신화
+3. 개발 후 commit -> push 할 때 꼭 팀원들에게 알려주기
+4. 좋은 말 할 때 꼭 꼭 Commit 해라...
