@@ -1,7 +1,7 @@
 package com.smhrd.web.controller;
 
 import com.smhrd.web.entity.User;
-import com.smhrd.web.security.CustomUserDetails; // [추가]
+import com.smhrd.web.security.CustomUserDetails;
 import com.smhrd.web.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -96,8 +96,8 @@ public class UserController {
     public Map<String, Boolean> verifyPassword(Authentication authentication,
                                                @RequestParam("currentPw") String currentPw) {
 
-        Long userIdx = ((CustomUserDetails) authentication.getPrincipal()).getUserIdx(); // [수정]
-        boolean valid = userService.verifyPassword(userIdx, currentPw);               // [수정]
+        Long userIdx = ((CustomUserDetails) authentication.getPrincipal()).getUserIdx();
+        boolean valid = userService.verifyPassword(userIdx, currentPw);
 
         Map<String, Boolean> result = new HashMap<>();
         result.put("valid", valid);
@@ -111,9 +111,9 @@ public class UserController {
     @ResponseBody
     public ResponseEntity<Void> deleteAccount(Authentication authentication) {
 
-        Long userIdx = ((CustomUserDetails) authentication.getPrincipal()).getUserIdx(); // [수정]
+        Long userIdx = ((CustomUserDetails) authentication.getPrincipal()).getUserIdx();
         try {
-            userService.deleteUserAccount(userIdx);                                   // [수정]
+            userService.deleteUserAccount(userIdx);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             e.printStackTrace();
@@ -127,8 +127,8 @@ public class UserController {
     @GetMapping("/mypage")
     public String mypageGet(Authentication authentication, Model model,@AuthenticationPrincipal UserDetails userDetails) {
 
-        Long userIdx = ((CustomUserDetails) authentication.getPrincipal()).getUserIdx(); // [수정]
-        userService.getUserInfo(userIdx)                                             // [수정]
+        Long userIdx = ((CustomUserDetails) authentication.getPrincipal()).getUserIdx();
+        userService.getUserInfo(userIdx)
                    .ifPresent(user -> model.addAttribute("user", user));
         if (userDetails != null) {
             // userDetails에서 닉네임 가져오기 (예: CustomUserDetails 사용)
@@ -151,8 +151,8 @@ public class UserController {
     @GetMapping("/editMypage")
     public String editMypage(Authentication authentication, Model model,@AuthenticationPrincipal CustomUserDetails userDetails) {
 
-        Long userIdx = ((CustomUserDetails) authentication.getPrincipal()).getUserIdx(); // [수정]
-        User user = userService.getUserInfo(userIdx).orElse(new User());            // [수정]
+        Long userIdx = ((CustomUserDetails) authentication.getPrincipal()).getUserIdx();
+        User user = userService.getUserInfo(userIdx).orElse(new User());
 
         model.addAttribute("user", user); // 항상 null-safe 보장
         if (userDetails != null) {
@@ -175,19 +175,22 @@ public class UserController {
                              @RequestParam(value = "userPw", required = false) String userPw,
                              @RequestParam(value = "interest_area", required = false) String interestArea,
                              @RequestParam(value = "learning_area", required = false) String learningArea,
+                             @RequestParam(value = "bio", required = false) String bio, // [추가: 자기소개 필드]
+                             @RequestParam(value = "mailingAgreed", required = false) Boolean mailingAgreed, // [추가: 메일링 동의 필드]
                              @RequestParam(value = "profileImage", required = false) MultipartFile profileImage,
                              @RequestParam(value = "deleteProfileImage", required = false) Boolean deleteProfileImage,
                              RedirectAttributes redirectAttributes) {
 
-        Long userIdx = ((CustomUserDetails) authentication.getPrincipal()).getUserIdx(); // [수정]
+        Long userIdx = ((CustomUserDetails) authentication.getPrincipal()).getUserIdx();
 
         try {
+            // UserService의 updateUserInfo 메서드 시그니처가 변경되어야 합니다.
             userService.updateUserInfo(userIdx, nickname, userEmail, userPw,
-                    interestArea, learningArea, profileImage, deleteProfileImage);          // [수정]
+                    interestArea, learningArea, bio, mailingAgreed, profileImage, deleteProfileImage); // [수정]
             redirectAttributes.addFlashAttribute("message", "회원 정보가 성공적으로 수정되었습니다.");
         } catch (Exception e) {
             e.printStackTrace();
-            redirectAttributes.addFlashAttribute("error", "회원 정보 수정 중 오류가 발생했습니다.");
+            redirectAttributes.addFlashAttribute("error", "회원 정보 수정 중 오류가 발생했습니다: " + e.getMessage());
         }
 
         return "redirect:/mypage";
