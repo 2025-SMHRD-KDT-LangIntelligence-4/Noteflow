@@ -10,122 +10,92 @@
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
 </head>
 <body>
-    <div th:replace="~{fragments/header :: siteHeader}"></div>
-
-    <!-- ✅ 로딩 오버레이 추가 -->
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="loading-content">
-            <div class="loading-spinner"></div>
-            <div class="loading-text" id="loadingText">회원가입 처리 중...</div>
-            <div class="loading-subtext" id="loadingSubtext">
-                계정을 생성하고 이메일 인증 메일을<br>
-                발송하고 있습니다. 잠시만 기다려주세요.
-            </div>
-            <div class="loading-progress">
-                <div class="loading-progress-bar"></div>
-            </div>
-        </div>
-    </div>
+    <div th:replace="fragments/header :: siteHeader"></div>
 
     <div class="signup-location-container">
-        <div class="logo-container">
-            <img th:src="@{/images/logo3.png}" class="logo-ad"/>
-        </div>
-        
-        <div class="full-container">
-            <h1>회원가입</h1>
-
-            <!-- ✅ 폼에 ID와 onsubmit 이벤트 추가 -->
-            <form th:action="@{/signup}" method="post" onsubmit="return handleSignupSubmit()" id="signupForm">
-                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-
-                <div class="input-container">
-                    <label for="userId">아이디</label>
-                    <div class="input-check-container">
-                        <input type="text" id="userId" name="userId" placeholder="아이디를 입력하세요" required />
-                        <button type="button" id="checkBtn" class="check-btn">중복확인</button>
-                    </div>
-                    <div id="checkResult" class="check-result"></div>
-                </div>
-
-                <div class="input-container">
-                    <label for="userNick">닉네임</label>
-                    <div class="input-check-container">
-                        <input type="text" id="userNick" name="userNick" placeholder="닉네임을 입력하세요" required />
-                        <button type="button" id="nickCheckBtn" class="check-btn">중복확인</button>
-                    </div>
-                    <div id="nickCheckResult" class="check-result"></div>
-                </div>
-
-                <div class="input-container">
-                    <label for="userPw">비밀번호</label>
-                    <input type="password" id="userPw" name="userPw" placeholder="비밀번호를 입력하세요" required />
-                </div>
-
-                <div class="input-container">
-                    <label for="confirmPw">비밀번호 확인</label>
-                    <input type="password" id="confirmPw" placeholder="비밀번호를 다시 입력하세요" required />
-                </div>
-
-                <div class="input-container">
-                    <label for="userEmail">이메일</label>
-                    <div class="input-check-container">
-                        <input type="email" id="userEmail" name="userEmail" placeholder="이메일을 입력하세요" required />
-                        <button type="button" id="emailCheckBtn" class="check-btn">중복확인</button>
-                    </div>
-                    <div id="emailCheckResult" class="check-result"></div>
-                </div>
-
-                <div class="input-container">
-                    <label>
-                        <input type="checkbox" name="mailingAgreed" value="true" />
-                        메일 수신 동의
-                    </label>
-                </div>
-
-                <div class="input-container">
-                    <label for="interestField">관심 분야</label>
-                    <select id="interestField" name="interestField">
-                        <option value="IT">IT</option>
-                        <option value="LANGUAGE">어학</option>
-                        <option value="BUSINESS">경영</option>
-                        <option value="DESIGN">디자인</option>
-                        <option value="OTHER">기타</option>
-                    </select>
-                </div>
-
-                <div class="input-container">
-                    <label for="learningField">학습 분야</label>
-                    <select id="learningField" name="learningField">
-                        <option value="PROGRAMMING">프로그래밍</option>
-                        <option value="WEB">웹 개발</option>
-                        <option value="MOBILE">모바일 앱</option>
-                        <option value="DATA">데이터 사이언스</option>
-                        <option value="OTHER">기타</option>
-                    </select>
-                </div>
-
-                <div class="input-container">
-                    <label>
-                        <input type="checkbox" id="terms" required />
-                        서비스 이용약관에 동의합니다.
-                    </label>
-                </div>
-
-                <!-- ✅ 회원가입 버튼에 ID 추가 -->
-                <button type="submit" class="signup-btn" id="signupBtn">회원가입</button>
-            </form>
-
-            <div class="links">
-                <a href="/login">로그인으로 돌아가기</a>
+       <div class="logo-container">
+          <img th:src="@{/images/logo3.png}" class="logo-ad"/>
+       </div>
+       
+       <div class="full-container">
+           <form th:action="@{/signup}" method="post" th:object="${user}" 
+                 onsubmit="return validateForm()" class="signup-container">
+               <h2>회원가입</h2>
+   
+               <!-- 아이디 -->
+               <label for="userId">아이디</label>
+               <div class="id-check">
+                   <input type="text" id="userId" th:field="*{userId}" required>
+                  <button type="button" id="checkBtn">중복확인</button>
+                  <span id="checkResult" style="margin-left:10px;"></span>
+               </div>
+               <!-- 닉네임 -->
+               <label for="userNick">닉네임</label>
+            <div class="userNick-check">
+                   <input type="text" id="userNick" th:field="*{nickname}" required>
+                   <button type="button" id="nickCheckBtn" class="nick-check-btn">중복확인</button>
+                   <span id="nickCheckResult" style="margin-left:10px;"></span>
+               </div>
+            
+               <!-- 비밀번호 -->
+               <label for="userPw">비밀번호</label>
+               <div style="width:100%;">
+                  <input type="password" id="userPw" th:field="*{userPw}" required>
+               </div>
+   
+               <label for="confirmPw">비밀번호 확인</label>
+               <div style="width:100%;">
+                  <input type="password" id="confirmPw" th:field="*{userPwConfirm}" required>
+               </div>
+   
+               <!-- 이메일 -->
+               <label for="userEmail">이메일</label>
+               <div class="email-block">
+                   <div class="email-check">
+                       <input type="email" id="userEmail" th:field="*{email}" required>
+                       <button type="button" id="emailCheckBtn">중복확인</button>
+                   </div>
+                   <span id="emailCheckResult" style="margin-top:5px; display:block;"></span>
+   
+                   <!-- 메일 수신 동의 -->
+                   <div class="mailing-agree">
+                       <input type="checkbox" id="mailingAgreed" th:field="*{mailingAgreed}">
+                       <label for="mailingAgreed">메일 수신 동의</label>
+                   </div>
+               </div>
+   
+               <!-- 관심 분야 -->
+               <label for="interestArea">관심 분야</label>
+               <div style="width:100%;">
+                  <input type="text" id="interestArea" th:field="*{interestArea}">
+               </div>
+   
+               <!-- 학습 분야 -->
+               <label for="learningArea">학습 분야</label>
+            <div style="width:100%;">
+                  <input type="text" id="learningArea" th:field="*{learningArea}">
             </div>
-        </div>
+   
+               <!-- 숨김 필드 -->
+               <input type="hidden" id="attachmentCount" th:field="*{attachmentCount}" value="0">
+   
+               <!-- 약관 동의 -->
+               <label class="terms">
+                   <input type="checkbox" id="terms" required> 서비스 이용약관에 동의합니다.
+               </label>
+   
+               <button type="submit">회원가입</button>
+   
+               <div class="link">
+                   <a href="/login">로그인으로 돌아가기</a>
+               </div>
+           </form>
+       </div>
     </div>
 
-    <div th:replace="~{fragments/footer :: siteFooter}"></div>
-
-    <!-- ✅ jQuery 먼저 로드 -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script th:src="@{/js/signup.js}"></script>
+
+    <div th:replace="fragments/footer :: siteFooter"></div>
 </body>
 </html>
