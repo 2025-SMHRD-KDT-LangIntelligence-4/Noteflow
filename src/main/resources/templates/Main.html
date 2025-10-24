@@ -61,10 +61,15 @@ document.addEventListener("DOMContentLoaded", () => {
 		<div class="ad-banner-wrapper">
 		  <div class="ad-banner">
 		    <div class="ad-slide fade">
-		      <img class="ad-banner-img" th:src="@{/images/background.png}" alt="광고1">
+		      <img class="ad-banner-img" th:src="@{/images/sns_thm.jpg}" alt="광고1" style="background:#0090CF;">
+		      <a href="https://lms.smhrd.or.kr/home/main/indexMain" target="_blank" class="smhrd-link">페이지바로가기</a>
 		    </div>
 		    <div class="ad-slide fade">
-		      <img class="ad-banner-img" th:src="@{/images/logo3.png}" alt="광고2">
+		      <img class="ad-banner-img" 
+		      src="https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt12c582d9d58631b9/6504c4b7af4949338d926e6c/Masthead_Overwatch2_Logo.png" alt="광고2"
+		      style="background:linear-gradient(180deg, #d5d5d5  0, #939393 100%);"
+		      >
+		      <a href="https://overwatch.blizzard.com/ko-kr/" target="_blank" class="ad2-link">소집에 응답하기</a>
 		    </div>
 		    <div class="ad-slide fade">
 		      <img class="ad-banner-img" th:src="@{/images/logo2.png}" alt="광고3">
@@ -88,9 +93,11 @@ document.addEventListener("DOMContentLoaded", () => {
 				<div class="AI-comment-box">
 					<div class="comment-box">
 						<div class="schedule-alarm">
-    <span th:if="${nickname != null and nickname != ''}" th:text="|${nickname}님 오늘 스케줄이 있어요!|"></span>
-    <span th:if="${nickname == null or nickname == ''}">오늘 스케줄이 있어요!</span>
-</div>
+    						<span th:if="${nickname != null and nickname != ''}" th:text="|${nickname}님 |"></span>
+    						<span th:if="${nickname == null or nickname == ''}"></span>
+    						<span>오늘의 스케줄을</span>
+    						<span>확인 해주세요</span>
+						</div>
 						<a th:href="@{/schedule}" class="goSchedule-btn">스케줄 확인하러가기</a>
 					</div>
 				</div>
@@ -108,7 +115,10 @@ document.addEventListener("DOMContentLoaded", () => {
 				</div>
 				<div class="ad-temMarket">
 					<div class="ad-temMarket-comment-box">
-						<div class="ad-temMarket-comment">다양한 템플릿을 제공해 드립니다!</div>
+						<div class="ad-temMarket-comment">
+							<span>다양한 템플릿을</span>
+							<span>구매할 수 있어요!</span>
+						</div>
 						<a th:href="@{/schedule}" class="goSchedule-btn">템플릿 마켓가기</a>
 					</div>
 				</div>

@@ -30,7 +30,7 @@ body{
 }
 
 .nc-slide-container { 
-	height: 220px; 
+	height: 140px; 
 	background:#1e1e1e;  
 	display:flex; 
 	align-items:center;
@@ -71,7 +71,7 @@ body{
   justify-content:space-between; 
   align-items:stretch;
   width:240px; 
-  height:200px; 
+  height:125px; 
   flex:0 0 auto; 
   padding:10px; 
   border-right:1px solid #96d0ff; 

@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const $lengthHint      = document.getElementById('nc-lengthHint');
   
   // ==== 상태/상수 ====
-  const CARD_WIDTH = 240;
+  const CARD_WIDTH = 170;
   const MAX_TOKENS = 7000; // ✅ 추가
   const prompts    = window.prompts || [];
 
