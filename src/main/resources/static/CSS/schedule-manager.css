@@ -513,7 +513,7 @@ input[type="time" i]{
 /* 공통 변수 — 살짝 키움 */
 :root {
   --hl-size: 40px;   /* 기존 22px → 26px 로 아주 약간만 확대 */
-  --hl-stroke: 2px;/* 윤곽선 두께 소폭 증가 (2px → 2.5px) */
+  --hl-stroke: 1px;/* 윤곽선 두께 소폭 증가 (2px → 2.5px) */
 }
 
 .fc-daygrid-day-number {
@@ -550,14 +550,16 @@ input[type="time" i]{
 .day-highlight-pin svg [data-outline]{
   fill: none;                  /* 속 비우기 */
   stroke: currentColor;        /* 부모의 color 상속 → .color-xxx 또는 style.color */
-  stroke-width: 10;            /* viewBox(0~100) 기준 선두께: 10이 26px 크기에 적당 */
+  stroke-width: 9;            /* viewBox(0~100) 기준 선두께: 10이 26px 크기에 적당 */
   stroke-linecap: round;
   stroke-linejoin: round;
+  stroke-dasharray: 2 1.5;    /* ✔️ 점선 패턴으로 크레파스 느낌 */
 }
-
-/* (선택) 거친 질감 효과를 주고 싶다면 아래 하나만 켜면 됨 */
-.day-highlight-pin svg [data-outline] { stroke-dasharray: 2 1; }
-
+/* 별, 세모만 반투명으로 – 숫자 가독성 강화 */
+.symbol-star svg [data-outline],
+.symbol-triangle svg [data-outline]{
+  stroke-opacity: 0.72;  /* ✔️ 0.65~0.8 사이에서 취향대로 조절 */
+}
 /* 더 이상 사용 안 함: 배경이미지 방식
 .symbol-triangle, .symbol-star { background-image: none !important; }
 .symbol-circle, .symbol-square { border: none !important; }
