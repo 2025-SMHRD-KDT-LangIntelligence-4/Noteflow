@@ -18,7 +18,7 @@ body {
 } 
 /* 상단 파란색 바 */
 .header-top {
-    background-color: #96D0FF;
+    background:linear-gradient(300deg, #1E9AFF 0, #96d0ff 100%);;
     width: 100%;
     height: 50px;
     display: flex;
@@ -101,6 +101,7 @@ body {
 	align-items:center;
 	width:100%;
 	height:100%;
+	color:black;
 }
 .email-container{
 	width:100%;
@@ -214,14 +215,15 @@ body {
     align-items: center;
     justify-content: center;
     border: none;
-    font-size: 15px;
-    background-color: #96d0ff;
+    font-size: 14px;
 }
 
 .categori-container a:hover {
-   	color:#2FA1FF;
+   	
     font-weight:bold;
-    font-size:17px;
+    font-size:18px;
+    background:#96d0ff;
+    border-radius:10px;
 }
 
 /* 로그인 버튼 영역 */
@@ -296,9 +298,8 @@ body {
 }
 /* 현재 활성화된 메뉴 표시용 */
 .categori-container a.active {
-    color:#2FA1FF;
     font-weight:bold;
-    font-size:17px;
+    font-size:18px;
 }
 
 .top-button {
