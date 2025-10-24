@@ -8,31 +8,52 @@
     <link rel="stylesheet" th:href="@{/css/footer.css}" />
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
-    </head>
-<style>
-
-</style>
+</head>
 <body>
-    <div th:replace="fragments/header :: siteHeader"></div>
+    <div th:replace="~{fragments/header :: siteHeader}"></div>
 
-	<div th:if="${param.error}" class="login-popup-overlay">
-	    <div class="login-popup">
-	        <p>로그인 실패! 아이디 또는 비밀번호를 확인해주세요.</p>
-	        <button onclick="closePopup()">확인</button>
-	    </div>
-	</div>
+    <!-- 기존 팝업들 -->
+    <div th:if="${param.error != null}" class="login-popup-overlay">
+        <div class="login-popup">
+            <p>로그인 실패! 아이디 또는 비밀번호를 확인해주세요.</p>
+            <button onclick="closePopup()">확인</button>
+        </div>
+    </div>
 
-	<!-- 로그아웃 -->
-	<div th:if="${param.logout}" class="login-popup-overlay">
-	    <div class="login-popup success">
-	        <p>로그아웃되었습니다.</p>
-	        <button onclick="closePopup()">확인</button>
-	    </div>
-	</div>
+    <div th:if="${param.logout != null}" class="login-popup-overlay">
+        <div class="login-popup success">
+            <p>로그아웃되었습니다.</p>
+            <button onclick="closePopup()">확인</button>
+        </div>
+    </div>
+    
+    <div th:if="${param.emailNotVerified != null}" class="login-popup-overlay">
+        <div class="login-popup">
+            <p>⚠️ 이메일 인증이 완료되지 않았습니다.<br>메일함을 확인해주세요.</p>
+            <button onclick="resendEmail()">인증메일 재발송</button>
+            <button onclick="closePopup()">확인</button>
+        </div>
+    </div>
+
+    <div th:if="${param.signupSuccess != null and param.needEmailVerification != null}" class="login-popup-overlay">
+        <div class="login-popup success">
+            <p>✅ 회원가입이 완료되었습니다!<br>📧 이메일 인증 메일을 발송했습니다.<br>메일함을 확인해주세요.</p>
+            <button onclick="closePopup()">확인</button>
+        </div>
+    </div>
+
+    <!-- ✅ 비밀번호 재설정 완료 팝업 추가 -->
+    <div th:if="${param.passwordReset != null}" class="login-popup-overlay">
+        <div class="login-popup success">
+            <p>✅ 비밀번호가 성공적으로 변경되었습니다!<br>새로운 비밀번호로 로그인해주세요.</p>
+            <button onclick="closePopup()">확인</button>
+        </div>
+    </div>
+
     <div class="a">
-    	<div class="logo-container">
-    		<img th:src="@{/images/logo3.png}" class="logo-ad"/>
-    	</div>
+        <div class="logo-container">
+            <img th:src="@{/images/logo3.png}" class="logo-ad"/>
+        </div>
         <div class="login-wrapper">
             <h1>Login</h1>
 
@@ -53,13 +74,14 @@
             </form>
 
             <div class="links">
-                <a href="#">비밀번호 찾기</a>
+                <!-- ✅ 비밀번호 찾기 링크를 실제 페이지로 연결 -->
+                <a href="/auth/forgot-password">비밀번호 찾기</a>
                 <span>|</span>
                 <a th:href="@{/signup}">회원가입</a>
             </div>
         </div>
     </div>
-<div th:replace="fragments/footer :: siteFooter"></div>
+    <div th:replace="~{fragments/footer :: siteFooter}"></div>
 
 <script>
   function closePopup() {
@@ -67,9 +89,37 @@
     if (popup) popup.remove();
   }
 
-  if (urlParams.has('expired')) {
-      alert('다른 곳에서 로그인하여 현재 세션이 종료되었습니다.');
+  function resendEmail() {
+    const email = prompt('인증 메일을 재발송할 이메일 주소를 입력하세요:');
+    if (!email) return;
+    
+    closePopup();
+    
+    const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+    
+    fetch('/auth/resend-verification', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            [csrfHeader]: csrfToken
+        },
+        body: 'email=' + encodeURIComponent(email)
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.status === 'success' ? '✅ ' + data.message : '❌ ' + data.message);
+    })
+    .catch(() => alert('❌ 오류가 발생했습니다.'));
   }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    if (urlParams.has('expired')) {
+        alert('다른 곳에서 로그인하여 현재 세션이 종료되었습니다.');
+    }
+  });
 </script>
 </body>
 </html>

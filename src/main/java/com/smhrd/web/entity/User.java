@@ -39,6 +39,12 @@ public class User {
     @Column(name = "mailing_agreed", nullable = false)
     private Boolean mailingAgreed;
 
+    @Column(name = "email_verified", nullable = false)
+    private Boolean emailVerified = false;
+
+    @Column(name = "account_enabled", nullable = false)
+    private Boolean accountEnabled = false;
+    
     @Column(name = "nickname")
     private String nickname;
 
@@ -97,4 +103,6 @@ public class User {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Note> notes = new ArrayList<>();
+
+	
 }

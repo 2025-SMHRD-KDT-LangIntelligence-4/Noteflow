@@ -28,7 +28,10 @@ public class Note {
 
     @Column(name = "source_id")
     private String sourceId;
-
+    // ✅ 추가
+    @Column(name = "prompt_id")
+    private Long promptId;
+    
     @Column(nullable = false)
     private String title;
 

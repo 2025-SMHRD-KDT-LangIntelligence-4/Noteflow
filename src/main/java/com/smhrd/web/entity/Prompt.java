@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 public class Prompt {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "prompt_id")
     private Long promptId;
 
     @Column(nullable = false)
@@ -24,7 +25,7 @@ public class Prompt {
     @Column(name = "example_output", nullable = false, columnDefinition = "TEXT")
     private String exampleOutput;
 
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)  // ✅ 추가
     private LocalDateTime createdAt;
     
     @Column(name = "priority", nullable = false)

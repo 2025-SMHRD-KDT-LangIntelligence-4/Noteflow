@@ -26,28 +26,65 @@ document.addEventListener('DOMContentLoaded', () => {
   const $tokenCount      = document.getElementById('nc-tokenCount');
   const $lengthHint      = document.getElementById('nc-lengthHint');
   
+  // ✅ 버전 선택 버튼
+  const $simpleBtn  = document.querySelector('.simpleBtn');
+  const $normalBtn  = document.querySelector('.normalBtn');
+  const $advanceBtn = document.querySelector('.advanceBtn');
+  const $versionBtns = [$simpleBtn, $normalBtn, $advanceBtn];
+  
   // ==== 상태/상수 ====
   const CARD_WIDTH = 170;
-  const MAX_TOKENS = 7000; // ✅ 추가
-  const prompts    = window.prompts || [];
-
+  const MAX_TOKENS = 7000;
+  
+  // ✅ 전체 프롬프트 & 필터링된 프롬프트 (1~16번만)
+  const allPrompts = window.prompts || [];
+  const displayPrompts = allPrompts.filter(p => p.promptId >= 1 && p.promptId <= 16);
+  
+  // ✅ 현재 선택된 버전 (기본값: 심플)
+  let selectedVersion = 'simple';
+  
   const state = {
-    editor: null, editor2: null,viewer: null,
+    editor: null,
+    editor2: null,
+    viewer: null,
     isSummaryShown: false,
     isPaused: false,
     currentPosition: 0,
     cloneCount: 0,
-    selectedPromptIdx: null,     // 확정 선택
-    peekChkIdx: null,            // 체크박스 미리보기
-    truncated: false, blocked: false, sizeBytes: 0,
-    mode: 'text', fileId: null, fileName: null,
+    selectedPromptIdx: null,  // displayPrompts 배열의 인덱스 (0~15)
+    peekChkIdx: null,         // 체크박스 미리보기
+    truncated: false,
+    blocked: false,
+    sizeBytes: 0,
+    mode: 'text',
+    fileId: null,
+    fileName: null,
     hasProcessedOnce: false,
-    inputCache: ''  ,             // 뒤로가기 캐시
-    lastSummary: null,  // ✅ 마지막 요약 결과 저장
-    lastWarn: null,      // ✅ 경고 메시지 저장
+    inputCache: '',           // 뒤로가기 캐시
+    lastSummary: null,        // 마지막 요약 결과 저장
+    lastWarn: null,           // 경고 메시지 저장
     isSaving: false
   };
-
+  
+  // ✅ 버전 버튼 클릭 이벤트
+  $versionBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      $versionBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedVersion = btn.dataset.version;
+      console.log(`✅ 버전 선택: ${selectedVersion}`);
+    });
+  });
+  
+  // ✅ 버전에 따른 promptId offset 계산
+  function getPromptIdOffset() {
+    switch(selectedVersion) {
+      case 'simple': return 32;   
+      case 'normal': return 16;  
+      case 'advance': return 0; 
+      default: return 0;
+    }
+  }
   // ==== Toast UI: Editor & Viewer ====
   state.editor = new toastui.Editor({
     el: document.getElementById('nc-editor'),
@@ -235,33 +272,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 렌더 & 무한 캐러셀 복제
   function renderSlider() {
-    $buttonContainer.innerHTML = '';
-    prompts.forEach((p, idx) => $buttonContainer.appendChild(makeCard(p, idx)));
+      $buttonContainer.innerHTML = '';
+      displayPrompts.forEach((p, idx) => $buttonContainer.appendChild(makeCard(p, idx)));
 
-    const wrapperWidth = document.querySelector('.nc-slide-container').clientWidth;
-    state.cloneCount = Math.ceil(wrapperWidth / CARD_WIDTH);
+      const wrapperWidth = document.querySelector('.nc-slide-container').clientWidth;
+      state.cloneCount = Math.ceil(wrapperWidth / CARD_WIDTH);
+      const originals = Array.from($buttonContainer.children);
 
-    const originals = Array.from($buttonContainer.children);
+      // 앞쪽 복제
+      for (let i = displayPrompts.length - state.cloneCount; i < displayPrompts.length; i++) {
+        const clone = originals[i].cloneNode(true);
+        wireCardEvents(clone);
+        $buttonContainer.insertBefore(clone, $buttonContainer.firstChild);
+      }
 
-    // 앞쪽 복제
-    for (let i = prompts.length - state.cloneCount; i < prompts.length; i++) {
-      const clone = originals[i].cloneNode(true);
-      wireCardEvents(clone);
-      $buttonContainer.insertBefore(clone, $buttonContainer.firstChild);
+      // 뒤쪽 복제
+      for (let i = 0; i < state.cloneCount; i++) {
+        const clone = originals[i].cloneNode(true);
+        wireCardEvents(clone);
+        $buttonContainer.appendChild(clone);
+      }
+
+      state.currentPosition = state.cloneCount * CARD_WIDTH;
+      $buttonContainer.style.transform = `translateX(-${state.currentPosition}px)`;
+      startAutoSlide();
     }
-    // 뒤쪽 복제
-    for (let i = 0; i < state.cloneCount; i++) {
-      const clone = originals[i].cloneNode(true);
-      wireCardEvents(clone);
-      $buttonContainer.appendChild(clone);
-    }
-
-    // 초기 위치
-    state.currentPosition = state.cloneCount * CARD_WIDTH;
-    $buttonContainer.style.transform = `translateX(-${state.currentPosition}px)`;
-
-    startAutoSlide();
-  }
 
   // ==== 슬라이드 이동 ====
   let animId = null, lastTime = Date.now();
@@ -325,28 +360,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ==== ✅ 프롬프트 확정 선택 → [입력 단계]로 전환 ====
   function finalizePromptSelection(index) {
-    state.selectedPromptIdx = index;
-    const p = prompts[index];
-
-    // 상단 라벨
-    $selectedName.textContent = `선택한 프롬프트: ${p.title}`;
-
-    // 입력 캐시
-    state.inputCache = state.editor.getMarkdown();
-
-    // 👉 전환: 프롬프트 단계 숨김, 입력 단계 표시
-    $promptStage.style.display = 'none';
-    $inputStage.style.display  = 'flex';
-
-    // 미리보기 체크 해제 + 슬라이드 재개
-    document.querySelectorAll('.nc-peek-check').forEach(c => c.checked = false);
-    state.peekChkIdx = null;
-    resumeSlider();
-
-    // 에디터 복원 + 상태
-    if (state.inputCache) state.editor.setMarkdown(state.inputCache);
-    updateCounters();
-  }
+      state.selectedPromptIdx = index;
+      const p = displayPrompts[index];
+      
+      $selectedName.textContent = `선택한 프롬프트: ${p.title}`;
+      state.inputCache = state.editor.getMarkdown();
+      
+      $promptStage.style.display = 'none';
+      $inputStage.style.display = 'flex';
+      
+      document.querySelectorAll('.nc-peek-check').forEach(c => c.checked = false);
+      state.peekChkIdx = null;
+      resumeSlider();
+      
+      if (state.inputCache) state.editor.setMarkdown(state.inputCache);
+      updateCounters();
+    }
 
   // 단계 복원 ====
   $btnBack.addEventListener('click', () => {
@@ -501,105 +530,123 @@ document.addEventListener('DOMContentLoaded', () => {
     const overlay = document.getElementById('nc-loadingOverlay');
     if (overlay) { overlay.style.display = isLoading ? 'flex' : 'none'; overlay.textContent = message; }
   }
-  async function requestTextSummary(contentToSend, promptTitle) {
-    const res = await fetch('/notion/create-text', {
-      method:'POST', headers:withCsrf({'Content-Type':'application/json'}),
-      body: JSON.stringify({ content: contentToSend, promptTitle })
-    });
-    const data = await res.json();
-    if (!data.success) throw new Error(data.error || '요약 실패');
-    return data;
-  }
-  async function requestFileSummaryById(fileId, promptTitle) {
-    const res = await fetch('/notion/create-by-id', {
-      method:'POST', headers:withCsrf({'Content-Type':'application/json'}),
-      body: JSON.stringify({ fileId, promptTitle })
-    });
-    const data = await res.json();
-    return data;
-  }
+  async function requestTextSummary(contentToSend, promptId) {
+      const res = await fetch('/notion/create-text', {
+        method: 'POST',
+        headers: {
+          ...withCsrf(),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          content: contentToSend,
+          promptId: promptId  // ✅ promptId 전달
+        })
+      });
+      
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || '요약 실패');
+      return data;
+    }
+	async function requestFileSummaryById(fileId, promptId) {
+	    const res = await fetch('/notion/create-by-id', {
+	      method: 'POST',
+	      headers: {
+	        ...withCsrf(),
+	        'Content-Type': 'application/json'
+	      },
+	      body: JSON.stringify({
+	        fileId: fileId,
+	        promptId: promptId  // ✅ promptId 전달
+	      })
+	    });
+	    
+	    const data = await res.json();
+	    return data;
+	  }
 
   // 요약하기
   $temsetBtn.addEventListener('click', async () => {
-    if (state.selectedPromptIdx === null) {
-      alert('프롬프트를 먼저 선택하세요.');
-      return;
-    }
-
-    const prompt = prompts[state.selectedPromptIdx];
-
-    try {
-      setLoading(true, '요약 중...');
-
-      let response;
-
-      // ==== 파일 모드 ====
-      if (state.mode === 'file') {
-        if (!state.fileId) {
-          alert('파일 ID가 없습니다.');
-          setLoading(false);
-          return;
-        }
-
-        response = await requestFileSummaryById(state.fileId, prompt.title);
-
-        if (response.success) {
-          // ✅ state에 저장
-          state.lastSummary = response.summary;
-          state.lastWarn = response.message || '';
-
-          showSummaryResult(state.lastSummary, state.lastWarn);
-
-        } else {
-          const msg = response.error || response.message;
-          $resultBox.innerHTML = `<div class="nc-error">${msg}</div>`;
-        }
-
-        // ==== 텍스트 모드 ====
-      } else {
-        let contentToSend;
-
-        if (!state.hasProcessedOnce) {
-          const promptContent = prompt.content;
-          const md = state.editor.getMarkdown().trim();
-          if (!md) {
-            alert('입력 내용이 없습니다.');
-            setLoading(false);
-            return;
-          }
-          contentToSend = md + '\n\n' + promptContent;
-        } else {
-          contentToSend = state.editor.getMarkdown().trim();
-          if (!contentToSend) {
-            alert('입력 내용이 없습니다.');
-            setLoading(false);
-            return;
-          }
-        }
-
-        response = await requestTextSummary(contentToSend, prompt.title);
-
-        // ✅ state에 저장
-        state.lastSummary = response.summary;
-        state.lastWarn = response.warn || '';
-
-        showSummaryResult(state.lastSummary, state.lastWarn);
+      if (state.selectedPromptIdx === null) {
+        alert('프롬프트를 먼저 선택해주세요.');
+        return;
       }
 
-      state.hasProcessedOnce = true;
-      alert('요약 완료!');
-      updateCounters();
+      // 선택한 프롬프트 (1~16번 중 하나)
+      const selectedPrompt = displayPrompts[state.selectedPromptIdx];
+      
+      // ✅ 버전에 따라 offset 추가
+      const offset = getPromptIdOffset();
+      const actualPromptId = selectedPrompt.promptId + offset;
+      
+      console.log(`🔥 선택 프롬프트ID: ${selectedPrompt.promptId}, 버전: ${selectedVersion}, 실제 사용: ${actualPromptId}`);
 
-    } catch (err) {
-      console.error(err);
-      alert('오류: ' + err.message);
-    } finally {
-      setLoading(false);
-    }
-  });
+      try {
+        setLoading(true, '요약 중입니다...');
+        let response;
 
-// ✅ 요약 결과 표시 함수 (중복 제거)
-// ✅ 요약 결과 표시 함수 추가
+        if (state.mode === 'file') {
+          if (!state.fileId) {
+            alert('파일 ID가 없습니다.');
+            setLoading(false);
+            return;
+          }
+          
+          // ✅ actualPromptId 전달
+          response = await requestFileSummaryById(state.fileId, actualPromptId);
+          
+          if (response.success) {
+            state.lastSummary = response.summary;
+            state.lastWarn = response.message;
+            showSummaryResult(state.lastSummary, state.lastWarn);
+          } else {
+            const msg = response.error || response.message || '요약 실패';
+            $resultBox.innerHTML = `<div class="nc-error">${msg}</div>`;
+          }
+        } else {
+          // ✅ 텍스트 모드
+          let contentToSend;
+          
+          if (!state.hasProcessedOnce) {
+            const promptContent = selectedPrompt.content || '';
+            const md = state.editor.getMarkdown().trim();
+            
+            if (!md) {
+              alert('내용을 입력해주세요.');
+              setLoading(false);
+              return;
+            }
+            
+            contentToSend = md + '\n\n' + promptContent;
+          } else {
+            contentToSend = state.editor.getMarkdown().trim();
+            
+            if (!contentToSend) {
+              alert('내용을 입력해주세요.');
+              setLoading(false);
+              return;
+            }
+          }
+
+          // ✅ actualPromptId 전달
+          response = await requestTextSummary(contentToSend, actualPromptId);
+          
+          state.lastSummary = response.summary;
+          state.lastWarn = response.warn;
+          showSummaryResult(state.lastSummary, state.lastWarn);
+          state.hasProcessedOnce = true;
+        }
+
+        alert('요약이 완료되었습니다!');
+        updateCounters();
+      } catch (err) {
+        console.error(err);
+        alert(`오류: ${err.message}`);
+      } finally {
+        setLoading(false);
+      }
+    });
+
+// ✅ 요약 결과 표시 
   function showSummaryResult(summary, warnMsg) {
     hideEditorArea();
 
@@ -703,26 +750,27 @@ document.addEventListener('DOMContentLoaded', () => {
     if (fileSection) fileSection.style.display = 'block';
   }
 
-  // 저장하기
+  // ✅ 저장 버튼
   $saveBtn.addEventListener('click', async () => {
-    // ✅ 이미 저장 중이면 무시
-    if (state.isSaving) {
-      return;
-    }
+    if (state.isSaving) return;
 
     const title = $titleInput.value.trim();
-
     if (!title) {
-      alert('제목을 입력하세요.');
+      alert('제목을 입력해주세요.');
       return;
     }
 
-    const promptId = state.selectedPromptIdx !== null
-        ? String(state.selectedPromptIdx)
-        : '0';
+    // ✅ 실제 사용된 promptId 계산
+    let finalPromptId = null;
+    if (state.selectedPromptIdx !== null) {
+      const selectedPrompt = displayPrompts[state.selectedPromptIdx];
+      const offset = getPromptIdOffset();
+      finalPromptId = selectedPrompt.promptId + offset;
+    }
 
-    let content = '';
-    let originalContent = '';
+    let content;
+    let originalContent;
+
     if (state.isSummaryShown && state.editor2) {
       content = state.editor2.getMarkdown();
       originalContent = state.editor.getMarkdown();
@@ -732,11 +780,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (!content.trim()) {
-      alert('저장할 내용이 없습니다.');
+      alert('내용을 입력해주세요.');
       return;
     }
 
-    // ✅ 저장 시작 - 버튼 비활성화
     state.isSaving = true;
     $saveBtn.disabled = true;
     $saveBtn.textContent = '저장 중...';
@@ -746,37 +793,34 @@ document.addEventListener('DOMContentLoaded', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...csrfHeader && csrfToken ? { [csrfHeader]: csrfToken } : {}
+          ...(csrfHeader && csrfToken ? { [csrfHeader]: csrfToken } : {})
         },
         credentials: 'same-origin',
         body: JSON.stringify({
           title: title,
-          summary: content,              // ✅ 수정: content 사용
+          summary: content,
           originalContent: originalContent,
-          promptId: promptId,            // ✅ 수정: 위에서 정의한 promptId 사용
-          gridfsId: state.fileId || ''   // ✅ 원본 파일 ID (없으면 빈 문자열)
+          promptId: finalPromptId,  // ✅ 실제 사용된 promptId 저장
+          gridfsId: state.fileId
         })
       });
 
       const data = await res.json();
-
+      
       if (!data.success) {
         throw new Error(data.error || '저장 실패');
       }
 
-      // ✅ 세션 스토리지에 저장
-      sessionStorage.setItem('noteId', data.noteId || '');
+      sessionStorage.setItem('noteId', data.noteId);
       sessionStorage.setItem('keywords', (data.keywords || []).join(', '));
       sessionStorage.setItem('categoryPath', data.categoryPath || '');
       sessionStorage.setItem('folderId', data.folderId || '');
-
+      
       window.location.href = '/notion/complete';
-
     } catch (err) {
-      console.error('❌ 저장 오류:', err);
-      alert('저장 실패: ' + err.message);
-
-      // ✅ 에러 시 버튼 다시 활성화
+      console.error('저장 오류:', err);
+      alert(`저장 실패: ${err.message}`);
+    } finally {
       state.isSaving = false;
       $saveBtn.disabled = false;
       $saveBtn.textContent = '저장하기';
