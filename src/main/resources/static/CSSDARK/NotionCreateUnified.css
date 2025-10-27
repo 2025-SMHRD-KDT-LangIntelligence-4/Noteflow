@@ -323,16 +323,20 @@ body{
 .nc-result-box .nc-error { background:#3e3e3e; color:#fdecea; padding:8px; border-radius:6px; }
 .nc-result-box .nc-md { white-space: pre-wrap; font-size:14px; line-height:1.6; }
 
-/* 로딩 오버레이 */
+/* 로딩 오버레이 (Dark Mode를 고려하여 배경색 조정) */
 #nc-loadingOverlay { 
-	display:none; 
-	position:fixed; 
-	inset:0; 
-	background:rgba(255,255,255,.75); 
-	z-index:999; 
-	font-size:18px; 
-	align-items:center; 
-	justify-content:center; 
+    display: none; 
+    position: fixed; 
+    inset: 0; 
+    /* 투명도를 유지하면서 Dark Mode에 맞게 배경색 조정 */
+    background: rgba(30, 30, 30, 0.9); 
+    z-index: 999; 
+    font-size: 18px; 
+    align-items: center; 
+    justify-content: center; 
+    color: white; /* 로딩 메시지 색상 */
+    flex-direction: column; /* 메시지와 스피너를 수직 정렬 */
+    gap: 15px;
 }
 
 /* 반응형 */
@@ -414,4 +418,19 @@ body{
 /* 선택된 버튼 스타일 (선택사항) */
 .version-btn-container button.active {
   border:2px solid green;
+}
+/* 🌟 스피너 스타일 및 애니메이션 추가 🌟 */
+.spinner-dots {
+    display: inline-block;
+    width: 60px; /* 스피너 크기 */
+    height: 60px;
+    border: 5px solid #f3f3f3; /* 옅은 테두리 */
+    border-top: 5px solid #2FA1FF; /* 돌아가는 부분 색상 (파란색) */
+    border-radius: 50%;
+    animation: spin 1s linear infinite; /* 1초에 한 바퀴, 무한 반복 */
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }

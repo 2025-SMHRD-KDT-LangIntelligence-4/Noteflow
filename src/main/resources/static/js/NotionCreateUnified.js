@@ -525,11 +525,34 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ==== LLM 요청 ====
-  function setLoading(isLoading, message='요약 중...') {
-    document.querySelectorAll('button').forEach(b => b.disabled = isLoading);
+  
+  // 🌟 요청하신 showLoadingOverlay 함수 추가 🌟
+  function showLoadingOverlay() {
     const overlay = document.getElementById('nc-loadingOverlay');
-    if (overlay) { overlay.style.display = isLoading ? 'flex' : 'none'; overlay.textContent = message; }
+    if (overlay) overlay.style.display = 'flex';
   }
+
+  // 🌟 요청하신 hideLoadingOverlay 함수 추가 🌟
+  function hideLoadingOverlay() {
+    const overlay = document.getElementById('nc-loadingOverlay');
+    if (overlay) overlay.style.display = 'none';
+  }
+  
+    function setLoading(isLoading, message='요약 중...') {
+      document.querySelectorAll('button').forEach(b => b.disabled = isLoading);
+      const overlay = document.getElementById('nc-loadingOverlay');
+      // 🌟 추가: 메시지를 표시할 새 요소를 선택
+      const msgEl = document.getElementById('nc-loadingMessage'); 
+
+      if (overlay) { 
+          overlay.style.display = isLoading ? 'flex' : 'none';
+          
+          // 🌟 수정: 텍스트를 오버레이 전체가 아닌 메시지 요소에 설정
+          if (msgEl) {
+               msgEl.textContent = message;
+          }
+      }
+    }
   async function requestTextSummary(contentToSend, promptId) {
       const res = await fetch('/notion/create-text', {
         method: 'POST',
