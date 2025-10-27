@@ -67,10 +67,13 @@
 	</div>
 
     <div class="AI-position-container">
-        <div class="AI-container">
-        	<a class ="AI=button" id="aiButton"><img th:src="@{/images/AI.png}" class="AI-image"/></a>
-        </div>
-    </div>
+	  <div class="AI-container">
+	    <!-- class 오타 수정 + id 추가 -->
+	    <a class="AI-button" id="aiButton">
+	      <img th:src="@{/images/AI.png}" class="AI-image" id="aiImage" />
+	    </a>
+	  </div>
+	</div>
 
     <div class="top-button-position-container">
         <button class ="top-button">TOP</button>
@@ -159,7 +162,29 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 <script>
-	
+document.addEventListener("DOMContentLoaded", () => {
+  const aiButton = document.getElementById("aiButton");
+  const aiImage = document.getElementById("aiImage");
+
+  // 정적 경로 (Thymeleaf가 서버에서 변환함)
+  const pngPath = "/images/AI.png";
+  const gifPath = "/images/AI.gif";
+
+  // ✅ 클릭 이벤트
+  aiButton.addEventListener("click", () => {
+    // 이미 gif 재생 중이면 다시 클릭해도 무시
+    if (aiImage.src.includes("AI.gif")) return;
+
+    // gif로 변경
+    aiImage.src = gifPath;
+
+    // ✅ gif 재생이 끝난 후 png로 자동 복귀
+    // 보통 gif는 2~3초이므로, 실제 재생 길이에 맞춰 조정 가능
+    setTimeout(() => {
+      aiImage.src = pngPath;
+    }, 3000); // ← 재생시간 (밀리초 단위)
+  });
+});
 </script>
 	<script th:src="@{/js/chatbot.js}"></script>
 </header>

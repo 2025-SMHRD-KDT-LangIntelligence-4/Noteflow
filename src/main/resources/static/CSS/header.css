@@ -295,6 +295,10 @@ body {
 .AI-image {
 	width:100%;
 	height:100%;
+	border-radius: 50%;      
+  	object-fit: cover;       
+  	overflow: hidden;       
+  	transition: all 0.3s ease;
 }
 /* 현재 활성화된 메뉴 표시용 */
 .categori-container a.active {
