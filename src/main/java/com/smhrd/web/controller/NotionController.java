@@ -161,13 +161,13 @@ public class NotionController {
     @PostMapping("/create-text")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> createFromText(
-            @RequestBody Map<String, String> req,
-            Authentication auth
+        @RequestBody Map<String, String> req,
+        Authentication auth
     ) {
         Long userIdx = ((CustomUserDetails) auth.getPrincipal()).getUserIdx();
         String content = req.getOrDefault("content", "");
         
-        // ✅ promptId로 변경
+        // ✅ promptId 파싱
         Long promptId = null;
         try {
             String promptIdStr = req.get("promptId");
@@ -178,34 +178,26 @@ public class NotionController {
             log.warn("⚠️ promptId 파싱 실패: {}", req.get("promptId"));
         }
         
+        // ✅ 기본값 설정 (promptId가 없으면 1번 사용)
+        if (promptId == null) {
+            promptId = 1L; // "심플버전"의 promptId
+        }
+
         Map<String, Object> result = new HashMap<>();
-        
         try {
-            // ✅ promptId로 Prompt 엔티티 조회
-            String promptTitle = "심플버전"; // 기본값
-            if (promptId != null) {
-                Optional<Prompt> promptOpt = promptRepository.findByPromptIdValue(promptId);
-                if (promptOpt.isPresent()) {
-                    promptTitle = promptOpt.get().getTitle();
-                } else {
-                    log.warn("⚠️ 프롬프트를 찾을 수 없음: promptId={}", promptId);
-                }
-            }
-            
-            log.info("✅ 텍스트 요약 요청: userIdx={}, promptId={}, promptTitle={}, contentLength={}", 
-                     userIdx, promptId, promptTitle, content.length());
-            
-            // LLM 요약 실행
-            var summary = llmService.summarizeLongDocument(userIdx, promptTitle, content);
-            
+            log.info("✅ 텍스트 요약 요청: userIdx={}, promptId={}, contentLength={}",
+                userIdx, promptId, content.length());
+
+            // ✅ promptId로 직접 호출 (promptTitle 조회 불필요)
+            var summary = llmService.summarizeLongDocument(userIdx, promptId, content);
+
             result.put("success", summary.isSuccess());
             result.put("summary", summary.getSummaryMarkdown());
             result.put("mode", summary.getMode());
             result.put("keywords", summary.getKeywords());
             result.put("message", summary.getMessage());
-            
+
             return ResponseEntity.ok(result);
-            
         } catch (Exception e) {
             log.error("❌ 텍스트 요약 실패: {}", e.getMessage(), e);
             return ResponseEntity.status(500)
@@ -219,33 +211,27 @@ public class NotionController {
     @PostMapping("/create-file")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> createFromFile(
-            @RequestParam("file") MultipartFile file,
-            @RequestParam(value = "promptId", required = false) Long promptId,
-            Authentication auth
+        @RequestParam("file") MultipartFile file,
+        @RequestParam(value = "promptId", required = false) Long promptId,
+        Authentication auth
     ) throws IOException {
         Long userIdx = ((CustomUserDetails) auth.getPrincipal()).getUserIdx();
-        Map<String, Object> result = new HashMap<>();
         
+        // ✅ 기본값 설정
+        if (promptId == null) {
+            promptId = 1L;
+        }
+
+        Map<String, Object> result = new HashMap<>();
         try {
             String text = fileParseService.extractText(file);
-            
-            // ✅ promptId로 Prompt 엔티티 조회
-            String promptTitle = "심플버전"; // 기본값
-            if (promptId != null) {
-                Optional<Prompt> promptOpt = promptRepository.findByPromptIdValue(promptId);
-                if (promptOpt.isPresent()) {
-                    promptTitle = promptOpt.get().getTitle();
-                } else {
-                    log.warn("⚠️ 프롬프트를 찾을 수 없음: promptId={}", promptId);
-                }
-            }
-            
-            log.info("✅ 파일 업로드 요약 요청: fileName={}, promptId={}, promptTitle={}", 
-                     file.getOriginalFilename(), promptId, promptTitle);
-            
-            // LLM 요약 실행
-            var summary = llmService.summarizeLongDocument(userIdx, promptTitle, text);
-            
+
+            log.info("✅ 파일 업로드 요약 요청: fileName={}, promptId={}",
+                file.getOriginalFilename(), promptId);
+
+            // ✅ promptId로 직접 호출
+            var summary = llmService.summarizeLongDocument(userIdx, promptId, text);
+
             result.put("success", summary.isSuccess());
             result.put("summary", summary.getSummaryMarkdown());
             result.put("mode", summary.getMode());
@@ -253,15 +239,15 @@ public class NotionController {
             result.put("message", summary.getMessage());
             result.put("fileName", file.getOriginalFilename());
             result.put("fileSize", file.getSize());
-            
+
             return ResponseEntity.ok(result);
-            
         } catch (Exception e) {
             log.error("❌ 파일 요약 실패: {}", e.getMessage(), e);
             return ResponseEntity.status(500)
                 .body(Map.of("success", false, "error", e.getMessage()));
         }
     }
+
 
     // ------------------------------------------------------------
     // ✅ 노트 저장 (promptId 저장)
