@@ -242,7 +242,7 @@ body {
 .reward-img{
 	width:95%;
 	height:180px;
-	
+	background:white;
 }
 .reward-name{
 	display: flex;

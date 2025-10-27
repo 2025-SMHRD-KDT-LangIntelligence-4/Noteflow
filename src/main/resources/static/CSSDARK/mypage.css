@@ -242,12 +242,14 @@ body {
     opacity: 0.7;
     align-items:center;
     flex-shrink:0;
+    object-fit:cover;
 }
 .reward-img{
 	width:95%;
 	height:180px;
-	
+	background:white;
 }
+
 .reward-name{
 	display: flex;
     align-items: center;

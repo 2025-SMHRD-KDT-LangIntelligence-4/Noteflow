@@ -303,13 +303,13 @@ body {
 
 /* GIF일 때 */
 .AI-image.gif-mode {
-  width:240px;
+  width:180px;
   height:180px;
   border-radius: 50%;
   background-color: #000;
   box-shadow: 0 0 15px rgba(0,0,0,0.4);
   display:flex;
-  object-fit:contain;
+  object-fit:cover;
   
 }
 /* 현재 활성화된 메뉴 표시용 */
