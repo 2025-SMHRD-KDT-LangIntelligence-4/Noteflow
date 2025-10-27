@@ -68,9 +68,8 @@
 
     <div class="AI-position-container">
 	  <div class="AI-container">
-	    <!-- class 오타 수정 + id 추가 -->
 	    <a class="AI-button" id="aiButton">
-	      <img th:src="@{/images/AI.png}" class="AI-image" id="aiImage" />
+	      <img th:src="@{/images/AI.png}" class="AI-image png-mode" id="aiImage" />
 	    </a>
 	  </div>
 	</div>
@@ -163,30 +162,40 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  const aiButton = document.getElementById("aiButton");
-  const aiImage = document.getElementById("aiImage");
-
-  // 정적 경로 (Thymeleaf가 서버에서 변환함)
+  const aiButton = document.getElementById('aiButton');
+  const aiImage = document.getElementById("aiImage"); // aiImage 변수 선언 확인!
   const pngPath = "/images/AI.png";
   const gifPath = "/images/AI.gif";
+  
+  if (aiButton && aiImage) {
+      aiButton.addEventListener("click", () => {
+        
+          // 💡 모달 열기 로직은 chatbot.js에서 담당하므로 여기서는 GIF 전환만 처리합니다. 
+          //    단, 이 클릭 이벤트는 GIF 전환이 필요할 때마다 실행됩니다.
 
-  // ✅ 클릭 이벤트
-  aiButton.addEventListener("click", () => {
-    // 이미 gif 재생 중이면 다시 클릭해도 무시
-    if (aiImage.src.includes("AI.gif")) return;
+          // 중복 방지 체크는 유지
+          if (aiImage.src.includes("AI.gif")) return; 
 
-    // gif로 변경
-    aiImage.src = gifPath;
+          // ✅ 캐시 무력화 파라미터 추가
+          const gifPathWithCacheBuster = gifPath + '?' + new Date().getTime();
 
-    // ✅ gif 재생이 끝난 후 png로 자동 복귀
-    // 보통 gif는 2~3초이므로, 실제 재생 길이에 맞춰 조정 가능
-    setTimeout(() => {
-      aiImage.src = pngPath;
-    }, 3000); // ← 재생시간 (밀리초 단위)
-  });
+          // 이미지 & 스타일 전환
+          aiImage.src = gifPathWithCacheBuster; // 캐시 무력화된 경로 사용
+          aiImage.classList.remove("png-mode");
+          aiImage.classList.add("gif-mode");
+
+          // 3초 후 복귀
+          setTimeout(() => {
+            aiImage.src = pngPath;
+            aiImage.classList.remove("gif-mode");
+            aiImage.classList.add("png-mode");
+          }, 3000);
+      });
+  }
 });
 </script>
-	<script th:src="@{/js/chatbot.js}"></script>
+
+<script th:src="@{/js/chatbot.js}"></script>
 </header>
 </body>
 </html>

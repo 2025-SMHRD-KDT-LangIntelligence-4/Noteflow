@@ -285,20 +285,26 @@ body {
     right: 30px;           /* 화면 오른쪽에서 30px 왼쪽 */
     z-index: 1000; 
 }
-.AI-container {
-	width:80px;
-	height:80px;
-	background-color:white;
-	border-radius:50%;
-	box-shadow:0 4px 12px rgba(0,0,0,0.1); 
-}
+/* 공통 스타일 */
 .AI-image {
-	width:100%;
-	height:100%;
-	border-radius: 50%;      
-  	object-fit: cover;       
-  	overflow: hidden;       
-  	transition: all 0.3s ease;
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  transition: all 0.3s ease;
+}
+
+/* PNG일 때 */
+.AI-image.png-mode {
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(0,0,0,0.15);
+  background-color: white;
+}
+
+/* GIF일 때 */
+.AI-image.gif-mode {
+  border-radius: 50%;
+  background-color: #000;
+  box-shadow: 0 0 15px rgba(0,0,0,0.4);
 }
 /* 현재 활성화된 메뉴 표시용 */
 .categori-container a.active {
