@@ -590,6 +590,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 	setTimeout(() => injectPlusButtons(), 0);
 });
 
+// yyyy-MM-dd 형태 문자열에 days 만큼 더해서 새로운 yyyy-MM-dd 문자열 반환
+function addDaysToYmd(ymd, days) {
+  // ymd 예: "2025-10-15"
+  const [y, m, d] = ymd.split('-').map(n => parseInt(n, 10));
+
+  // JS Date는 month가 0부터 시작하니까 m-1
+  const dt = new Date(y, m - 1, d + days);
+
+  const yy = dt.getFullYear();
+  const mm = String(dt.getMonth() + 1).padStart(2, '0');
+  const dd = String(dt.getDate()).padStart(2, '0');
+
+  return `${yy}-${mm}-${dd}`;
+}
 // ------------------ 데이터 로드 & 렌더 ------------------
 export const refreshEvents = async () => {
 	try {
@@ -601,7 +615,31 @@ export const refreshEvents = async () => {
 		_allEvents = schedules.map(s => {
 			const rawColor = s.color_tag || '#3788d8';
 			const isOutline = (rawColor === 'outline');
+			
+			const isAllDay = !!s.is_all_day;
+			// 원본에서 받아온 문자열 (예: "2025-10-15T00:00:00")
+			      const startRaw = s.start_time || '';
+			      const endRaw   = s.end_time   || '';
+				  let fcStart = startRaw;
+				        let fcEnd   = endRaw;
+						if (isAllDay) {
+						        // 하루종일 일정일 때는 FullCalendar가 좋아하는 형태로 변환한다.
+						        // 1) start 는 'YYYY-MM-DD'만 남긴다
+						        // 2) end 는 '종료일 다음날' 날짜(독점 end)로 맞춘다
 
+						        // s.start_time: "2025-10-15T00:00:00" → "2025-10-15"
+						        const startDateOnly = startRaw.slice(0, 10);
+
+						        // s.end_time: "2025-10-17T23:59:59" → "2025-10-17"
+						        const endDateOnly = endRaw.slice(0, 10);
+
+						        // FullCalendar allDay 이벤트는 end가 '다음날 00:00'처럼 exclusive여야
+						        // 마지막 날짜까지 제대로 차지해서 보인다.
+						        const exclusiveEnd = addDaysToYmd(endDateOnly, 1);
+
+						        fcStart = startDateOnly;
+						        fcEnd   = exclusiveEnd;
+						      }
 			return {
 				id: s.schedule_id,
 				title: s.title,
@@ -611,7 +649,7 @@ export const refreshEvents = async () => {
 				// ✅ outline이면 캘린더에 강한 배경색 주지 않음
 				color: isOutline ? 'transparent' : rawColor,
 
-				allDay: !!s.is_all_day,
+				allDay: isAllDay,
 				display: 'block',
 
 				// 기본 텍스트색: outline은 나중에 CSS로 덮어쓸 거라 여기선 그냥 흰색 넣어둬도 됨
@@ -620,7 +658,7 @@ export const refreshEvents = async () => {
 				extendedProps: {
 					description: s.description || '',
 					emoji: s.emoji || null,
-					isAllDay: !!s.is_all_day,
+					isAllDay: isAllDay,
 					category: (s.category || '').toLowerCase(),
 					highlightType: (s.highlight_type || '').toLowerCase(),
 
