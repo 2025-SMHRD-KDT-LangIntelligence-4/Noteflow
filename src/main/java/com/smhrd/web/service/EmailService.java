@@ -2,7 +2,9 @@ package com.smhrd.web.service;
 
 import com.smhrd.web.entity.EmailVerificationToken;
 import com.smhrd.web.entity.EmailVerificationToken.TokenType;
+import com.smhrd.web.entity.Schedule;
 import com.smhrd.web.repository.EmailVerificationTokenRepository;
+import com.smhrd.web.entity.Schedule;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,6 +15,8 @@ import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
+
+import java.time.format.DateTimeFormatter;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import java.time.LocalDateTime;
@@ -189,5 +193,55 @@ public class EmailService {
         return tokenRepository.findByTokenAndTokenTypeAndUsed(token, tokenType, true)
             .map(EmailVerificationToken::getEmail)
             .orElse(null);
+    }
+
+    public void sendScheduleNotificationEmail(String email, String nickname, Schedule schedule) {
+        try {
+            // Thymeleaf Context 생성
+            Context context = new Context();
+            context.setVariable("nickname", nickname);
+            context.setVariable("scheduleTitle", schedule.getTitle());
+            context.setVariable("scheduleDescription", schedule.getDescription());
+            
+            // 날짜 포맷팅
+            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy년 MM월 dd일");
+            DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+            DateTimeFormatter datetimeFormatter = DateTimeFormatter.ofPattern("yyyy년 MM월 dd일 HH:mm");
+            
+            if (Boolean.TRUE.equals(schedule.getIsAllDay())) {
+                context.setVariable("isAllDay", true);
+                context.setVariable("startDate", schedule.getStartTime().format(dateFormatter));
+                context.setVariable("endDate", schedule.getEndTime().format(dateFormatter));
+            } else {
+                context.setVariable("isAllDay", false);
+                context.setVariable("startDateTime", schedule.getStartTime().format(datetimeFormatter));
+                context.setVariable("endDateTime", schedule.getEndTime().format(datetimeFormatter));
+            }
+            
+            context.setVariable("location", schedule.getLocation() != null ? schedule.getLocation() : "장소 미정");
+            context.setVariable("minutesBefore", schedule.getNotificationMinutesBefore());
+            context.setVariable("baseUrl", baseUrl);
+            
+            // 템플릿 처리
+            String htmlContent = templateEngine.process("email/schedule-notification", context);
+            
+            // 이메일 메시지 생성
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            
+            helper.setFrom(fromEmail, "새김(SSAEGIM)");
+            helper.setTo(email);
+            helper.setSubject("📅 [일정 알림] " + schedule.getTitle());
+            helper.setText(htmlContent, true);
+            
+            // 이메일 발송
+            mailSender.send(message);
+            
+            log.info("일정 알림 이메일 발송 성공: {} - {}", email, schedule.getTitle());
+            
+        } catch (Exception e) {
+            log.error("일정 알림 이메일 발송 실패: {} - {}", email, e.getMessage(), e);
+            throw new RuntimeException("이메일 발송 중 오류가 발생했습니다.", e);
+        }
     }
 }

@@ -123,4 +123,16 @@ public class Schedule {
     @Column(name = "attachment_list")
     @JsonProperty("attachmentList")
     private String attachmentList = "[]";
+    
+    @Column(name = "email_notification_enabled")
+    private Boolean emailNotificationEnabled = false;
+    
+    @Column(name = "notification_minutes_before")
+    private Integer notificationMinutesBefore = 30;
+    
+    @Column(name = "email_notification_sent")
+    private Boolean emailNotificationSent = false;
+    
+    @Column(name = "quartz_job_id", length = 255)
+    private String quartzJobId;
 }

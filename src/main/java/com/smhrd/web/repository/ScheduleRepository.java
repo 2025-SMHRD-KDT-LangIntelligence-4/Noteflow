@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.repository.query.Param;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
@@ -48,4 +49,20 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
 			+ "AND s.createdAt BETWEEN :from AND :to " + "AND (s.isDeleted = false OR s.isDeleted IS NULL)")
 	int softDeleteRecent(@Param("userIdx") Long userIdx, @Param("from") LocalDateTime from,
 			@Param("to") LocalDateTime to, @Param("now") LocalDateTime now);
+
+    @Query("SELECT s FROM Schedule s JOIN FETCH s.user WHERE s.scheduleId = :scheduleId")
+    Optional<Schedule> findByIdWithUser(@Param("scheduleId") Long scheduleId);
+    
+	/**
+     * 이메일 알림이 활성화되었고 아직 발송되지 않은 일정 조회
+     */
+    List<Schedule> findByEmailNotificationEnabledTrueAndEmailNotificationSentFalse();
+    
+    /**
+     * 특정 시간 범위에 해당하는 미발송 알림 일정 조회
+     */
+    List<Schedule> findByStartTimeBetweenAndEmailNotificationEnabledTrueAndEmailNotificationSentFalse(
+        LocalDateTime start, 
+        LocalDateTime end
+    );
 }
