@@ -458,6 +458,30 @@ function handleOutsideClick(e) {
 		closeQuickAddModal();
 	}
 }
+export function injectPlusButtons() {
+   if (!quickModal) return;
+
+   document.querySelectorAll('.fc-daygrid-day').forEach(dayCell => {
+      const dayTop = dayCell.querySelector('.fc-daygrid-day-top');
+      if (!dayTop || dayTop.querySelector('.day-plus-btn')) return;
+
+      const btn = document.createElement('button');
+      btn.className = 'day-plus-btn';
+      btn.type = 'button';
+      btn.title = '일정 추가';
+      btn.innerText = '+';
+
+      const dateStr = dayCell.getAttribute('data-date') || '';
+      if (dateStr) btn.dataset.date = dateStr;
+
+      btn.addEventListener('click', (e) => {
+         e.stopPropagation();
+         openQuickAddModal(btn.dataset.date);
+      });
+
+      dayTop.appendChild(btn);
+   });
+}
 
 
 // ------------------------------ DOMContentLoaded에서 리스너 묶기 ------------------------------
