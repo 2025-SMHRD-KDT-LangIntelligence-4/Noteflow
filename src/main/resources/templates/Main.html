@@ -120,21 +120,21 @@ document.addEventListener("DOMContentLoaded", () => {
 	                            <a th:href="@{/notion/create}" class="project-card__btn">노트 작성하러 가기</a>
 	                        </div>
 	                    </div>
-	                </article>	    
-	                <article class="project-card">
-	                    <img class="project-card__bg" th:src="@{/images/calendar .jpg}" alt="캘린더 배경 이미지">
+	                </article>
+	                <article class="project-card" active>
+	                    <img class="project-card__bg" th:src="@{/images/noteManage.jpg}" alt="노트 관리 이미지">
 	                    <div class="project-card__content">
-	                        <img class="project-card__thumb" th:src="@{/images/calendar.gif}" alt="캘린더 아이콘">
+	                        <img class="project-card__thumb" th:src="@{/images/noteManage.gif}" alt="노트 관리 아이콘">
 	                        <div class="card-div">
-	                            <h3 class="project-card__title">학습 스케줄</h3>
+	                            <h3 class="project-card__title">작성 노트 관리</h3>
 	                            <p class="project-card__desc">
 	                                <span th:if="${nickname != null and nickname != ''}" th:text="|${nickname}님, |"></span>
-	                                <span>개인 일정부터 학습 계획까지 한눈에 확인하고 관리하세요.</span>
+	                                <span>작성된 노트들을 쉽게 관리해요!</span>
 	                            </p>
-	                            <a th:href="@{/schedule}" class="project-card__btn">스케줄 확인하기</a>
+	                            <a th:href="@{/notion/manage}" class="project-card__btn">작성된 노트 보러가기</a>
 	                        </div>
 	                    </div>
-	                </article>	    
+	                </article>	 	    
 	                
 	                <article class="project-card">
 	                    <img class="project-card__bg" th:src="@{/images/test.jpg}" alt="문제생성 배경이미지">
@@ -162,6 +162,21 @@ document.addEventListener("DOMContentLoaded", () => {
 	                        </div>
 	                    </div>
 	                </article>
+	                <article class="project-card">
+	                    <img class="project-card__bg" th:src="@{/images/calendar .jpg}" alt="캘린더 배경 이미지">
+	                    <div class="project-card__content">
+	                        <img class="project-card__thumb" th:src="@{/images/calendar.gif}" alt="캘린더 아이콘">
+	                        <div class="card-div">
+	                            <h3 class="project-card__title">학습 스케줄</h3>
+	                            <p class="project-card__desc">
+	                                <span th:if="${nickname != null and nickname != ''}" th:text="|${nickname}님, |"></span>
+	                                <span>개인 일정부터 학습 계획까지 한눈에 확인하고 관리하세요.</span>
+	                            </p>
+	                            <a th:href="@{/schedule}" class="project-card__btn">스케줄 확인하기</a>
+	                        </div>
+	                    </div>
+	                </article>	    
+	                
 	                <article class="project-card">
 	                    <img class="project-card__bg" th:src="@{/images/market.jpg}" alt="마켓 배경 이미지">
 	                    <div class="project-card__content">
