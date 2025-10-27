@@ -563,3 +563,59 @@ input[type="time" i]{
 /* 더 이상 사용 안 함: 배경이미지 방식*/
 .symbol-triangle, .symbol-star { background-image: none !important; }
 .symbol-circle, .symbol-square { border: none !important; }
+/* ---------------------------------
+   Outline 일정 전용 스타일 (밝은 테마)
+-----------------------------------*/
+.fc-event-outline {
+  background-color: transparent !important;
+  color: rgb(0, 0, 0) !important;
+  border: 1px solid rgb(128, 128, 128) !important;
+  border-radius: 4px !important;
+  box-shadow: none !important;
+}
+
+/* FullCalendar 안쪽 구조에 따라 a.fc-event, .fc-event-main 등도 있을 수 있으므로 안전하게 */
+.fc-event-outline .fc-event-main {
+  color: rgb(0, 0, 0) !important;
+}
+/* ---------------------------------
+   공통: 일정 칩 hover 인터랙션
+-----------------------------------*/
+
+/* 모든 캘린더 이벤트 칩은 마우스 오버 시 포인터 */
+.fc .fc-event,
+.fc .fc-daygrid-event {
+  cursor: pointer;
+  transition: filter 0.12s ease, box-shadow 0.12s ease, background-color 0.12s ease;
+}
+
+/* 1) 일반(배경색 있는) 일정 칩 hover 효과 */
+.fc .fc-event:hover:not(.fc-event-outline),
+.fc .fc-daygrid-event:hover:not(.fc-event-outline) {
+  filter: brightness(1.08);          /* 살짝 밝아지는 느낌 */
+  box-shadow: 0 4px 10px rgba(0,0,0,.25);
+}
+
+/* 2) outline 스타일 일정 칩 기본 상태
+   (이건 앞에서 이미 넣어줬을 거야. 혹시 아직 안 넣었다면 그대로 넣어줘)
+*/
+.fc-event-outline {
+  background-color: #fff !important;
+  color: #000 !important;
+  border: 1px solid #000 !important;
+  border-radius: 4px !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,.15);
+}
+.fc-event-outline .fc-event-main {
+  color: #000 !important;
+}
+
+/* 3) outline 일정 칩 hover 효과 */
+.fc-event-outline:hover {
+  background-color: #f5f5f5 !important;      /* 살짝 회색 먹여서 "선택됨" 느낌 */
+  box-shadow: 0 4px 10px rgba(0,0,0,.25) !important;
+  border-color: #000 !important;
+}
+.fc-event-outline:hover .fc-event-main {
+  color: #000 !important;
+}

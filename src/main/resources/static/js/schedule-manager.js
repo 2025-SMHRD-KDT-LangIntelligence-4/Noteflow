@@ -10,44 +10,44 @@ let _hlByDate = {}; // {'yyyy-MM-dd': {symbol,color,note}}
 
 // ── 하이라이트 SVG 렌더러 (모든 도형을 inline SVG로 통일) ─────────────────
 function renderHighlightSVG(containerEl, symbol) {
-  // 기존 내용 제거
-  containerEl.innerHTML = '';
+	// 기존 내용 제거
+	containerEl.innerHTML = '';
 
-  const SVG_NS = 'http://www.w3.org/2000/svg';
-  const svg = document.createElementNS(SVG_NS, 'svg');
-  svg.setAttribute('viewBox', '0 0 100 100');
-  svg.setAttribute('aria-hidden', 'true');
+	const SVG_NS = 'http://www.w3.org/2000/svg';
+	const svg = document.createElementNS(SVG_NS, 'svg');
+	svg.setAttribute('viewBox', '0 0 100 100');
+	svg.setAttribute('aria-hidden', 'true');
 
-  let shape;
-  if (symbol === 'circle') {
-    shape = document.createElementNS(SVG_NS, 'circle');
-    shape.setAttribute('cx', '50');
-    shape.setAttribute('cy', '50');
-    shape.setAttribute('r',  '36'); // 숫자 가림 최소화
-  } else if (symbol === 'square') {
-    shape = document.createElementNS(SVG_NS, 'rect');
-    shape.setAttribute('x', '14');
-    shape.setAttribute('y', '14');
-    shape.setAttribute('width',  '72');
-    shape.setAttribute('height', '72');
-    shape.setAttribute('rx', '12'); // 살짝 둥글게
-  } else if (symbol === 'triangle') {
-    shape = document.createElementNS(SVG_NS, 'polygon');
-    shape.setAttribute('points', '50,10 90,88 10,88');
-  } else if (symbol === 'star') {
-    shape = document.createElementNS(SVG_NS, 'path');
-    // 가독성과 숫자 가림 최소화를 고려한 별 경로
-    shape.setAttribute('d', 'M50 8 L61 38 L92 38 L66 56 L76 88 L50 70 L24 88 L34 56 L8 38 L39 38 Z');
-  } else {
-    // 알 수 없는 심볼은 렌더 생략
-    return;
-  }
+	let shape;
+	if (symbol === 'circle') {
+		shape = document.createElementNS(SVG_NS, 'circle');
+		shape.setAttribute('cx', '50');
+		shape.setAttribute('cy', '50');
+		shape.setAttribute('r', '36'); // 숫자 가림 최소화
+	} else if (symbol === 'square') {
+		shape = document.createElementNS(SVG_NS, 'rect');
+		shape.setAttribute('x', '14');
+		shape.setAttribute('y', '14');
+		shape.setAttribute('width', '72');
+		shape.setAttribute('height', '72');
+		shape.setAttribute('rx', '12'); // 살짝 둥글게
+	} else if (symbol === 'triangle') {
+		shape = document.createElementNS(SVG_NS, 'polygon');
+		shape.setAttribute('points', '50,10 90,88 10,88');
+	} else if (symbol === 'star') {
+		shape = document.createElementNS(SVG_NS, 'path');
+		// 가독성과 숫자 가림 최소화를 고려한 별 경로
+		shape.setAttribute('d', 'M50 8 L61 38 L92 38 L66 56 L76 88 L50 70 L24 88 L34 56 L8 38 L39 38 Z');
+	} else {
+		// 알 수 없는 심볼은 렌더 생략
+		return;
+	}
 
-  // 공통 스타일 플래그 (CSS에서 잡아줌)
-  shape.setAttribute('data-outline', '1');
+	// 공통 스타일 플래그 (CSS에서 잡아줌)
+	shape.setAttribute('data-outline', '1');
 
-  svg.appendChild(shape);
-  containerEl.appendChild(svg);
+	svg.appendChild(shape);
+	containerEl.appendChild(svg);
 }
 
 
@@ -243,49 +243,49 @@ function drawTempBadgesOnDays() {
 
 
 function drawHighlightsOnDays() {
-  document.querySelectorAll('.fc-daygrid-day').forEach(dayCell => {
-    const dateStr = dayCell.getAttribute('data-date'); // yyyy-MM-dd
-    if (!dateStr) return;
+	document.querySelectorAll('.fc-daygrid-day').forEach(dayCell => {
+		const dateStr = dayCell.getAttribute('data-date'); // yyyy-MM-dd
+		if (!dateStr) return;
 
-    // 기존 표시 제거
-    const old = dayCell.querySelector('.day-highlight-pin');
-    if (old) old.remove();
+		// 기존 표시 제거
+		const old = dayCell.querySelector('.day-highlight-pin');
+		if (old) old.remove();
 
-    const item = _hlByDate[dateStr];
-    if (!item) return;
+		const item = _hlByDate[dateStr];
+		if (!item) return;
 
-    const numEl = dayCell.querySelector('.fc-daygrid-day-number');
-    if (!numEl) return;
+		const numEl = dayCell.querySelector('.fc-daygrid-day-number');
+		if (!numEl) return;
 
-    // 핀 생성 (색상 클래스 또는 HEX 대응)
-    const pin = document.createElement('span');
-    pin.className = `day-highlight-pin symbol-${item.symbol}`;
+		// 핀 생성 (색상 클래스 또는 HEX 대응)
+		const pin = document.createElement('span');
+		pin.className = `day-highlight-pin symbol-${item.symbol}`;
 
-    // color: 키워드(red|yellow|blue|orange)면 클래스, 그 외(HEX 등)는 style.color로 직접 지정
-    const color = (item.color || '').toLowerCase();
-    if (['red', 'yellow', 'blue', 'orange'].includes(color)) {
-      pin.classList.add(`color-${color}`);
-    } else if (color) {
-      pin.style.color = color; // ex) #ff66cc
-    } else {
-      pin.classList.add('color-red'); // fallback
-    }
+		// color: 키워드(red|yellow|blue|orange)면 클래스, 그 외(HEX 등)는 style.color로 직접 지정
+		const color = (item.color || '').toLowerCase();
+		if (['red', 'yellow', 'blue', 'orange'].includes(color)) {
+			pin.classList.add(`color-${color}`);
+		} else if (color) {
+			pin.style.color = color; // ex) #ff66cc
+		} else {
+			pin.classList.add('color-red'); // fallback
+		}
 
-    pin.title = item.note || '특별한 날';
+		pin.title = item.note || '특별한 날';
 
-    // 클릭 시 편집창 열기
-    pin.addEventListener('click', (e) => {
-      e.stopPropagation();
-      openHighlightPicker(dateStr);
-    });
+		// 클릭 시 편집창 열기
+		pin.addEventListener('click', (e) => {
+			e.stopPropagation();
+			openHighlightPicker(dateStr);
+		});
 
-    // inline SVG로 심볼 렌더
-    renderHighlightSVG(pin, item.symbol);
+		// inline SVG로 심볼 렌더
+		renderHighlightSVG(pin, item.symbol);
 
-    // 숫자 컨테이너 기준으로 배치 (숫자 z-index가 더 높아서 항상 보임)
-    numEl.style.position = 'relative';
-    numEl.appendChild(pin);
-  });
+		// 숫자 컨테이너 기준으로 배치 (숫자 z-index가 더 높아서 항상 보임)
+		numEl.style.position = 'relative';
+		numEl.appendChild(pin);
+	});
 }
 
 
@@ -318,80 +318,80 @@ function filterEventsByCategory(categoryFilter) {
 
 // 하이라이트
 function wireDayNumberClick() {
-  document.querySelectorAll('.fc-daygrid-day-number').forEach(numEl => {
-    // 중복 바인딩 방지
-    if (numEl.dataset.hlBound === '1') return;
-    numEl.dataset.hlBound = '1';
-    numEl.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const dayCell = numEl.closest('.fc-daygrid-day');
-      const dateStr = dayCell?.getAttribute('data-date');
-      if (!dateStr) return;
-      openHighlightPicker(dateStr);
-    });
-  });
+	document.querySelectorAll('.fc-daygrid-day-number').forEach(numEl => {
+		// 중복 바인딩 방지
+		if (numEl.dataset.hlBound === '1') return;
+		numEl.dataset.hlBound = '1';
+		numEl.addEventListener('click', (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			const dayCell = numEl.closest('.fc-daygrid-day');
+			const dateStr = dayCell?.getAttribute('data-date');
+			if (!dateStr) return;
+			openHighlightPicker(dateStr);
+		});
+	});
 }
 
 // 하이라이트 편집창 함수
 async function openHighlightPicker(dateStr) {
-  const cur = _hlByDate[dateStr] || { symbol:'circle', color:'red', note:'' };
+	const cur = _hlByDate[dateStr] || { symbol: 'circle', color: 'red', note: '' };
 
-  const html = `
+	const html = `
     <div style="text-align:left;display:flex;flex-direction:column;gap:10px">
       <div><b>${dateStr}</b> 특별 표시</div>
       <div>
         <div style="margin-bottom:6px">기호</div>
-        <label><input type="radio" name="hlSymbol" value="circle"  ${cur.symbol==='circle'?'checked':''}> ● (동그라미)</label><br/>
-        <label><input type="radio" name="hlSymbol" value="star"    ${cur.symbol==='star'?'checked':''}> ★ (별)</label><br/>
-        <label><input type="radio" name="hlSymbol" value="square"  ${cur.symbol==='square'?'checked':''}> ■ (네모)</label><br/>
-        <label><input type="radio" name="hlSymbol" value="triangle" ${cur.symbol==='triangle'?'checked':''}> ▲ (세모)</label>
+        <label><input type="radio" name="hlSymbol" value="circle"  ${cur.symbol === 'circle' ? 'checked' : ''}> ● (동그라미)</label><br/>
+        <label><input type="radio" name="hlSymbol" value="star"    ${cur.symbol === 'star' ? 'checked' : ''}> ★ (별)</label><br/>
+        <label><input type="radio" name="hlSymbol" value="square"  ${cur.symbol === 'square' ? 'checked' : ''}> ■ (네모)</label><br/>
+        <label><input type="radio" name="hlSymbol" value="triangle" ${cur.symbol === 'triangle' ? 'checked' : ''}> ▲ (세모)</label>
       </div>
       <div>
         <div style="margin-bottom:6px">색상</div>
-        <label><input type="radio" name="hlColor" value="red"    ${cur.color==='red'?'checked':''}> 빨강</label>
-        <label><input type="radio" name="hlColor" value="yellow" ${cur.color==='yellow'?'checked':''} style="margin-left:10px"> 노랑</label>
-        <label><input type="radio" name="hlColor" value="blue"   ${cur.color==='blue'?'checked':''} style="margin-left:10px"> 파랑</label>
-        <label><input type="radio" name="hlColor" value="orange" ${cur.color==='orange'?'checked':''} style="margin-left:10px"> 주황</label>
+        <label><input type="radio" name="hlColor" value="red"    ${cur.color === 'red' ? 'checked' : ''}> 빨강</label>
+        <label><input type="radio" name="hlColor" value="yellow" ${cur.color === 'yellow' ? 'checked' : ''} style="margin-left:10px"> 노랑</label>
+        <label><input type="radio" name="hlColor" value="blue"   ${cur.color === 'blue' ? 'checked' : ''} style="margin-left:10px"> 파랑</label>
+        <label><input type="radio" name="hlColor" value="orange" ${cur.color === 'orange' ? 'checked' : ''} style="margin-left:10px"> 주황</label>
       </div>
       <div>
         <div style="margin-bottom:6px">메모(옵션)</div>
-        <input id="hlNote" class="swal2-input" placeholder="툴팁으로 표시될 메모" value="${cur.note?.replace(/"/g,'&quot;')||''}" />
+        <input id="hlNote" class="swal2-input" placeholder="툴팁으로 표시될 메모" value="${cur.note?.replace(/"/g, '&quot;') || ''}" />
       </div>
     </div>
   `;
 
-  const { isConfirmed, isDenied } = await Swal.fire({
-    title: '하이라이트',
-    html,
-    showDenyButton: !!_hlByDate[dateStr],
-    denyButtonText: '삭제',
-    showCancelButton: true,
-    confirmButtonText: '저장'
-  });
+	const { isConfirmed, isDenied } = await Swal.fire({
+		title: '하이라이트',
+		html,
+		showDenyButton: !!_hlByDate[dateStr],
+		denyButtonText: '삭제',
+		showCancelButton: true,
+		confirmButtonText: '저장'
+	});
 
-  if (isDenied) {
-    await fetchWithCsrf(`/api/day-highlights/${dateStr}`, { method: 'DELETE' });
-    delete _hlByDate[dateStr];
-    drawHighlightsOnDays();
-    Swal.fire({ icon:'success', text:'삭제되었습니다.' });
-    return;
-  }
-  if (!isConfirmed) return;
+	if (isDenied) {
+		await fetchWithCsrf(`/api/day-highlights/${dateStr}`, { method: 'DELETE' });
+		delete _hlByDate[dateStr];
+		drawHighlightsOnDays();
+		Swal.fire({ icon: 'success', text: '삭제되었습니다.' });
+		return;
+	}
+	if (!isConfirmed) return;
 
-  const container = Swal.getHtmlContainer();
-  const symbol = container.querySelector('input[name="hlSymbol"]:checked')?.value || 'circle';
-  const color  = container.querySelector('input[name="hlColor"]:checked')?.value  || 'red';
-  const note   = container.querySelector('#hlNote')?.value || '';
+	const container = Swal.getHtmlContainer();
+	const symbol = container.querySelector('input[name="hlSymbol"]:checked')?.value || 'circle';
+	const color = container.querySelector('input[name="hlColor"]:checked')?.value || 'red';
+	const note = container.querySelector('#hlNote')?.value || '';
 
-  await fetchWithCsrf(`/api/day-highlights/${dateStr}`, {
-    method: 'PUT',
-    body: JSON.stringify({ symbol, color, note })
-  });
+	await fetchWithCsrf(`/api/day-highlights/${dateStr}`, {
+		method: 'PUT',
+		body: JSON.stringify({ symbol, color, note })
+	});
 
-  _hlByDate[dateStr] = { symbol, color, note };
-  drawHighlightsOnDays();
-  Swal.fire({ icon:'success', text:'저장되었습니다.' });
+	_hlByDate[dateStr] = { symbol, color, note };
+	drawHighlightsOnDays();
+	Swal.fire({ icon: 'success', text: '저장되었습니다.' });
 }
 
 // ------------------ 검색(제목+내용) ------------------
@@ -446,6 +446,11 @@ function initCalendar() {
 		},
 		eventDidMount: (info) => {
 			setTimeout(() => injectPlusButtons(), 0);
+			// ✅ outline 스타일 적용
+			if (info.event.extendedProps && info.event.extendedProps.isOutline) {
+				// 클래스 부여해서 CSS에서 강제 스타일
+				info.el.classList.add('fc-event-outline');
+			}
 			// 🔴 체크박지/선택 뱃지 주입
 			decorateEventForSelection(info);
 
@@ -592,23 +597,37 @@ export const refreshEvents = async () => {
 		_allSchedulesRaw = schedules || [];
 		if (!schedules) return;
 
-		_allEvents = schedules.map(s => ({
-			id: s.schedule_id,
-			title: s.title,
-			start: s.start_time,
-			end: s.end_time,
-			color: s.color_tag || '#3788d8',
-			allDay: !!s.is_all_day,
-			display: 'block',     // ← 혹시 전역 옵션이 못 먹었을 때도 칩 스타일 강제
-			textColor: '#ffffff', // ← 개별 이벤트 글자색도 흰색으로
-			extendedProps: {
-				description: s.description || '',
-				emoji: s.emoji || null,
-				isAllDay: !!s.is_all_day,
-				category: (s.category || '').toLowerCase(), // 소문자 정규화
-				highlightType: (s.highlight_type || '').toLowerCase()
-			}
-		}));
+		_allEvents = schedules.map(s => {
+			const rawColor = s.color_tag || '#3788d8';
+			const isOutline = (rawColor === 'outline');
+
+			return {
+				id: s.schedule_id,
+				title: s.title,
+				start: s.start_time,
+				end: s.end_time,
+
+				// ✅ outline이면 캘린더에 강한 배경색 주지 않음
+				color: isOutline ? 'transparent' : rawColor,
+
+				allDay: !!s.is_all_day,
+				display: 'block',
+
+				// 기본 텍스트색: outline은 나중에 CSS로 덮어쓸 거라 여기선 그냥 흰색 넣어둬도 됨
+				textColor: isOutline ? '#000000' : '#ffffff',
+
+				extendedProps: {
+					description: s.description || '',
+					emoji: s.emoji || null,
+					isAllDay: !!s.is_all_day,
+					category: (s.category || '').toLowerCase(),
+					highlightType: (s.highlight_type || '').toLowerCase(),
+
+					// ✅ outline 여부를 플래그로 넘김
+					isOutline: isOutline
+				}
+			};
+		});
 
 		calendar.removeAllEvents();
 		calendar.addEventSource(_allEvents);

@@ -64,7 +64,7 @@ window.openQuickAddFromDraft = function(draft) {
 
 	qaTitle.value = draft.title || '';
 	qaDesc.value = draft.description || '';
-	qaColor.value = draft.color_tag || draft.colorTag || '#3788d8';
+	qaColor.value = draft.color_tag || draft.colorTag || 'outline';
 	qaAllDay.checked = isAllDay;
 
 	if (s) {
@@ -385,7 +385,7 @@ export function openQuickAddModal(dateStr) {
 	// 필드 초기화
 	qaTitle.value = '';
 	qaDesc.value = '';
-	qaColor.value = '#3788d8';
+	qaColor.value = 'outline';
 	qaAllDay.checked = false;
 	qaNotify.value = '0';
 	if (qaEmoji) qaEmoji.value = '';

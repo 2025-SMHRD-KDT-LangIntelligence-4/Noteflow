@@ -582,3 +582,59 @@ input[type="time" i]{
 /* (이전 background-image 방식 비활성화 안전장치) */
 .symbol-triangle, .symbol-star { background-image: none !important; }
 .symbol-circle, .symbol-square { border: none !important; }
+/* ---------------------------------
+   Outline 일정 전용 스타일 (어두운 테마)
+-----------------------------------*/
+.fc-event-outline {
+  background-color: transparent !important;
+  color: rgb(255, 255, 255) !important;
+  border: 1px solid rgb(192, 192, 192) !important;
+  border-radius: 4px !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,.6);
+}
+
+.fc-event-outline .fc-event-main {
+  color: rgb(255, 255, 255) !important;
+}
+
+/* ---------------------------------
+   공통: 일정 칩 hover 인터랙션 (다크)
+-----------------------------------*/
+
+/* 마우스 올리면 손 모양 */
+.fc .fc-event,
+.fc .fc-daygrid-event {
+  cursor: pointer;
+  transition: filter 0.12s ease, box-shadow 0.12s ease, background-color 0.12s ease;
+}
+
+/* 1) 일반(배경색 있는) 일정 칩 hover 효과 */
+.fc .fc-event:hover:not(.fc-event-outline),
+.fc .fc-daygrid-event:hover:not(.fc-event-outline) {
+  filter: brightness(1.15);                /* 어두운 색일수록 이 정도는 눈에 잘 띄어 */
+  box-shadow: 0 6px 16px rgba(0,0,0,.8);
+}
+
+/* 2) outline 일정 칩 기본 상태
+   (이것도 앞에서 넣었던 버전과 맞춰서 유지)
+*/
+.fc-event-outline {
+  background-color: transparent !important;
+  color: rgb(255, 255, 255) !important;
+  border: 1px solid rgb(192, 192, 192) !important;
+  border-radius: 4px !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,.6);
+}
+.fc-event-outline .fc-event-main {
+  color: #fff !important;
+}
+
+/* 3) outline 일정 칩 hover 효과 */
+.fc-event-outline:hover {
+  background-color: #1a1a1a !important;     /* 살짝 밝은 톤 */
+  box-shadow: 0 8px 20px rgba(0,0,0,.9) !important;
+  border-color: #fff !important;
+}
+.fc-event-outline:hover .fc-event-main {
+  color: #fff !important;
+}
