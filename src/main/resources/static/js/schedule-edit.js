@@ -244,108 +244,141 @@ function collectEditData() {
 
 // ------------------------------ 모달 오픈 / 클로즈 ------------------------------
 export async function openEditModal(scheduleId) {
-	if (!editModal || !scheduleId) return;
+  if (!editModal || !scheduleId) return;
 
-	try {
-		// 일정 단건 조회
-		const schedule = await fetchWithCsrf(`/api/schedule/${scheduleId}`);
-		if (!schedule) throw new Error('일정 정보를 불러올 수 없습니다.');
+  try {
+    // 1. 일정 단건 조회
+    const schedule = await fetchWithCsrf(`/api/schedule/${scheduleId}`);
+    if (!schedule) throw new Error('일정 정보를 불러올 수 없습니다.');
 
-		// snake/camel 혼용 대비
-		const apiScheduleId = schedule.scheduleId ?? schedule.schedule_id ?? scheduleId;
-		const colorTagValue = schedule.colorTag ?? schedule.color_tag ?? null;
-		const isAllDayValue = schedule.isAllDay ?? schedule.is_all_day ?? false;
-		const startTimeRaw = schedule.startTime ?? schedule.start_time ?? null;
-		const endTimeRaw = schedule.endTime ?? schedule.end_time ?? null;
+    // 🟡 snake_case ↔ camelCase 혼용 대비용 헬퍼
+    // (백엔드가 snake_case로 내려줄 수도 있으니까 안전하게 뽑아줌)
+    const getVal = (obj, ...keys) => {
+      for (const k of keys) {
+        if (obj[k] !== undefined && obj[k] !== null) return obj[k];
+      }
+      return undefined;
+    };
 
-		// 값 채우기
-		editScheduleId.value = apiScheduleId;
-		editTitle.value = schedule.title || '';
-		editDesc.value = schedule.description || '';
+    // id
+    const schedIdVal = getVal(schedule, 'scheduleId', 'schedule_id');
+    editScheduleId.value = schedIdVal || scheduleId;
 
-		// ✅ colorTag: outline 기본 사용
-		editColor.value = colorTagValue || 'outline';
+    // title / desc
+    editTitle.value = getVal(schedule, 'title') || '';
+    editDesc.value  = getVal(schedule, 'description') || '';
 
-		editAllDay.checked = !!isAllDayValue;
-		editEmoji.value = schedule.emoji || '';
+    // color
+    editColor.value = getVal(schedule, 'colorTag', 'color_tag') || 'outline';
 
-		// 날짜/시간
-		const startTime = startTimeRaw ? new Date(startTimeRaw) : null;
-		const endTime = endTimeRaw ? new Date(endTimeRaw) : null;
+    // allDay
+    const isAllDayVal = !!getVal(schedule, 'isAllDay', 'is_all_day');
+    editAllDay.checked = isAllDayVal;
 
-		if (startTime) {
-			editStartDate.value = formatDate(startTime);
-			editStartTime.value = formatTime(startTime);
-		}
-		if (endTime) {
-			editEndDate.value = formatDate(endTime);
-			if (!editAllDay.checked) {
-				editEndTime.value = formatTime(endTime);
-			}
-		}
+    // emoji
+    editEmoji.value = getVal(schedule, 'emoji') || '';
 
-		// 알림 드롭다운 초기값
-		// TODO: 실제 alarmTime / 알림 설정 기반으로 값을 복원하려면 여기 로직 확장
-		editNotify.value = '-1';
+    // 시간
+    const startRaw = getVal(schedule, 'startTime', 'start_time');
+    const endRaw   = getVal(schedule, 'endTime', 'end_time');
 
-		// 알림 타입 체크박스
-		const alertTypesRaw = schedule.alertType ?? schedule.alert_type ?? '0';
-		const alertTypes = (alertTypesRaw && alertTypesRaw !== '0')
-			? alertTypesRaw.split(',')
-			: [];
-		document.querySelectorAll('input[name="editAlertType"]').forEach(cb => {
-			cb.checked = alertTypes.includes(cb.value);
-		});
+    const startTime = startRaw ? new Date(startRaw) : null;
+    const endTime   = endRaw ? new Date(endRaw)   : null;
 
-		editCustomAlertValue.value = schedule.customAlertValue ?? schedule.custom_alert_value ?? '';
-		editLocation.value = schedule.location || '';
-		editHighlightType.value = schedule.highlightType ?? schedule.highlight_type ?? '';
+    if (startTime) {
+      editStartDate.value = formatDate(startTime);
+      editStartTime.value = formatTime(startTime);
+    }
+    if (endTime) {
+      editEndDate.value = formatDate(endTime);
+      if (!isAllDayVal) {
+        editEndTime.value = formatTime(endTime);
+      }
+    }
 
-		// 카테고리
-		const rawCategory = schedule.category || '';
-		editCategory.value = rawCategory;
-		editCategoryValues = rawCategory
-			.split(',')
-			.map(v => v.trim())
-			.filter(Boolean);
-		renderEditCategoryTags();
+    // 알림 (지금은 임시로 알림 없음 처리 유지)
+    editNotify.value = '-1';
 
-		// 첨부파일
-		editAttachmentPath.value = schedule.attachmentPath ?? schedule.attachment_path ?? '';
-		editAttachmentList.value = schedule.attachmentList ?? schedule.attachment_list ?? '';
-		editAttachmentListSlot.innerHTML = '';
-		try {
-			const files = JSON.parse(editAttachmentList.value || '[]');
-			if (files && files.length > 0) {
-				files.forEach(file => {
-					addFileToSlot(file.fileName, file.filePath, editAttachmentListSlot);
-				});
-			}
-		} catch (e) {
-			console.error('Attachment list JSON 파싱 오류:', e);
-		}
+    // alertType (멀티 체크)
+    const rawAlertType = getVal(schedule, 'alertType', 'alert_type') || '0';
+    const alertTypesArr = (rawAlertType !== '0' && rawAlertType !== '')
+      ? rawAlertType.split(',').map(v => v.trim())
+      : [];
+    document.querySelectorAll('input[name="editAlertType"]').forEach(cb => {
+      cb.checked = alertTypesArr.includes(cb.value);
+    });
 
-		// UI 상태 조정
-		toggleTimeInputs(editAllDay.checked);
-		if (editAdvancedOptions) editAdvancedOptions.classList.add('hidden');
-		toggleEditCustomAlertFields();
+    editCustomAlertValue.value = getVal(schedule, 'customAlertValue', 'custom_alert_value') || '';
+    editLocation.value         = getVal(schedule, 'location') || '';
+    editHighlightType.value    = getVal(schedule, 'highlightType', 'highlight_type') || '';
 
-		// 모달 표시 애니메이션
-		editModal.classList.remove('hidden');
-		editModal.setAttribute('aria-hidden', 'false');
+    // ✅ 카테고리: 단건 응답에서 안 줄 수도 있으니 안전하게 처리
+    // 1차 시도: 이번에 받은 schedule에서 category를 뽑음
+    let categoryStr = getVal(schedule, 'category') || '';
 
-		editModal.style.opacity = 0;
-		editModal.style.transform = 'translateY(-20px) translateX(-50%)';
-		requestAnimationFrame(() => {
-			editModal.style.transition = 'all 0.25s ease-out';
-			editModal.style.opacity = 1;
-			editModal.style.transform = 'translateY(0) translateX(-50%)';
-		});
-	} catch (err) {
-		console.error('일정 로드 실패:', err);
-		alertError('일정 정보를 불러오는 데 실패했습니다.');
-	}
+    // 2차 fallback: 전역에 있는 _allSchedulesRaw에서 같은 일정 찾아서 category 복구
+    if (!categoryStr && window._allSchedulesRaw && Array.isArray(window._allSchedulesRaw)) {
+      const match = window._allSchedulesRaw.find(ev =>
+        // 서버 리스트는 snake_case라서 ev.schedule_id
+        String(ev.schedule_id) === String(scheduleId) ||
+        String(ev.scheduleId)  === String(scheduleId)
+      );
+      if (match && match.category) {
+        categoryStr = match.category;
+      }
+    }
+
+    // editCategory input에 표시
+    editCategory.value = categoryStr || '';
+
+    // 칩 상태 세팅
+    editCategoryValues = (categoryStr || '')
+      .split(',')
+      .map(v => v.trim())
+      .filter(Boolean);
+
+    renderEditCategoryTags(); // ← 기존 chips 렌더 함수 재사용
+
+    // 첨부파일
+    editAttachmentPath.value = getVal(schedule, 'attachmentPath', 'attachment_path') || '';
+    editAttachmentList.value = getVal(schedule, 'attachmentList', 'attachment_list') || '';
+
+    // 파일 목록 UI
+    editAttachmentListSlot.innerHTML = '';
+    try {
+      const files = JSON.parse(editAttachmentList.value || '[]');
+      if (files && files.length > 0) {
+        files.forEach(file => {
+          addFileToSlot(file.fileName, file.filePath, editAttachmentListSlot);
+        });
+      }
+    } catch (e) {
+      console.error('Attachment list JSON 파싱 오류:', e);
+    }
+
+    // UI 정리
+    toggleTimeInputs(isAllDayVal);
+    if (editAdvancedOptions) editAdvancedOptions.classList.add('hidden');
+    toggleEditCustomAlertFields();
+
+    // 모달 애니메이션 오픈
+    editModal.classList.remove('hidden');
+    editModal.setAttribute('aria-hidden', 'false');
+    editModal.style.opacity = 0;
+    editModal.style.transform = 'translateY(-20px) translateX(-50%)';
+    requestAnimationFrame(() => {
+      editModal.style.transition = 'all 0.25s ease-out';
+      editModal.style.opacity = 1;
+      editModal.style.transform = 'translateY(0) translateX(-50%)';
+    });
+
+  } catch (err) {
+    console.error('일정 로드 실패:', err);
+    alertError('일정 정보를 불러오는 데 실패했습니다.');
+  }
 }
+
+
 
 export function closeEditModal() {
 	if (!editModal) return;

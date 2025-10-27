@@ -595,6 +595,7 @@ export const refreshEvents = async () => {
 	try {
 		const schedules = await fetchWithCsrf('/api/schedule');
 		_allSchedulesRaw = schedules || [];
+		window._allSchedulesRaw = _allSchedulesRaw;
 		if (!schedules) return;
 
 		_allEvents = schedules.map(s => {
