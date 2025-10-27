@@ -10,6 +10,14 @@
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
 </head>
 <body>
+	<!-- ✅ 로딩 오버레이 HTML 구조 추가 -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <p class="loading-text">회원가입 진행 중...</p>
+            <p class="loading-subtext">잠시만 기다려주세요. 계정을 생성하고 있습니다.</p>
+        </div>
+    </div>
     <div th:replace="fragments/header :: siteHeader"></div>
 
     <div class="signup-location-container">
@@ -80,12 +88,12 @@
                <input type="hidden" id="attachmentCount" th:field="*{attachmentCount}" value="0">
    
                <!-- 약관 동의 -->
-               <label class="terms">
-                   <input type="checkbox" id="terms" required> 서비스 이용약관에 동의합니다.
-               </label>
-   
+               <div class="full-agree">
+	               <input type="checkbox" id="terms" required>
+	               <label class="terms"> 서비스 이용약관에 동의합니다.</label>
+   			   </div>
                <button type="submit">회원가입</button>
-   
+   				
                <div class="link">
                    <a href="/login">로그인으로 돌아가기</a>
                </div>

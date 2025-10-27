@@ -191,7 +191,22 @@ function validateForm() {
         document.getElementById("terms").focus();
         return false;
     }
-
+	// 4. 모든 검증 통과 시 로딩 애니메이션 활성화 및 버튼 비활성화
+	    // Canvas CSS에 정의된 loading-overlay와 submit-button-loading 클래스를 사용합니다.
+	    const loadingOverlay = document.getElementById("loadingOverlay");
+	    const submitButton = document.getElementById("submitButton"); 
+	    
+	    if (loadingOverlay) {
+	        // 로딩 오버레이 표시 (display: none -> display: flex)
+	        loadingOverlay.style.display = 'flex';
+	    }
+	    
+	    if (submitButton) {
+	        // 버튼 비활성화 및 로딩 스타일 적용
+	        submitButton.disabled = true;
+	        submitButton.classList.add('submit-button-loading'); 
+	    }
+	    
     // 모든 검증 통과
     return true;
 }
