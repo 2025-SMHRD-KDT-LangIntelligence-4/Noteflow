@@ -66,10 +66,10 @@ document.addEventListener("DOMContentLoaded", () => {
 		    </div>
 		    <div class="ad-slide fade">
 		      <img class="ad-banner-img" 
-		      src="https://blz-contentstack-images.akamaized.net/v3/assets/blt2477dcaf4ebd440c/blt12c582d9d58631b9/6504c4b7af4949338d926e6c/Masthead_Overwatch2_Logo.png" alt="광고2"
-		      style="background:linear-gradient(180deg, #d5d5d5  0, #939393 100%);"
+		      th:src="@{/images/smhrd-ad.png}" alt="광고2"
+		      style="background:#02021E;"
 		      >
-		      <a href="https://overwatch.blizzard.com/ko-kr/" target="_blank" class="ad2-link">소집에 응답하기</a>
+		      <a href="https://smhrd.or.kr/?gad_source=1&gad_campaignid=23036586174&gbraid=0AAAAA-Q0118M7R0F6vDPw3ituxJ54gY95&gclid=CjwKCAjwjffHBhBuEiwAKMb8pLPi8ydSwT99Ozs0rYdC0tNwUcx8toc7BkX7qnXYrz0Sq_Kc3oy7QRoCl0QQAvD_BwE" target="_blank" class="ad2-link">지금 보러가기</a>
 		    </div>
 		    <div class="ad-slide fade" style="background:white;">
 		      <img class="ad-banner-img" th:src="@{/images/qnet.jpg}" alt="광고3" style="background:white; width:70%">
@@ -94,88 +94,112 @@ document.addEventListener("DOMContentLoaded", () => {
 		    <span class="dot" onclick="currentSlide(3)"></span>
 		  </div>
 		</div>
-		<div class="moto-text-container">
-			<div class="moto-text-box">
-				<span>노트정리와 문제풀기까지 한번에! 새김AI와 함께하세요!</span>
-			</div>
-		</div>
-		<div class="ad-banner1-wrapper">
-			<div class="ad-banner1">
-				<div class="note-box">
-					<img th:src="@{/images/note.jpg}" class="calander-img"/>
-					
-				</div>
-				<div class="AI-comment-box">
-					<div class="comment-box">
-						<div class="note-alarm">
-    						<span th:if="${nickname != null and nickname != ''}" th:text="|${nickname}님 |"></span>
-    						<span th:if="${nickname == null or nickname == ''}"></span>
-    						<span>오늘의 학습내용을</span>
-    						<span>정리 해보세요</span>
-						</div>
-						<a th:href="@{/notion/create}" class="goNoteCreate-btn">노트 작성하러가기</a>
-					</div>
-				</div>
-			</div>
-		</div>
-		<div class="moto-text-container">
-			<div class="moto-text-box">
-				<span>개인일정도 학습일정도 새김AI와 함께하세요!</span>
-			</div>
-		</div>
-		<div class="ad-banner2-wrapper">
-			<div class="ad-banner2">
-				<div class="AI-comment-box">
-					<div class="comment-box">
-						<div class="schedule-alarm">
-    						<span th:if="${nickname != null and nickname != ''}" th:text="|${nickname}님 |"></span>
-    						<span th:if="${nickname == null or nickname == ''}"></span>
-    						<span>오늘의 스케줄을</span>
-    						<span>확인 해주세요</span>
-						</div>
-						<a th:href="@{/schedule}" class="goSchedule-btn">스케줄 확인하러가기</a>
-					</div>
-				</div>
-				<div class="calander-box">
-					<img th:src="@{/images/calendar.gif}" class="calander-img"/>
-					
-				</div>
-			</div>
-		</div>
-		<div class="moto-text-container2">
-			<div class="moto-text-box">
-				<span>마켓에서 다양한 템플릿을 확인해보세요!</span>
-			</div>
-		</div>
-		<div class="ad-banner3-wrapper">
-			<div class="ad-banner3">
-				<div class="market-img-box">
-					<img th:src="@{/images/market.gif}" class="calander-img"/>
-					
-				</div>
-				<div class="ad-temMarket">
-					<div class="ad-temMarket-comment-box">
-						<div class="ad-temMarket-comment">
-							<span>취향에 맞는 템플릿을</span>
-							<span>구매할 수 있어요!</span>
-						</div>
-						<a th:href="@{/schedule}" class="goSchedule-btn">템플릿 마켓가기</a>
-					</div>
-				</div>
-				<div class="slide-wrapper">
-					<div class="slide-container">
-						<div class="slide-btn"></div>
-					</div>
-				</div>
-			</div>
-		</div>
-		<div class="moto-text-container">
-			<div class="moto-text-box">
-				<span>새김AI와 학습의 질을 높여보세요!</span>
-			</div>
-		</div>
-	</div>
-	<div th:replace="fragments/footer :: siteFooter"></div>
+		<div class="full-location-container">    
+    <section id="main-feature-slider">   
+	        <div class="head">
+	    
+	            <h2>새김AI 핵심 기능으로 학습의 질을 높여보세요!</h2>
+	            <div class="controls">
+	                <button id="prev-main" class="nav-btn" aria-label="이전">&#10094;</button>            
+	                <button id="next-main" class="nav-btn" aria-label="다음">&#10095;</button>
+	            </div>
+	            
+	        </div>
+	    	<div class="slider">
+	            <div class="track" id="track-main"> 	    
+	                <article class="project-card" active>
+	                    <img class="project-card__bg" th:src="@{/images/note.jpg}" alt="노트 배경 이미지">
+	                    <div class="project-card__content">
+	                        <img class="project-card__thumb" th:src="@{/images/memo.gif}" alt="노트 아이콘">
+	                        <div class="card-div">
+	                            <h3 class="project-card__title">AI 노트 정리</h3>
+	                            <p class="project-card__desc">
+	                                <span th:if="${nickname != null and nickname != ''}" th:text="|${nickname}님, |"></span>
+	                                <span>오늘의 학습 내용을 AI가 분석하여 정리해 드려요.</span>
+	                            </p>
+	                            <a th:href="@{/notion/create}" class="project-card__btn">노트 작성하러 가기</a>
+	                        </div>
+	                    </div>
+	                </article>
+	                <article class="project-card" active>
+	                    <img class="project-card__bg" th:src="@{/images/noteManage.jpg}" alt="노트 관리 이미지">
+	                    <div class="project-card__content">
+	                        <img class="project-card__thumb" th:src="@{/images/noteManage.gif}" alt="노트 관리 아이콘">
+	                        <div class="card-div">
+	                            <h3 class="project-card__title">작성 노트 관리</h3>
+	                            <p class="project-card__desc">
+	                                <span th:if="${nickname != null and nickname != ''}" th:text="|${nickname}님, |"></span>
+	                                <span>작성된 노트들을 쉽게 관리해요!</span>
+	                            </p>
+	                            <a th:href="@{/notion/manage}" class="project-card__btn">작성된 노트 보러가기</a>
+	                        </div>
+	                    </div>
+	                </article>	 	    
+	                
+	                <article class="project-card">
+	                    <img class="project-card__bg" th:src="@{/images/test.jpg}" alt="문제생성 배경이미지">
+	                    <div class="project-card__content">
+	                        <img class="project-card__thumb" th:src="@{/images/test.gif}" alt="문제생성 아이콘">
+	                        <div class="card-div">
+	                            <h3 class="project-card__title">문제 생성/테스트</h3>
+	                            <p class="project-card__desc">
+	                                <span>나만의 노트에 맞춰 생성된 문제를 풀어보세요</span>
+	                            </p>
+	                            <a th:href="@{/exam/create}" class="project-card__btn">문제생성가기</a>
+	                        </div>
+	                    </div>
+	                </article>
+	                <article class="project-card">
+	                    <img class="project-card__bg" th:src="@{/images/lecture.jpg}" alt="강의목록 배경이미지">
+	                    <div class="project-card__content">
+	                        <img class="project-card__thumb" th:src="@{/images/lecture.gif}" alt="강의목록 아이콘">
+	                        <div class="card-div">
+	                            <h3 class="project-card__title">강의목록</h3>
+	                            <p class="project-card__desc">
+	                                <span>부족한 학습은 강의로 채워보세요</span>
+	                            </p>
+	                            <a th:href="@{/recomLecture}" class="project-card__btn">문제생성가기</a>
+	                        </div>
+	                    </div>
+	                </article>
+	                <article class="project-card">
+	                    <img class="project-card__bg" th:src="@{/images/calendar .jpg}" alt="캘린더 배경 이미지">
+	                    <div class="project-card__content">
+	                        <img class="project-card__thumb" th:src="@{/images/calendar.gif}" alt="캘린더 아이콘">
+	                        <div class="card-div">
+	                            <h3 class="project-card__title">학습 스케줄</h3>
+	                            <p class="project-card__desc">
+	                                <span th:if="${nickname != null and nickname != ''}" th:text="|${nickname}님, |"></span>
+	                                <span>개인 일정부터 학습 계획까지 한눈에 확인하고 관리하세요.</span>
+	                            </p>
+	                            <a th:href="@{/schedule}" class="project-card__btn">스케줄 확인하기</a>
+	                        </div>
+	                    </div>
+	                </article>	    
+	                
+	                <article class="project-card">
+	                    <img class="project-card__bg" th:src="@{/images/market.jpg}" alt="마켓 배경 이미지">
+	                    <div class="project-card__content">
+	                        <img class="project-card__thumb" th:src="@{/images/market.gif}" alt="마켓 아이콘">
+	                        <div class="card-div">
+	                            <h3 class="project-card__title">템플릿 마켓</h3>
+	                            <p class="project-card__desc">
+	                                <span>다양한 학습 스타일과 취향에 맞는 노트와 스케줄 템플릿을 만나보세요.</span>
+	                            </p>
+	                            <a th:href="@{/market}" class="project-card__btn">템플릿 마켓 가기</a>
+	                        </div>
+	                    </div>
+	                </article>	  	  	    			  
+	            </div>
+	            <div class="dots" id="dots-main"></div>
+	        </div>
+	        </section>	        
+	    </div>   
+        
+   
+  	<div th:replace="fragments/footer :: siteFooter"></div>
+</div>
+
 	<script>
 		let slideIndex = 0;
 		showSlides();
@@ -218,8 +242,116 @@ document.addEventListener("DOMContentLoaded", () => {
 		  slides[slideIndex - 1].style.display = "flex";
 		  dots[slideIndex - 1].classList.add("active");
 		}
-	</script>
+		/* 기존 광고 슬라이드 JavaScript (showSlides, plusSlides, currentSlide, showManualSlide) 코드 아래에 추가 */
 
+		// ----------------------------------------------------
+		// ⚡️ 핵심 기능 슬라이더 JS (ID 변경)
+		// ----------------------------------------------------
+		(() => {
+		    // ID를 track-main, prev-main, next-main, dots-main으로 변경
+		    const track = document.getElementById("track-main");
+		    if (!track) return; // 요소가 없으면 실행 중지 (안전 장치)
+		    
+		    const wrap = track.parentElement;
+		    const cards = Array.from(track.children);
+		    const prev = document.getElementById("prev-main");
+		    const next = document.getElementById("next-main");
+		    const dotsBox = document.getElementById("dots-main");
+
+		    const isMobile = () => matchMedia("(max-width:767px)").matches;
+
+		    cards.forEach((_, i) => {
+		        const dot = document.createElement("span");
+		        dot.className = "dot";
+		        dot.onclick = () => activate(i, true);
+		        dotsBox.appendChild(dot);
+		    });
+		    const dots = Array.from(dotsBox.children);
+
+		    let current = 0;
+
+		    function center(i) {
+		        const card = cards[i];
+		        // ... (center 함수 내용은 동일)
+		        const axis = isMobile() ? "top" : "left";
+		        const size = isMobile() ? "clientHeight" : "clientWidth";
+		        const start = isMobile() ? card.offsetTop : card.offsetLeft;
+		        wrap.scrollTo({
+		            [axis]: start - (wrap[size] / 2 - card[size] / 2),
+		            behavior: "smooth"
+		        });
+		    }
+
+		    function toggleUI(i) {
+		        // ... (toggleUI 함수 내용은 동일)
+		        cards.forEach((c, k) => c.toggleAttribute("active", k === i));
+		        dots.forEach((d, k) => d.classList.toggle("active", k === i));
+		        prev.disabled = i === 0;
+		        next.disabled = i === cards.length - 1;
+		    }
+
+		    function activate(i, scroll) {
+		        // ... (activate 함수 내용은 동일)
+		        if (i === current) return;
+		        current = i;
+		        toggleUI(i);
+		        if (scroll) center(i);
+		    }
+
+		    function go(step) {
+		        // ... (go 함수 내용은 동일)
+		        activate(Math.min(Math.max(current + step, 0), cards.length - 1), true);
+		    }
+
+		    // 이벤트 리스너도 ID가 변경된 버튼에 연결
+		    prev.onclick = () => go(-1);
+		    next.onclick = () => go(1);
+
+		    addEventListener(
+		        "keydown",
+		        (e) => {
+		            if (["ArrowRight", "ArrowDown"].includes(e.key)) go(1);
+		            if (["ArrowLeft", "ArrowUp"].includes(e.key)) go(-1);
+		        },
+		        { passive: true }
+		    );
+
+		    cards.forEach((card, i) => {
+		        card.addEventListener(
+		            "mouseenter",
+		            () => matchMedia("(hover:hover)").matches && activate(i, true)
+		        );
+		        card.addEventListener("click", () => activate(i, true));
+		    });
+
+		    let sx = 0, sy = 0;
+		    track.addEventListener(
+		        "touchstart",
+		        (e) => {
+		            sx = e.touches[0].clientX;
+		            sy = e.touches[0].clientY;
+		        },
+		        { passive: true }
+		    );
+
+		    track.addEventListener(
+		        "touchend",
+		        (e) => {
+		            const dx = e.changedTouches[0].clientX - sx;
+		            const dy = e.changedTouches[0].clientY - sy;
+		            if (isMobile() ? Math.abs(dy) > 60 : Math.abs(dx) > 60)
+		                go((isMobile() ? dy : dx) > 0 ? -1 : 1);
+		        },
+		        { passive: true }
+		    );
+		    if (window.matchMedia("(max-width:767px)").matches) dotsBox.hidden = true;
+
+		    addEventListener("resize", () => center(current));
+
+		    toggleUI(0);
+		    center(0);
+		})();
+	</script>
 
 </body>
 

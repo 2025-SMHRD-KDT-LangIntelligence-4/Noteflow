@@ -1,418 +1,548 @@
 @charset "UTF-8";
+/* ---------------------------------------------------- */
+/* 1. Global & Fonts */
+/* ---------------------------------------------------- */
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+/* Custom CSS Variables for the new Slider */
+:root {
+	--gap: 1.25rem;
+	--speed: 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+	--closed: 5rem;
+	--open: 30rem;
+	--accent: #1E9AFF; /* 기존 주황색 대신 새김AI의 파란색 계열로 변경 */
+}
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
 body {
 	background: white; 
 	margin:0px;
-	font-family:pretendard;
+	font-family: pretendard;
+	color: #333; /* 기본 텍스트 색상 설정 */
 }
 .full-location-container {
 	width:100%;
 	height:100%;
 	display:flex;
 	flex-wrap:wrap;
-}
-.ad-banner-wrapper {
-  position: relative;
-  width: 100%;
-  height: 500px;
-  overflow: hidden;
-  margin: 0 auto;
-  top:50px;
+	
 }
 
+/* ---------------------------------------------------- */
+/* 2. Main Page Sections (Original Styles) */
+/* ---------------------------------------------------- */
+
+/* --- A. 상단 광고 배너 (Carousel) --- */
+.ad-banner-wrapper {
+	position: relative;
+	width: 100%;
+	height: 500px;
+	overflow: hidden;
+	margin: 0 auto;
+	top: 50px;
+}
 .ad-banner {
-  position: relative;
-  height: 100%;
-  width:100%;
+	position: relative;
+	height: 100%;
+	width: 100%;
 }
-.smhrd-link{
-	position:absolute;
-	top:75%;
-	left:70%;
-	width:200px;
-	height:50px;
-	background:linear-gradient(300deg, #1E9AFF 0, #96d0ff 100%);;
-	border-radius:20px;
-	text-decoration:none;
-	display:flex;
-	justify-content:center;
-	align-items:center;
-	font-size:20px;
-	color:white;
-	font-weight:bold;
-}
-.smhrd-link:hover{
-	background:linear-gradient(300deg, #1E9AFF 0, #96d0ff 100%);;
-	transform: translateY(1px);
-	color:white;
-}
-.ad2-link{
-	width:200px;
-	height:50px;
-	position:absolute;
-	background:#FF7D21;
-	color:white;
-	font-weight:bold;
-	font-size:20px;
-	left:43%;
-	top:71%;
-	display:flex;
-	justify-content:center;
-	align-items:center;
-	text-decoration:none;
+.ad-slide {
+	display: none;
+	width: 100%;
+	height: 100%;
+	aspect-ratio: 2/1;
+	justify-content: flex-start;
 }
 .ad-banner-img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
 }
-.ad3-link{
-	position:absolute;
-	top:75%;
-	left:70%;
-	width:200px;
-	height:50px;
-	background:linear-gradient(300deg, #1E9AFF 0, #96d0ff 100%);;
-	border-radius:20px;
-	text-decoration:none;
-	display:flex;
-	justify-content:center;
-	align-items:center;
-	font-size:20px;
-	color:white;
-	font-weight:bold;
-}
-/* 슬라이드 숨김 */
-.ad-slide {
-  display: none;
-  width: 100%;
-  height: 100%;
-  aspect-ratio: 2/1;
-  justify-content:flex-start;
-  
-}
-.ad-pre{
+/* Link Styles */
+.smhrd-link, .ad3-link {
+	position: absolute;
+	top: 75%;
+	left: 70%;
+	width: 200px;
+	height: 50px;
+	background: linear-gradient(300deg, #1E9AFF 0, #96d0ff 100%);
+	border-radius: 20px;
+	text-decoration: none;
 	display: flex;
-    flex-wrap: wrap;
-    height: 150px;
-    justify-content: flex-end;
-    width:400px;
-    position:absolute;
-    top:30%;
-    left:55%;
-    gap:10px;
-}
-.ad-slide span{
+	justify-content: center;
+	align-items: center;
 	font-size: 20px;
-    width: 100%;
-    display: flex;
-    justify-content: flex-end;;
+	color: white;
+	font-weight: bold;
+	transition: all 0.2s;
 }
-.ad-pre-title{
-	font-size:50px;
-	width:100px;
+.smhrd-link:hover, .ad3-link:hover {
+	transform: translateY(1px);
 }
-/* 페이드 애니메이션 */
-.fade {
-  animation: fadeEffect 1s;
-}
-@keyframes fadeEffect {
-  from {opacity: 0.4;}
-  to {opacity: 1;}
-}
-
-/* 버튼 */
-.prev, .next {
-  cursor: pointer;
-  position: absolute;
-  top: 50%;
-  padding: 16px;
-  color: white;
-  font-weight: bold;
-  font-size: 24px;
-  user-select: none;
-  transition: 0.3s;
-  transform: translateY(-50%);
-}
-.prev { left: 0; }
-.next { right: 0; }
-
-.prev:hover, .next:hover {
-  background-color: rgba(0,0,0,0.4);
-  border-radius: 50%;
-}
-
-/* 점 네비게이션 */
-.dots {
-  text-align: center;
-  position: absolute;
-  width: 100%;
-  bottom: 15px;
-}
-.dot {
-  cursor: pointer;
-  height: 10px;
-  width: 10px;
-  margin: 0 4px;
-  background-color: #bbb;
-  border-radius: 50%;
-  display: inline-block;
-  transition: 0.3s;
-}
-.dot.active, .dot:hover {
-  background-color: #717171;
-}
-
-.ad-banner2-wrapper{
-	width:100%;
-	height:500px;
-	display:flex;
-	justify-content:center;
-	position: relative;   
-}
-.ad-banner2{
-	width:100%;
-	height:100%;
-	gap:40px;
-	display:flex;
-	justify-content:center;
-	flex-wrap:wrap;
-	align-items:center;
-}
-.AI-comment-box{
-	padding:10px;
-}
-.comment-box{
-	width:400px;
-	height:auto;
-	font-size:30px;
-	display:flex;
-	flex-wrap:wrap;
-	gap:20px;
-}
-.schedule-alarm{
-	width:100%;
-	font-size:50px;
-	display:flex;
-	flex-wrap:wrap;
-	gap:10px;
-}
-.ad-temMarket-comment{
-	width:100%;
-	font-size:50px;
-	display:flex;
-	flex-wrap:wrap;
-	gap:10px;
-}
-.schedule-alarm2{
-	width:100%;
-}
-.ai-image{
-	width:250px;
-	
-}
-.calander-img{
-	width:400px;
-	height:300px;
-	border-radius:50%;
-	
-}
-.goSchedule-btn{
-	width:200px;
-	font-size:20px;
-	padding:10px;
-	background-color:white;
-	display:flex;
-	justify-content:center;
-	border-radius:10px;
+.ad2-link {
+	width: 200px;
+	height: 50px;
+	position: absolute;
+	background: #FF7D21;
+	color: white;
+	font-weight: bold;
+	font-size: 20px;
+	left: 19%;
+	top: 58%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
 	text-decoration: none;
-	color:black;
-	box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
-.goSchedule-btn:hover{
-	background-color:#96d0ff;
-	color:white;
-}
-.calander-box{
-	display:flex;
-	flex-wrap:wrap;
-	width: 500px;
-    height: auto;
-    justify-content:center;
-}
-.ad-banner3-wrapper{
-	width:100%;
-	height:500px;
-	position: relative;
-    margin-bottom:100px;
-}
-.ad-banner3{
-	width:100%;
-	height:100%;
-	background-color:white;
-	display:flex;
-	justify-content:center;
-	flex-wrap:wrap;
-	align-items:center;
-	gap:40px;
-}
-.market-img-box{
-	display:flex;
+.ad-pre {
+	display: flex;
 	flex-wrap: wrap;
-    width: 500px;
-    height: auto;
-	justify-content:center;
+	height: 150px;
+	justify-content: flex-end;
+	width: 400px;
+	position: absolute;
+	top: 30%;
+	left: 55%;
+	gap: 10px;
 }
-.ad-temMarket{
-	padding:10px;
+.ad-slide span {
+	font-size: 20px;
+	width: 100%;
+	display: flex;
+	justify-content: flex-end;
 }
-.ad-temMarket-comment-box{
-	width:450px;
-	height:auto;
-	font-size:30px;
-	display:flex;
-	flex-wrap:wrap;
-	gap:20px;
-}
-.ad-temMarket-comment{
-	width:100%;
-	font-size:50px;
-}
-.ad-temMarket-comment2{
-	width:100%;
-}
-.ad-banner-wrapper {
-  position: relative;
-  max-width: 100%;
-  height: 500px;
-  overflow: hidden;
-  margin: 0 auto;
-}
-
-.ad-banner {
-  position: relative;
-  height: 100%;
-}
-
-/* 슬라이드 숨김 */
-.ad-slide {
-  display: none;
-  width: 100%;
-  height: 100%;
-}
-
-/* 페이드 애니메이션 */
+/* Fade Animation */
 .fade {
-  animation: fadeEffect 1s;
+	animation: fadeEffect 1s;
 }
 @keyframes fadeEffect {
-  from {opacity: 0.4;}
-  to {opacity: 1;}
+	from {opacity: 0.4;}
+	to {opacity: 1;}
 }
-
-/* 버튼 */
+/* Navigation Buttons */
 .prev, .next {
-  cursor: pointer;
-  position: absolute;
-  top: 50%;
-  padding: 16px;
-  color: white;
-  font-weight: bold;
-  font-size: 24px;
-  user-select: none;
-  transition: 0.3s;
-  transform: translateY(-50%);
+	cursor: pointer;
+	position: absolute;
+	top: 50%;
+	padding: 16px;
+	color: white;
+	font-weight: bold;
+	font-size: 24px;
+	user-select: none;
+	transition: 0.3s;
+	transform: translateY(-50%);
 }
 .prev { left: 0; }
 .next { right: 0; }
-
 .prev:hover, .next:hover {
-  background-color: rgba(0,0,0,0.4);
-  border-radius: 50%;
+	background-color: rgba(0, 0, 0, 0.4);
+	border-radius: 50%;
 }
-
-/* 점 네비게이션 */
+/* Dots Navigation */
 .dots {
-  text-align: center;
-  position: absolute;
-  width: 100%;
-  bottom: 15px;
+	text-align: center;
+	width: 100%;
+	bottom: 15px;
 }
 .dot {
-  cursor: pointer;
-  height: 10px;
-  width: 10px;
-  margin: 0 4px;
-  background-color: #bbb;
-  border-radius: 50%;
-  display: inline-block;
-  transition: 0.3s;
+	cursor: pointer;
+	height: 10px;
+	width: 10px;
+	margin: 0 4px;
+	background-color: #bbb;
+	border-radius: 50%;
+	display: inline-block;
+	transition: 0.3s;
 }
 .dot.active, .dot:hover {
-  background-color: #717171;
+	background-color: #717171;
 }
-.moto-text-container,.moto-text-container2 {
-	margin-top:50px;
-	width:100%;
-	height:180px;
-	background:linear-gradient(360deg, #1E9AFF 0, #96d0ff 100%);;
-	display:flex;
-	justify-content:center;
-}
-.moto-text-box{
-	width:1000px;
-	height:100%;
 
-	font-size:30px;
-	color:white;
-	font-weight:bold;
-	display:flex;
-	justify-content:center;
-	align-items:center;
+/* --- B. 모토 텍스트 배너 --- */
+.moto-text-container, .moto-text-container2 {
+	margin-top: 50px;
+	width: 100%;
+	height: 180px;
+	background: linear-gradient(360deg, #1E9AFF 0, #96d0ff 100%);
+	display: flex;
+	justify-content: center;
 }
-.ad-banner1-wrapper{
-	width:100%;
-	height:500px;
-	display:flex;
-	justify-content:center;
-	position: relative; 
+.moto-text-box {
+	width: 1000px;
+	height: 100%;
+	font-size: 30px;
+	color: white;
+	font-weight: bold;
+	display: flex;
+	justify-content: center;
+	align-items: center;
 }
-.ad-banner1{
-	width:100%;
-	height:100%;
-	gap:40px;
-	display:flex;
-	justify-content:center;
-	flex-wrap:wrap;
-	align-items:center;
-}
-.goNoteCreate-btn{
-	width:200px;
-	font-size:20px;
-	padding:10px;
-	background-color:white;
-	display:flex;
-	justify-content:center;
-	border-radius:10px;
+
+/* --- C. 기존 ad-banner1, ad-banner2, ad-banner3 (삭제된 요소지만 관련 스타일 유지) --- */
+/* (새로운 슬라이더가 이 스타일들을 대체합니다. 필요한 버튼 스타일만 남깁니다.) */
+.goNoteCreate-btn, .goSchedule-btn {
+	width: 200px;
+	font-size: 20px;
+	padding: 10px;
+	background-color: white;
+	display: flex;
+	justify-content: center;
+	border-radius: 10px;
 	text-decoration: none;
-	color:black;
-	box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+	color: black;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	transition: background-color 0.2s, color 0.2s;
 }
-.goNoteCreate-btn:hover{
-	background-color:#96d0ff;
-	color:white;
+.goNoteCreate-btn:hover, .goSchedule-btn:hover {
+	background-color: #96d0ff;
+	color: white;
 }
-.note-alarm{
-	width:100%;
-	font-size:50px;
-	display:flex;
-	flex-wrap:wrap;
-	gap:10px;
+
+
+/* ---------------------------------------------------- */
+/* 3. New Center-Mode Productivity Slider Styles */
+/* ---------------------------------------------------- */
+
+#main-feature-slider {
+	/* 새로운 슬라이더 섹션을 위한 컨테이너 */
+	width: 100%;
+	padding-bottom: 50px; /* 푸터와의 간격 */
+	background: linear-gradient(180deg, #1E9AFF 0, #96d0ff 100%);
+	margin-top:50px;
 }
-.note-box{
-	display:flex;
-	flex-wrap:wrap;
-	width: 500px;
-    height: auto;
-    justify-content:center;
+#main-feature-slider .head {
+	max-width: 1400px;
+	margin: auto;
+	padding: 70px 20px 50px;
+	display: flex;
+    align-items: center;
+    flex-direction: row;
+    justify-content: center;
+	gap: 2rem;
+}
+#main-feature-slider .head h2 {
+	font: bold 1.5rem/1.2 Pretendard, sans-serif; /* 폰트 Pretendard로 변경 */
+	color: white; /* 배경색에 맞춰 텍스트 색상 변경 */
+}
+@media (min-width: 1024px) {
+	#main-feature-slider .head h2 {
+		font-size: 2.25rem;
+	}
+}
+#main-feature-slider .nav-btn {
+	width: 2.5rem;
+	height: 2.5rem;
+	border: 1px solid rgba(0, 0, 0, 0.2); /* 흰색 배경에 맞춰 테두리 추가 */
+	border-radius: 50%;
+	background: rgba(0, 0, 0, 0.05); /* 밝은 배경에 연한 배경 */
+	color: #333; /* 텍스트 색상 */
+	font-size: 1.5rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: 0.3s;
+}
+#main-feature-slider .nav-btn:hover {
+	background: var(--accent); /* 새김AI 파란색 */
+	color: white;
+}
+#main-feature-slider .nav-btn:disabled {
+	opacity: 0.3;
+	cursor: default;
+}
+
+#main-feature-slider .slider {
+	max-width: 1400px;
+	margin: auto;
+	overflow: hidden;
+}
+
+#main-feature-slider .controls {
+	display: flex;
+	flex-direction: row;
+	gap: 0.5rem;
+	justify-content:center;
+}
+#main-feature-slider .track {
+	display: flex;
+	gap: var(--gap);
+	align-items: flex-start;
+	justify-content: center;
+	scroll-behavior: smooth;
+	scroll-snap-type: x mandatory;
+	padding-bottom: 50px;
+	padding-top:50px;
+}
+#main-feature-slider .track::-webkit-scrollbar {
+	display: none;
+}
+
+#main-feature-slider .project-card {
+	position: relative;
+	flex: 0 0 var(--closed);
+	height: 26rem;
+	border-radius: 1rem;
+	overflow: hidden;
+	cursor: pointer;
+	transition: flex-basis var(--speed), transform var(--speed);
+	border: 2px solid transparent; /* 기본 테두리 */
+	height:350px;
+}
+#main-feature-slider .project-card[active] {
+	flex-basis: var(--open);
+	transform: translateY(-6px);
+	box-shadow: 0 18px 55px rgba(0, 0, 0, 0.2); /* 그림자 밝게 조정 */
+	border-color: var(--accent); /* 활성화 시 파란색 테두리 */
+}
+#main-feature-slider .project-card__bg {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	filter: brightness(0.85) saturate(90%); /* 밝은 배경에 맞춰 밝기 조정 */
+	transition: filter 0.3s, transform var(--speed);
+}
+#main-feature-slider .project-card:hover .project-card__bg {
+	filter: brightness(0.95) saturate(100%);
+	transform: scale(1.06);
+}
+
+#main-feature-slider .project-card__content {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	gap: 0.7rem;
+	padding: 0;
+	/* 흰 배경과 어우러지도록 그라데이션 수정 */
+	background: linear-gradient(transparent 10%, rgba(0, 0, 0, 0.7) 100%); 
+	z-index: 2;
+	color: white;
+}
+#main-feature-slider .project-card__title {
+	color: #fff;
+    font-weight: 700;
+    font-size: 1.35rem;
+    writing-mode: sideways-lr;
+}
+#main-feature-slider .project-card__thumb,
+#main-feature-slider .project-card__desc,
+#main-feature-slider .project-card__btn {
+	display: none;
+}
+
+#main-feature-slider .project-card[active] .project-card__content {
+	flex-direction: row;
+	align-items: center;
+	padding: 1.2rem 2rem;
+	gap: 1.1rem;
+	justify-content: flex-start; /* 활성화 시 왼쪽 정렬 */
+}
+#main-feature-slider .project-card[active] .project-card__title {
+	writing-mode: horizontal-tb;
+	transform: none;
+	font-size: 2.0rem;
+	color: white;
+}
+#main-feature-slider .project-card[active] .project-card__thumb,
+#main-feature-slider .project-card[active] .project-card__desc,
+#main-feature-slider .project-card[active] .project-card__btn {
+	display: flex;
+}
+
+#main-feature-slider .project-card__thumb {
+	width: 200px;
+    height: 150px;
+    border-radius: 0.45rem;
+    object-fit: fill;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+#main-feature-slider .project-card__desc {
+	color: #ddd;
+	font-size: 1rem;
+	line-height: 1.4;
+	max-width: 16rem;
+}
+#main-feature-slider .project-card__btn {
+	padding: 0.55rem 1.3rem;
+	border: none;
+	border-radius: 9999px;
+	background: var(--accent); /* 새김AI 파란색 */
+	color: #fff;
+	font-size: 0.9rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background 0.3s;
+	width: 172px;
+	text-decoration:none;
+	justify-content:center;
+}
+#main-feature-slider .project-card__btn:hover {
+	background: #96d0ff; /* hover 색상 변경 */
+}
+
+#main-feature-slider .dots {
+	display: flex;
+	gap: 0.5rem;
+	justify-content: center;
+	padding: 20px 0;
+}
+#main-feature-slider .dot {
+	width: 13px;
+	height: 13px;
+	border-radius: 50%;
+	background: rgba(0, 0, 0, 0.3); /* 밝은 배경에 맞춰 색상 변경 */
+	cursor: pointer;
+	transition: 0.3s;
+}
+#main-feature-slider .dot.active {
+	background: var(--accent);
+	transform: scale(1.2);
+}
+
+/* ---------------------------------------------------- */
+/* 4. Media Queries (Responsive Design) */
+/* ---------------------------------------------------- */
+
+/* --- A. New Slider Mobile Styles (767px 이하) --- */
+@media (max-width: 767px) {
+	/* 기존 슬라이더 모바일 설정 오버라이드 (새김AI 디자인 유지) */
+	:root {
+		--closed: 100%;
+		--open: 100%;
+		--gap: 0.8rem;
+	}
+
+	#main-feature-slider .head {
+		padding: 30px 15px 20px;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 1rem;
+		display:flex;
+		justify-content:center;
+	}
+
+	#main-feature-slider .slider {
+		padding: 0 15px;
+	}
+
+	#main-feature-slider .track {
+		flex-direction: column;
+		scroll-snap-type: y mandatory;
+		gap: 0.8rem;
+		padding-bottom: 20px;
+	}
+
+	#main-feature-slider .project-card {
+		height: auto;
+		min-height: 80px;
+		flex: 0 0 auto;
+		width: 100%;
+		scroll-snap-align: start;
+	}
+
+	#main-feature-slider .project-card[active] {
+		min-height: 300px;
+		transform: none;
+		box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+		border-color: var(--accent);
+	}
+
+	#main-feature-slider .project-card__content {
+		flex-direction: row;
+		justify-content: flex-start;
+		padding: 1rem;
+		align-items: center;
+		gap: 1rem;
+	}
+
+	#main-feature-slider .project-card__title {
+		writing-mode: horizontal-tb;
+		transform: none;
+		font-size: 1.2rem;
+		margin-right: auto;
+		color: white; /* 폰트 색상 유지 */
+	}
+
+	#main-feature-slider .project-card__thumb,
+	#main-feature-slider .project-card__desc,
+	#main-feature-slider .project-card__btn {
+		display: none;
+	}
+
+	#main-feature-slider .project-card[active] .project-card__content {
+		flex-direction: column;
+		align-items: flex-start;
+		padding: 1.5rem;
+		justify-content: flex-start;
+	}
+
+	#main-feature-slider .project-card[active] .project-card__title {
+		font-size: 1.8rem;
+		margin-bottom: 0.5rem; /* 간격 조정 */
+		margin-top: 0; /* 불필요한 마진 제거 */
+	}
+
+	#main-feature-slider .project-card[active] .project-card__thumb {
+		width: 100px; /* 모바일 썸네일 크기 조정 */
+		height: 100px;
+		object-fit: contain;
+		border-radius: 50%; /* 원형으로 변경 */
+		margin-bottom: 1rem;
+		align-self: center; /* 중앙 정렬 */
+	}
+
+	#main-feature-slider .project-card[active] .project-card__desc {
+		display: block;
+		font-size: 0.95rem;
+		max-width: 100%;
+		margin-bottom: 1rem;
+	}
+
+	#main-feature-slider .project-card[active] .project-card__btn {
+		display: block;
+		align-self: center;
+		width: 100%;
+		text-align: center;
+		padding: 0.7rem;
+	}
+
+	#main-feature-slider .dots {
+		display: none;
+	}
+
+	#main-feature-slider .controls {
+		width: 100%;
+		justify-content: center;
+		padding: 0 15px 20px;
+	}
+
+	#main-feature-slider .nav-btn {
+		position: static;
+		transform: none;
+	}
+}
+
+/* --- B. Original Sections Mobile Styles (필요에 따라 추가/수정) --- */
+/*
+@media (max-width: 767px) {
+	.ad-banner-wrapper { height: 300px; }
+	.moto-text-container { height: 100px; font-size: 1.2rem; }
+	.ad-banner1, .ad-banner2, .ad-banner3 { flex-direction: column; height: auto; padding: 20px 0; }
+	.calander-img { width: 250px; height: 180px; }
+	.comment-box, .ad-temMarket-comment-box { width: 90%; text-align: center; justify-content: center; }
+}
+*/
+.card-div{
+	display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
