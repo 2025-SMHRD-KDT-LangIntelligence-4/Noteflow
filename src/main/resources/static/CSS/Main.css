@@ -355,6 +355,7 @@ body {
 #main-feature-slider .project-card[active] .project-card__desc,
 #main-feature-slider .project-card[active] .project-card__btn {
 	display: flex;
+	flex-wrap:wrap;
 }
 
 #main-feature-slider .project-card__thumb {

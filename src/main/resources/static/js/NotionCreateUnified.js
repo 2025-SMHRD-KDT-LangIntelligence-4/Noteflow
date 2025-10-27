@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
     currentPosition: 0,
     cloneCount: 0,
     selectedPromptIdx: null,  // displayPrompts 배열의 인덱스 (0~15)
-    peekChkIdx: null,         // 체크박스 미리보기
+    peekChkIdx: null,         // 체크박스 미리보기 -> 이제 '클릭 미리보기' 상태를 저장
     truncated: false,
     blocked: false,
     sizeBytes: 0,
@@ -100,10 +100,11 @@ document.addEventListener('DOMContentLoaded', () => {
     el: $promptViewerEl,
     viewer: true,
     height: 'auto',
-    initialEditType: 'wysiwyg',  // ✅ 추가
+    initialEditType: 'wysiwyg', 
     usageStatistics: false
   });
-  state.viewer.setMarkdown('**프롬프트가 여기에 표시됩니다.**\n\n카드 하단의 체크박스를 켜면 해당 프롬프트의 예시만 표시되고 슬라이드가 멈춥니다.');
+  // ✅ 안내 문구 수정
+  state.viewer.setMarkdown('**프롬프트가 여기에 예시로 표시됩니다.**\n\n카드를 클릭하면 해당 프롬프트의 예시가 표시되고 슬라이드가 멈춥니다. 한번 더 클릭 시 다시 슬라이드를 시작합니다.');
 
   // ==== 유틸 ====
   const setMsg = (text, type='info') => { if (!$preMsg) return; $preMsg.textContent = text; $preMsg.style.color = type === 'error' ? 'red' : (type === 'success' ? 'green' : '#666'); };
@@ -157,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   state.editor.on('change', updateCounters);
 
-  // ==== 슬라이드: 카드 생성 ====
+  // ==== 슬라이드: 카드 생성 (수정됨) ====
   function makeCard(p, idx) {
     const card = document.createElement('div');
     card.className = 'nc-slide-item';
@@ -171,23 +172,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const actions = document.createElement('div');
     actions.className = 'nc-item-actions';
 
-    // 체크박스 (미리보기/정지 토글)
-    const label = document.createElement('label');
-    label.className = 'nc-peek-label';
-    const chk = document.createElement('input');
-    chk.type = 'checkbox';
-    chk.className = 'nc-peek-check';
-    chk.dataset.index = idx;
-    label.appendChild(chk);
-    label.appendChild(document.createTextNode(' 이 프롬프트 예시 자세히 보기'));
+    // ❌ 체크박스(label, chk) 관련 코드 제거됨
 
     // 확정 선택 버튼
     const btn = document.createElement('button');
     btn.className = 'nc-btn nc-primary';
     btn.textContent = '프롬프트 선택';
-    btn.addEventListener('click', () => finalizePromptSelection(idx));
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation(); // 카드 클릭 이벤트와의 충돌 방지
+        finalizePromptSelection(idx)
+    });
 
-    actions.appendChild(label);
+    // ❌ actions.appendChild(label); // 제거됨
     actions.appendChild(btn);
 	// 이미지
 	if (p.imageUrl) {
@@ -207,66 +203,82 @@ document.addEventListener('DOMContentLoaded', () => {
 	
     card.appendChild(actions);
 
-    // 체크박스 동작
-    chk.addEventListener('change', () => {
-      if (chk.checked) {
-        document.querySelectorAll('.nc-peek-check').forEach(c => { if (c !== chk) c.checked = false; });
-        state.peekChkIdx = idx;
-        pauseSlider();
-        const md = p.exampleOutput || p.content || '';
-        state.viewer.setMarkdown(md);
+    // ✅ 카드 클릭 이벤트 (미리보기/정지 토글)
+    card.addEventListener('click', () => {
+        const isSelected = card.classList.contains('nc-selected');
+
+        // 모든 카드에서 nc-selected 클래스 제거 (현재 클릭한 카드와 복제본 포함)
         document.querySelectorAll('.nc-slide-item').forEach(el => el.classList.remove('nc-selected'));
-        card.classList.add('nc-selected');
-      } else {
-        state.peekChkIdx = null;
-        card.classList.remove('nc-selected');
-        if (state.selectedPromptIdx !== null) {
-          const sp = prompts[state.selectedPromptIdx];
-          const md = sp?.exampleOutput || sp?.content || '';
-          state.viewer.setMarkdown(md);
+
+        if (isSelected) {
+            // 이미 선택된 카드 -> 선택 해제 (미리보기 끄기)
+            state.peekChkIdx = null;
+            
+            // 최종 선택된 프롬프트가 있다면 그 내용을 다시 보여줌
+            if (state.selectedPromptIdx !== null) {
+                const sp = displayPrompts[state.selectedPromptIdx];
+                const md = sp?.exampleOutput || sp?.content || '';
+                state.viewer.setMarkdown(md);
+            } else {
+                state.viewer.setMarkdown('**프롬프트가 여기에 표시됩니다.**\n\n카드를 클릭하면 해당 프롬프트의 예시가 표시되고 슬라이드가 멈춥니다.');
+            }
+            resumeSlider();
         } else {
-          state.viewer.setMarkdown('**프롬프트가 여기에 표시됩니다.**\n\n카드 하단의 체크박스를 켜면 해당 프롬프트의 예시만 표시되고 슬라이드가 멈춥니다.');
+            // 새로운 카드 선택 (미리보기 켜기)
+            state.peekChkIdx = idx;
+            pauseSlider();
+            const md = p.exampleOutput || p.content || '';
+            state.viewer.setMarkdown(md);
+            // 클릭한 카드와 동일한 인덱스를 가진 모든 카드에 nc-selected 추가
+            document.querySelectorAll(`.nc-slide-item[data-index="${idx}"]`).forEach(el => el.classList.add('nc-selected'));
         }
-        resumeSlider();
-      }
     });
 
     return card;
   }
 
-  // 복제 카드 이벤트 연결(무한 캐러셀용)
+  // 복제 카드 이벤트 연결(무한 캐러셀용) (수정됨)
   function wireCardEvents(cardEl) {
     const idx = parseInt(cardEl.dataset.index);
-    const p = prompts[idx];
-    const chk = cardEl.querySelector('.nc-peek-check');
+    const p = displayPrompts[idx];
     const btn = cardEl.querySelector('.nc-btn.nc-primary');
 
-    if (chk) {
-      chk.addEventListener('change', () => {
-        if (chk.checked) {
-          document.querySelectorAll('.nc-peek-check').forEach(c => { if (c !== chk) c.checked = false; });
-          state.peekChkIdx = idx;
-          pauseSlider();
-          const md = p.exampleOutput || p.content || '';
-          state.viewer.setMarkdown(md);
-          document.querySelectorAll('.nc-slide-item').forEach(el => el.classList.remove('nc-selected'));
-          cardEl.classList.add('nc-selected');
+    // ✅ 카드 클릭 이벤트 (makeCard와 동일한 로직)
+    cardEl.addEventListener('click', () => {
+        const isSelected = cardEl.classList.contains('nc-selected');
+        
+        // 모든 카드에서 nc-selected 클래스 제거 (현재 클릭한 카드와 복제본 포함)
+        document.querySelectorAll('.nc-slide-item').forEach(el => el.classList.remove('nc-selected'));
+
+        if (isSelected) {
+            // 선택 해제
+            state.peekChkIdx = null;
+            if (state.selectedPromptIdx !== null) {
+                const sp = displayPrompts[state.selectedPromptIdx];
+                const md = sp?.exampleOutput || sp?.content || '';
+                state.viewer.setMarkdown(md);
+            } else {
+                state.viewer.setMarkdown('**프롬프트가 여기에 표시됩니다.**\n\n카드를 클릭하면 해당 프롬프트의 예시가 표시되고 슬라이드가 멈춥니다.');
+            }
+            resumeSlider();
         } else {
-          state.peekChkIdx = null;
-          cardEl.classList.remove('nc-selected');
-          if (state.selectedPromptIdx !== null) {
-            const sp = prompts[state.selectedPromptIdx];
-            const md = sp?.exampleOutput || sp?.content || '';
+            // 새로운 카드 선택
+            state.peekChkIdx = idx;
+            pauseSlider();
+            const md = p.exampleOutput || p.content || '';
             state.viewer.setMarkdown(md);
-          } else {
-            state.viewer.setMarkdown('**프롬프트가 여기에 표시됩니다.**\n\n카드 하단의 체크박스를 켜면 해당 프롬프트의 예시만 표시되고 슬라이드가 멈춥니다.');
-          }
-          resumeSlider();
+            // 클릭한 카드와 동일한 인덱스를 가진 모든 카드에 nc-selected 추가
+            document.querySelectorAll(`.nc-slide-item[data-index="${idx}"]`).forEach(el => el.classList.add('nc-selected'));
         }
-      });
-    }
+    });
+
+    // ❌ 기존의 체크박스 이벤트 제거됨
+
     if (btn) {
-      btn.addEventListener('click', () => finalizePromptSelection(idx));
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation(); // 카드 클릭 이벤트와의 충돌 방지
+        finalizePromptSelection(idx)
+      });
     }
   }
 
@@ -313,7 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
         state.currentPosition += 0.6;
         $buttonContainer.style.transition = 'none';
         $buttonContainer.style.transform = `translateX(-${state.currentPosition}px)`;
-        const maxPos = (prompts.length + state.cloneCount) * CARD_WIDTH;
+        const maxPos = (displayPrompts.length + state.cloneCount) * CARD_WIDTH;
         if (state.currentPosition >= maxPos) {
           state.currentPosition = state.cloneCount * CARD_WIDTH;
           $buttonContainer.style.transition = 'none';
@@ -336,7 +348,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
       resumeSlider();
       if (state.currentPosition < state.cloneCount * CARD_WIDTH) {
-        state.currentPosition = (prompts.length + state.cloneCount - 1) * CARD_WIDTH;
+        state.currentPosition = (displayPrompts.length + state.cloneCount - 1) * CARD_WIDTH;
         $buttonContainer.style.transition = 'none';
         $buttonContainer.style.transform = `translateX(-${state.currentPosition}px)`;
       }
@@ -349,7 +361,7 @@ document.addEventListener('DOMContentLoaded', () => {
     pauseSlider();
     setTimeout(() => {
       resumeSlider();
-      const maxPos = (prompts.length + state.cloneCount) * CARD_WIDTH;
+      const maxPos = (displayPrompts.length + state.cloneCount) * CARD_WIDTH;
       if (state.currentPosition >= maxPos) {
         state.currentPosition = state.cloneCount * CARD_WIDTH;
         $buttonContainer.style.transition = 'none';
@@ -369,7 +381,8 @@ document.addEventListener('DOMContentLoaded', () => {
       $promptStage.style.display = 'none';
       $inputStage.style.display = 'flex';
       
-      document.querySelectorAll('.nc-peek-check').forEach(c => c.checked = false);
+      // 선택된 카드 스타일 초기화 (선택을 확정했으므로 미리보기 상태 해제)
+      document.querySelectorAll('.nc-slide-item').forEach(c => c.classList.remove('nc-selected'));
       state.peekChkIdx = null;
       resumeSlider();
       
@@ -398,12 +411,16 @@ document.addEventListener('DOMContentLoaded', () => {
     resumeSlider();
 
     if (state.selectedPromptIdx !== null) {
-      const sp = prompts[state.selectedPromptIdx];
+      const sp = displayPrompts[state.selectedPromptIdx];
       const md = sp?.exampleOutput || sp?.content || '';
       state.viewer.setMarkdown(md);
     } else {
-      state.viewer.setMarkdown('**프롬프트가 여기에 표시됩니다.**\n\n카드 하단의 체크박스를 켜면 해당 프롬프트의 예시만 표시되고 슬라이드가 멈춥니다.');
+      // ✅ 문구 수정
+      state.viewer.setMarkdown('**프롬프트가 여기에 표시됩니다.**\n\n카드를 클릭하면 해당 프롬프트의 예시가 표시되고 슬라이드가 멈춥니다.');
     }
+    // 복귀 시 선택 상태 초기화
+    document.querySelectorAll('.nc-slide-item').forEach(c => c.classList.remove('nc-selected'));
+    state.peekChkIdx = null;
   });
 
   // ==== 파일 업로드 → preview-meta → 정책 ====
@@ -526,13 +543,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ==== LLM 요청 ====
   
-  // 🌟 요청하신 showLoadingOverlay 함수 추가 🌟
   function showLoadingOverlay() {
     const overlay = document.getElementById('nc-loadingOverlay');
     if (overlay) overlay.style.display = 'flex';
   }
 
-  // 🌟 요청하신 hideLoadingOverlay 함수 추가 🌟
   function hideLoadingOverlay() {
     const overlay = document.getElementById('nc-loadingOverlay');
     if (overlay) overlay.style.display = 'none';
@@ -541,13 +556,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function setLoading(isLoading, message='요약 중...') {
       document.querySelectorAll('button').forEach(b => b.disabled = isLoading);
       const overlay = document.getElementById('nc-loadingOverlay');
-      // 🌟 추가: 메시지를 표시할 새 요소를 선택
       const msgEl = document.getElementById('nc-loadingMessage'); 
 
       if (overlay) { 
           overlay.style.display = isLoading ? 'flex' : 'none';
           
-          // 🌟 수정: 텍스트를 오버레이 전체가 아닌 메시지 요소에 설정
           if (msgEl) {
                msgEl.textContent = message;
           }
@@ -562,7 +575,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         body: JSON.stringify({
           content: contentToSend,
-          promptId: promptId  // ✅ promptId 전달
+          promptId: promptId 
         })
       });
       
@@ -579,7 +592,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	      },
 	      body: JSON.stringify({
 	        fileId: fileId,
-	        promptId: promptId  // ✅ promptId 전달
+	        promptId: promptId 
 	      })
 	    });
 	    

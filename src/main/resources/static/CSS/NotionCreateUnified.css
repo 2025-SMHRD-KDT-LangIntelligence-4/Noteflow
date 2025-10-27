@@ -60,9 +60,9 @@ body{
 	transform: translateY(-2px); 
 }
 .nc-slide-item.nc-selected { 
-	background-color:#96D0FF; 
-	color:#fff; 
-	transform: scale(1.03); 
+	background-color:#d9d9d9; 
+	color:black; 
+	transform: scale(1.03);
 }
 .nc-item-title { 
 	font-weight:700; 
@@ -249,7 +249,7 @@ body{
 	justify-content:space-between;
 	align-items:center;
 }
-.nc-primary { background:#96D0FF; color:#fff; border-color:#96D0FF; height:40px;}
+.nc-primary { background:#96D0FF; color:#fff; border-color:#96D0FF; height:40px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);}
 .nc-secondary { background:#10b981; color:#fff; border-color:#10b981;}
 .nc-btn:hover { background-color:#2FA1FF; color:#fff }
 .nc-btn:disabled { opacity:.5; cursor:not-allowed; }
