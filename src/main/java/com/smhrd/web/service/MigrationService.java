@@ -71,4 +71,7 @@ public class MigrationService {
         log.info("=== 마이그레이션 완료 ===");
         log.info("성공: {} 개, 실패: {} 개", successCount, failCount);
     }
+
+    public void migrateLecturesToPostgres() {
+    }
 }

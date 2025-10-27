@@ -12,6 +12,7 @@
 	let source = null;
 	let isManualControl = false;  // ⭐ 수동 조절 중인지 플래그
 	let manualControlTimeout = null;
+	let currentVideoElement = null;
 	document.addEventListener('DOMContentLoaded', () => {
 
 		// 1) NotionComplete에서 넘어온 payload
@@ -389,7 +390,6 @@
 		return hasVideo && (isSmhrd || hasSingaeTag);
 	}
 
-	// ⭐ 오프라인 영상 재생
 	function playOfflineVideo(videoFileId, title) {
 		if (!videoFileId) {
 			alert('재생 가능한 영상이 없습니다.');
@@ -412,6 +412,17 @@
 		modalTitle.textContent = title;
 		videoSource.src = `/api/video/stream/${videoFileId}`;
 
+		// ✅ 로그 추가
+		videoPlayer.addEventListener('loadstart', () => console.log('[비디오] 로딩 시작'), { once: true });
+		videoPlayer.addEventListener('loadedmetadata', () => console.log('[비디오] 메타데이터 로드 완료'), { once: true });
+		videoPlayer.addEventListener('canplay', () => console.log('[비디오] 재생 가능'), { once: true });
+		videoPlayer.addEventListener('error', (e) => {
+			console.error('[비디오 에러]', {
+				code: videoPlayer.error?.code,
+				message: videoPlayer.error?.message
+			});
+		}, { once: true });
+
 		videoPlayer.load();
 		modal.style.display = 'block';
 
@@ -425,120 +436,26 @@
 
 // ⭐ 오디오 자동 증폭 설정
 	function setupAudioBoost(videoElement) {
-		try {
-			// 이미 설정되어 있으면 초기화
-			if (audioContext) {
-				audioContext.close();
-			}
+		console.log('[볼륨 설정] HTML5 기본 볼륨 사용');
 
-			// Web Audio API 초기화
-			audioContext = new (window.AudioContext || window.webkitAudioContext)();
+		// 기본 볼륨 2배는 안 되니까 최대(1.0)로 설정
+		videoElement.volume = 1.0;
 
-			// 비디오 소스 연결
-			source = audioContext.createMediaElementSource(videoElement);
-
-			// 게인 노드 생성 (초기 볼륨 1.0 = 100%)
-			gainNode = audioContext.createGain();
-			gainNode.gain.value = 1.0;
-
-			// 분석기 노드 생성
-			analyser = audioContext.createAnalyser();
-			analyser.fftSize = 2048;
-
-			// 노드 연결: 비디오 → 게인 → 분석기 → 스피커
-			source.connect(gainNode);
-			gainNode.connect(analyser);
-			analyser.connect(audioContext.destination);
-
-			console.log('[오디오 증폭] 초기화 완료');
-
-			// 1초마다 음량 분석 및 자동 조절
-			startVolumeAnalysis();
-
-		} catch (e) {
-			console.error('[오디오 증폭] 초기화 실패:', e);
+		const slider = document.getElementById('volumeBoost');
+		const label = document.getElementById('volumeLabel');
+		if (slider && label) {
+			slider.value = '1.0';
+			label.textContent = '1.0x';
 		}
 	}
 
-// ⭐ 음량 자동 분석 및 조절
-	function startVolumeAnalysis() {
-		const bufferLength = analyser.frequencyBinCount;
-		const dataArray = new Uint8Array(bufferLength);
-
-		let analysisInterval = setInterval(() => {
-			if (!analyser || !gainNode) {
-				clearInterval(analysisInterval);
-				return;
-			}
-
-			// ⭐ 수동 조절 중이면 자동 증폭 스킵
-			if (isManualControl) {
-				return;
-			}
-
-			// 현재 음량 분석
-			analyser.getByteFrequencyData(dataArray);
-
-			let sum = 0;
-			for (let i = 0; i < bufferLength; i++) {
-				sum += dataArray[i];
-			}
-			let average = sum / bufferLength;
-
-			// 자동 증폭 로직
-			let targetGain = 1.0;
-
-			if (average < 30) {
-				targetGain = 3.0;
-			} else if (average < 50) {
-				targetGain = 2;
-			} else if (average < 80) {
-				targetGain = 1.5;
-			} else {
-				targetGain = 1.0;
-			}
-
-			// 부드럽게 볼륨 조절
-			if (audioContext) {
-				gainNode.gain.linearRampToValueAtTime(
-					targetGain,
-					audioContext.currentTime + 0.5
-				);
-
-				// 슬라이더도 동기화
-				const slider = document.getElementById('volumeBoost');
-				const label = document.getElementById('volumeLabel');
-				if (slider && label) {
-					slider.value = targetGain.toFixed(1);
-					label.textContent = targetGain.toFixed(1) + 'x';
-				}
-			}
-
-		}, 5000); // ⭐ 5초마다로 변경 (1초는 너무 자주)
-
-		window.audioAnalysisInterval = analysisInterval;
-	}
-	// ⭐ 수동 볼륨 조절
 	function adjustVolume(value) {
-		if (gainNode) {
-			// 수동 조절 모드 활성화
-			isManualControl = true;
-
-			// 즉시 볼륨 적용
-			gainNode.gain.setValueAtTime(parseFloat(value), audioContext.currentTime);
+		const videoPlayer = document.getElementById('videoPlayer');
+		if (videoPlayer) {
+			// HTML5 video는 최대 1.0까지만 지원
+			videoPlayer.volume = Math.min(parseFloat(value), 1.0);
 			document.getElementById('volumeLabel').textContent = value + 'x';
-			console.log('[수동 볼륨 조절] ' + value + 'x');
-
-			// 5초 동안 손 안 대면 자동 증폭 재개
-			if (manualControlTimeout) {
-				clearTimeout(manualControlTimeout);
-			}
-			manualControlTimeout = setTimeout(() => {
-				isManualControl = false;
-				console.log('[자동 증폭 재개]');
-			}, 5000);
-		} else {
-			console.warn('[볼륨 조절] gainNode가 아직 초기화되지 않았습니다.');
+			console.log('[볼륨 조절] ' + videoPlayer.volume);
 		}
 	}
 

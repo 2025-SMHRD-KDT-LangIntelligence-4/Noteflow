@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>시험 결과</title>
 <link id="theme-css" rel="stylesheet" th:href="@{/css/quizResult.css}">
+	<meta name="_csrf" th:content="${_csrf.token}"/>
+	<meta name="_csrf_header" th:content="${_csrf.headerName}"/>
 <script>
 		document.addEventListener("DOMContentLoaded", () => {
 		  const themeLink = document.getElementById("theme-css");

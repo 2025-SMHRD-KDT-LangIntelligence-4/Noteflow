@@ -13,4 +13,6 @@ public interface LectureRepository extends JpaRepository<Lecture, Long> {
     List<Lecture> findByLecTitleContainingOrderByCreatedAtDesc(String keyword);
 	List<Lecture> findByCategoryLargeContainingOrCategoryMediumContainingOrCategorySmallContaining(String tag,
 			String tag2, String tag3);
+
+    List<Lecture> findByLecTitleContaining(String search);
 }

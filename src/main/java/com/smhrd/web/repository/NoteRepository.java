@@ -37,4 +37,7 @@ public interface NoteRepository extends JpaRepository<Note, Long> {
     @Query("UPDATE Note n SET n.sourceId = :sourceId WHERE n.noteIdx = :noteIdx")
     void updateNoteSourceId(@Param("noteIdx") Long noteIdx, @Param("sourceId") String sourceId);
 
+    @Query(value = "SELECT * FROM notes WHERE user_idx = :userIdx AND title LIKE CONCAT('%', :title, '%')", nativeQuery = true)
+    List<Note> findByUserIdxAndNoteTitleContaining(@Param("userIdx") Long userIdx, @Param("title") String title);
+
 }

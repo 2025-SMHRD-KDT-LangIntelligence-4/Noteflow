@@ -2,10 +2,12 @@ package com.smhrd.web.service;
 
 import com.smhrd.web.entity.*;
 import com.smhrd.web.repository.*;
+import com.smhrd.web.event.NoteSavedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.MediaType;
@@ -33,6 +35,7 @@ public class NotionContentService {
     private final LLMUnifiedService llmUnifiedService;
     private final MongoTemplate mongoTemplate;
     private final NoteFolderRepository noteFolderRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Qualifier("embeddingClient")
     private final WebClient embeddingClient;
@@ -62,7 +65,8 @@ public class NotionContentService {
 
         // ✅ MongoDB에도 저장
         saveToMongoDB(userIdx, savedNote.getNoteIdx(), title, content, null);
-
+        eventPublisher.publishEvent(new NoteSavedEvent(this, savedNote.getNoteIdx(), userIdx));
+        log.info("🔔 노트 저장 이벤트 발행: noteIdx={}", savedNote.getNoteIdx());
         return savedNote.getNoteIdx();
     }
 
@@ -96,7 +100,8 @@ public class NotionContentService {
 
         // ✅ MongoDB에도 저장
         saveToMongoDB(userIdx, savedNote.getNoteIdx(), title, content, null);
-
+        eventPublisher.publishEvent(new NoteSavedEvent(this, savedNote.getNoteIdx(), userIdx));
+        log.info("🔔 노트 저장 이벤트 발행: noteIdx={}", savedNote.getNoteIdx());
         return savedNote.getNoteIdx();
     }
 
@@ -127,7 +132,8 @@ public class NotionContentService {
         Note savedNote = noteRepository.save(note);
         saveTags(savedNote, unified.getTags());
         saveToMongoDB(user.getUserIdx(), savedNote.getNoteIdx(), title, content, unified.getSummary());
-
+        eventPublisher.publishEvent(new NoteSavedEvent(this, savedNote.getNoteIdx(), userIdx));
+        log.info("🔔 노트 저장 이벤트 발행: noteIdx={}", savedNote.getNoteIdx());
         return savedNote.getNoteIdx();
     }
 
@@ -160,7 +166,8 @@ public class NotionContentService {
         Note savedNote = noteRepository.save(note);
         saveTags(savedNote, unified.getTags());
         saveToMongoDB(user.getUserIdx(), savedNote.getNoteIdx(), fileName, unified.getSummary(), unified.getSummary());
-
+        eventPublisher.publishEvent(new NoteSavedEvent(this, savedNote.getNoteIdx(), userIdx));
+        log.info("🔔 노트 저장 이벤트 발행: noteIdx={}", savedNote.getNoteIdx());
         return savedNote.getNoteIdx();
     }
 

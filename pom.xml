@@ -203,6 +203,25 @@
 		    <groupId>org.springframework.boot</groupId>
 		    <artifactId>spring-boot-starter-quartz</artifactId>
 		</dependency>
+		<!-- PostgreSQL JDBC -->
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<scope>provided</scope>
+		</dependency>
+
+		<!-- PostgreSQL용 JDBC Template -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-jdbc</artifactId>
+		</dependency>
+
+
+
+
+
+
+
 	</dependencies>
 	<dependencyManagement>
 		<dependencies>

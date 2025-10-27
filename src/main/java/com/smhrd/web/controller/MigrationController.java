@@ -1,5 +1,7 @@
 package com.smhrd.web.controller;
 
+import com.smhrd.web.service.DataMigrationService;
+import com.smhrd.web.service.DirectMigrationService;
 import com.smhrd.web.service.MigrationService;
 import lombok.RequiredArgsConstructor;
 import org.bson.Document;
@@ -19,13 +21,15 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class MigrationController {
 
-    private final MigrationService migrationService;
-    private final MongoTemplate mongoTemplate;
 
+    private final MongoTemplate mongoTemplate;
+    private final DataMigrationService dataMigrationService;
+    private final DirectMigrationService directMigrationService;
+    private final MigrationService lectureMigrationService;
     @PostMapping("/migrate-notes")
     public ResponseEntity<Map<String, String>> migrateNotes() {
         try {
-            migrationService.migrateAllNotesToMongoDB();
+            directMigrationService.migrateNotesDirectlyToPostgres();
             return ResponseEntity.ok(Map.of(
                     "status", "success",
                     "message", "마이그레이션 완료"
@@ -41,7 +45,7 @@ public class MigrationController {
     @GetMapping("/migrate-notes")  // ← GET 추가
     public ResponseEntity<Map<String, String>> migrateNotesGet() {
         try {
-            migrationService.migrateAllNotesToMongoDB();
+            directMigrationService.migrateNotesDirectlyToPostgres();
             return ResponseEntity.ok(Map.of(
                     "status", "success",
                     "message", "마이그레이션 완료"
@@ -84,5 +88,10 @@ public class MigrationController {
                     "error", e.getMessage()
             ));
         }
+    }
+    @PostMapping("/lectures")
+    public ResponseEntity<String> migrateLectures() {
+        lectureMigrationService.migrateLecturesToPostgres(); // 이거 호출
+        return ResponseEntity.ok("완료");
     }
 }

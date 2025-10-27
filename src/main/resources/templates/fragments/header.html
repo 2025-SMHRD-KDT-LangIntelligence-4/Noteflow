@@ -7,7 +7,25 @@
     <!-- 외부 CSS 파일 연결 -->
 	<meta name="_csrf" th:content="${_csrf.token}"/>
 	<meta name="_csrf_header" th:content="${_csrf.headerName}"/>
-    
+<style>
+	.chat-button {
+		display: inline-block;
+		margin-top: 10px;
+		padding: 8px 16px;
+		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		color: white;
+		text-decoration: none;
+		border-radius: 8px;
+		font-weight: 500;
+		transition: transform 0.2s;
+	}
+
+	.chat-button:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+	}
+</style>
+
 </head>
 <body>
 <header th:fragment="siteHeader">
@@ -22,12 +40,12 @@
 		            <a th:href="@{/notion/manage}" th:classappend="${activeMenu == 'notionManage'} ? ' active' : ''">노트관리</a>
 		            <a th:href="@{/exam/create}" th:classappend="${activeMenu == 'quizCreate'} ? ' active' : ''">문제생성</a>
 		            <a th:href="@{/exam/my-results}" th:classappend="${activeMenu == 'examList'} ? ' active' : ''">시험목록</a>
-		            
+
 		            <a th:href="@{/schedule}" th:classappend="${activeMenu == 'schedule'} ? ' active' : ''">일정관리</a>
 		            <a th:href="@{/recomLecture}" th:classappend="${activeMenu == 'recomLecture'} ? active : ''">강의목록</a>
 		            <a th:href="@{/market}" th:classappend="${activeMenu == 'market'} ? active : ''">마켓이동</a>
 		        </div>
-		
+
 	    	</div>
 	        <!-- 로그인 상태에 따른 버튼 -->
 	        <div class="login-container">
@@ -40,7 +58,7 @@
 						  <button class="userProfile-btn" id="profileBtn">
 						    <img th:src="@{/images/default-profile.png}" alt="프로필 이미지" class="user-image-container" />
 						  </button>
-	
+
 						  <!-- ▼ 클릭 시 나타날 드롭다운 -->
 						  <div class="dropdown-menu" id="dropdownMenu">
 						  		<div class="user-location-container">
@@ -59,7 +77,7 @@
 							  		</div>
 						  		</div>
 						  </div>
-	  				</div>     
+	  				</div>
 			  		<button id="theme-toggle-btn" class="mode-changeBtn"></button>
 	  			</div>
 	        </div>
@@ -98,11 +116,11 @@
 			</div>
 		</div>
 	</div>
-    
+
  <script>
 	const topButtonContainer = document.querySelector('.top-button-position-container');
 	const topButton = document.querySelector('.top-button');
-	
+
 	topButtonContainer.style.display = 'none';
 	// 스크롤 감지: 300px 이상 내려가면 버튼 보이기
 	window.addEventListener('scroll', () => {
@@ -112,7 +130,7 @@
 	        topButtonContainer.style.display = 'none';
 	    }
 	});
-	
+
 	// 클릭 시 부드럽게 맨 위로 이동
 	topButton.addEventListener('click', () => {
 	    window.scrollTo({
@@ -166,15 +184,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const aiImage = document.getElementById("aiImage"); // aiImage 변수 선언 확인!
   const pngPath = "/images/AI.png";
   const gifPath = "/images/AI.gif";
-  
+
   if (aiButton && aiImage) {
       aiButton.addEventListener("click", () => {
-        
-          // 💡 모달 열기 로직은 chatbot.js에서 담당하므로 여기서는 GIF 전환만 처리합니다. 
+
+          // 💡 모달 열기 로직은 chatbot.js에서 담당하므로 여기서는 GIF 전환만 처리합니다.
           //    단, 이 클릭 이벤트는 GIF 전환이 필요할 때마다 실행됩니다.
 
           // 중복 방지 체크는 유지
-          if (aiImage.src.includes("AI.gif")) return; 
+          if (aiImage.src.includes("AI.gif")) return;
 
           // ✅ 캐시 무력화 파라미터 추가
           const gifPathWithCacheBuster = gifPath + '?' + new Date().getTime();
@@ -194,7 +212,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 </script>
-
+	<script th:src="@{/js/marked.min.js}"></script>
 <script th:src="@{/js/chatbot.js}"></script>
 </header>
 </body>

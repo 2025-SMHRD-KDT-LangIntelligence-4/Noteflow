@@ -451,4 +451,25 @@ public class NotionController {
         
         return "NotionComplete";
     }
+    @PostMapping("/notion/manage")
+    public String searchNotePost(
+            @RequestParam String search,
+            @AuthenticationPrincipal UserDetails userDetails,
+            Model model
+    ) {
+        Long userIdx = ((CustomUserDetails) userDetails).getUserIdx();
+
+        // ✅ 수정: 변수명만 넣어
+        List<Note> notes = noteRepository.findByUserIdxAndNoteTitleContaining(userIdx, search);
+
+        model.addAttribute("notes", notes);
+        model.addAttribute("searchKeyword", search);
+
+        return "notionManage";
+    }
+
+    @GetMapping("/view/{noteIdx}")
+    public String viewNote(@PathVariable Long noteIdx) {
+        return "redirect:/notion/manage";
+    }
 }

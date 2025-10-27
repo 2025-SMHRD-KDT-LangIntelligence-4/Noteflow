@@ -7,13 +7,19 @@ import com.smhrd.web.repository.LectureTagRepository;
 import com.smhrd.web.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -28,6 +34,15 @@ public class LectureRecommendController {
     private final LectureSearchRepository lectureSearchRepository;
     private final LectureTagRepository lectureTagRepository;
 
+    @Autowired
+    @Qualifier("postgresNamedParameterJdbcTemplate")
+    private NamedParameterJdbcTemplate postgresTemplate;
+
+    @Autowired
+    @Qualifier("mysqlNamedParameterJdbcTemplate")
+    private NamedParameterJdbcTemplate mysqlTemplate;
+
+    private final RestTemplate restTemplate;
     /**
      * 강의 추천 페이지
      */
@@ -382,7 +397,22 @@ public class LectureRecommendController {
         return results;
     }
 
+    @PostMapping("/recomLecture")
+    public String searchLecturePost(
+            @RequestParam String search,
+            @AuthenticationPrincipal UserDetails userDetails,
+            Model model
+    ) {
+        log.info("🔍 POST 강의 검색: {}", search);
 
+        // 검색 로직
+        List<Lecture> lectures = lectureRepository.findByLecTitleContaining(search);
+
+        model.addAttribute("lectures", lectures);
+        model.addAttribute("searchKeyword", search);
+
+        return "recomLecture";
+    }
 
     /**
      * 강의별 태그 목록 생성
@@ -448,6 +478,135 @@ public class LectureRecommendController {
                     ", searchMode='" + searchMode + '\'' +  // ⭐ 추가
                     '}';
         }
+    }
+
+    @PostMapping("/lectures")
+    public ResponseEntity<String> migrateLectures() {
+        log.info("🚀 강의 마이그레이션 시작");
+
+        try {
+            List<Lecture> allLectures = lectureRepository.findAll();
+            log.info("📊 총 {} 개 강의 발견", allLectures.size());
+
+            int successCount = 0;
+            int failCount = 0;
+
+            for (Lecture lecture : allLectures) {
+                try {
+                    // 1. 임베딩 텍스트 구성
+                    String embeddingText = String.format("%s | %s > %s > %s",
+                            lecture.getLecTitle(),
+                            lecture.getCategoryLarge(),
+                            lecture.getCategoryMedium(),
+                            lecture.getCategorySmall()
+                    );
+
+                    // 2. 임베딩 생성
+                    List<Double> embedding = generateEmbedding(embeddingText);
+                    String vectorString = formatVector(embedding);
+
+                    // 3. 태그 배열 조회
+                    String[] tags = getLectureTags(lecture.getLecIdx());
+
+                    // 4. PostgreSQL에 저장
+                    String sql = """
+                        INSERT INTO course_embeddings
+                        (lec_idx, title, url, category_large, category_medium, category_small,
+                         tags, embedding, created_at)
+                        VALUES
+                        (:lecIdx, :title, :url, :categoryLarge, :categoryMedium, :categorySmall,
+                         :tags, CAST(:embedding AS vector), :createdAt)
+                        ON CONFLICT (lec_idx) DO UPDATE SET
+                            title = EXCLUDED.title,
+                            embedding = CAST(:embedding AS vector),
+                            tags = EXCLUDED.tags
+                        """;
+
+                    MapSqlParameterSource params = new MapSqlParameterSource()
+                            .addValue("lecIdx", lecture.getLecIdx())
+                            .addValue("title", lecture.getLecTitle())
+                            .addValue("url", lecture.getLecUrl())
+                            .addValue("categoryLarge", lecture.getCategoryLarge())
+                            .addValue("categoryMedium", lecture.getCategoryMedium())
+                            .addValue("categorySmall", lecture.getCategorySmall())
+                            .addValue("tags", tags)
+                            .addValue("embedding", vectorString)
+                            .addValue("createdAt", lecture.getCreatedAt());
+
+                    postgresTemplate.update(sql, params);
+                    successCount++;
+
+                    if (successCount % 100 == 0) {
+                        log.info("📈 진행: {} / {} 완료", successCount, allLectures.size());
+                    }
+
+                } catch (Exception e) {
+                    failCount++;
+                    log.error("❌ 강의 {} 실패: {}", lecture.getLecIdx(), e.getMessage());
+                }
+            }
+
+            String result = String.format("✅ 완료: 성공=%d, 실패=%d", successCount, failCount);
+            log.info(result);
+            return ResponseEntity.ok(result);
+
+        } catch (Exception e) {
+            log.error("마이그레이션 전체 실패", e);
+            return ResponseEntity.status(500).body("실패: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 강의 태그 조회
+     */
+    private String[] getLectureTags(Long lecIdx) {
+        try {
+            String sql = """
+                SELECT t.name
+                FROM lecture_tags lt
+                JOIN tags t ON lt.tag_idx = t.tag_idx
+                WHERE lt.lec_idx = :lecIdx
+                """;
+
+            List<String> tagList = mysqlTemplate.query(sql,
+                    new MapSqlParameterSource("lecIdx", lecIdx),
+                    (rs, rowNum) -> rs.getString("name"));
+
+            return tagList.toArray(new String[0]);
+
+        } catch (Exception e) {
+            log.warn("⚠️ 태그 조회 실패 (lecIdx={})", lecIdx);
+            return new String[0];
+        }
+    }
+
+    /**
+     * 임베딩 생성
+     */
+    private List<Double> generateEmbedding(String content) {
+        try {
+            Map<String, Object> response = restTemplate.postForObject(
+                    "http://ssaegim.tplinkdns.com:8081/embed",
+                    Map.of("texts", List.of(content.trim())),
+                    Map.class
+            );
+
+            List<List<Double>> embeddings = (List<List<Double>>) response.get("embeddings");
+            return embeddings.get(0);
+
+        } catch (Exception e) {
+            log.error("임베딩 생성 실패", e);
+            return Collections.nCopies(1024, 0.0);
+        }
+    }
+
+    /**
+     * 벡터 포맷팅
+     */
+    private String formatVector(List<Double> embedding) {
+        return "[" + embedding.stream()
+                .map(d -> String.format("%.15f", d))
+                .collect(Collectors.joining(",")) + "]";
     }
 
     /**

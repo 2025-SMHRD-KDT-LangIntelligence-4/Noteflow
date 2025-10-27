@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <title>Insert title here</title>
-    <meta name="csrf" th:content="${_csrf?.token}">
-    <meta name="csrf-header" th:content="${_csrf?.headerName}">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
 <link rel="stylesheet" th:href="@{/css/header.css}" />
 <link rel="stylesheet" id="theme-css" th:href="@{/css/notioncomplete.css}" />
 <link rel="stylesheet" th:href="@{/css/footer.css}" />
@@ -106,22 +106,7 @@
 <!-- 푸터 -->
 <div th:replace="~{fragments/footer :: siteFooter}"></div>
 
-<!-- JavaScript 코드 추가 -->
 <script>
-    // CSRF 토큰 함수
-    function getCsrfToken() {
-        return document.querySelector('meta[name="csrf"]')?.content || '';
-    }
-
-    function getCsrfHeader() {
-        return document.querySelector('meta[name="csrf-header"]')?.content || 'X-CSRF-TOKEN';
-    }
-
-    console.log('CSRF 정보:', {
-        token: getCsrfToken() ? '있음' : '없음',
-        header: getCsrfHeader()
-    });
-
     // 강의 추천 기능
     document.getElementById('nc-go-lecture')?.addEventListener('click', function(ev) {
         ev.preventDefault();

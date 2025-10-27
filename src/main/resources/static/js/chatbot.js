@@ -11,20 +11,73 @@ function getCsrfToken() {
         header: header ? header.getAttribute('content') : null
     };
 }
-
+function getCsrfInput() {
+    const csrf = getCsrfToken();
+    return `<input type="hidden" name="${csrf.header}" value="${csrf.token}">`;
+}
+function renderMarkdown(text) {
+    if (typeof marked !== 'undefined') {
+        return marked.marked ? marked.marked(text) : marked.parse(text);
+    }
+    return escapeHtml(text);
+}
 // HTML 이스케이프 (XSS 방지) (전역 함수)
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
 }
+function renderBotMessage(text) {
+    // [FORM:POST:/url:param=value:버튼텍스트] 파싱
+    const formPattern = /\[FORM:(POST|GET):([^:]+):([^:]*):([^\]]+)\]/g;
 
+    let html = renderMarkdown(text.replace(formPattern, '')); // Form 태그 제거하고 마크다운 렌더링
+
+    // Form 버튼 추가
+    let match;
+    while ((match = formPattern.exec(text)) !== null) {
+        const [, method, url, params, buttonText] = match;
+        const formId = 'chatForm-' + Date.now() + Math.random();
+
+        // ✅ CSRF 토큰 가져오기
+        const csrf = getCsrfToken();
+
+        // 파라미터 파싱
+        let hiddenInputs = '';
+        if (params) {
+            const paramPairs = params.split('&');
+            paramPairs.forEach(pair => {
+                const [name, value] = pair.split('=');
+                if (name && value) {
+                    hiddenInputs += `<input type="hidden" name="${name}" value="${decodeURIComponent(value)}">`;
+                }
+            });
+        }
+
+        // ✅ CSRF 토큰 추가 (POST일 때만)
+        let csrfInput = '';
+        if (method === 'POST' && csrf.token && csrf.header) {
+            const headerName = csrf.header.replace('X-', '').replace(/-/g, '');
+            csrfInput = `<input type="hidden" name="_csrf" value="${csrf.token}">`;
+        }
+
+        html += `
+            <form id="${formId}" method="${method}" action="${url}" style="display:inline;">
+                ${hiddenInputs}
+                ${csrfInput}
+                <button type="submit" class="chat-button">${buttonText}</button>
+            </form>
+        `;
+    }
+
+    return html;
+}
 // 새 대화 시작 (옵션) (전역 함수)
 function startNewChat() {
     currentSessionId = 'session-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
     const chatBody = document.getElementById('chatBody');
     if (chatBody) {
-        chatBody.innerHTML = '<div class="message bot">새 대화를 시작합니다. 무엇을 도와드릴까요?</div>';
+        chatBody.innerHTML += `<div class="message bot">${renderMarkdown(data.reply)}</div>`;
     }
 }
 
@@ -71,8 +124,8 @@ async function loadChatHistory() {
             chatBody.innerHTML = '<div class="message bot">안녕하세요! 무엇을 도와드릴까요?</div>';
         } else {
             history.forEach(chat => {
-                chatBody.innerHTML += `<div class="message user">${escapeHtml(chat.question)}</div>`;
-                chatBody.innerHTML += `<div class="message bot">${escapeHtml(chat.answer)}</div>`;
+                chatBody.innerHTML += `<div class="message user">${renderMarkdown(chat.question)}</div>`;
+                chatBody.innerHTML += `<div class="message bot">${renderMarkdown(chat.reply)}</div>`;
             });
         }
 
@@ -126,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const text = userInput.value.trim();
             if (!text) return;
 
-            chatBody.innerHTML += `<div class="message user">${escapeHtml(text)}</div>`;
+            chatBody.innerHTML += `<div class="message user">${renderMarkdown(text)}</div>`;
             userInput.value = '';
 
             const loadingId = 'loading-' + Date.now();
@@ -168,7 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 document.getElementById(loadingId)?.remove();
-                chatBody.innerHTML += `<div class="message bot">${escapeHtml(data.reply)}</div>`;
+                chatBody.innerHTML += `<div class="message bot">${renderBotMessage(data.reply)}</div>`;
                 chatBody.scrollTop = chatBody.scrollHeight;
 
             } catch (error) {

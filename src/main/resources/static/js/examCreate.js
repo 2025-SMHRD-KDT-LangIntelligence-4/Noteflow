@@ -418,8 +418,8 @@ document.addEventListener('DOMContentLoaded', () => {
         createBtn.textContent = '🔄 생성 중...';
 
         try {
-            const csrfToken = document.querySelector('meta[name="csrf"]')?.content;
-            const csrfHeader = document.querySelector('meta[name="csrf-header"]')?.content;
+            const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+            const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
 
             const headers = {
                 'Content-Type': 'application/json'
