@@ -491,7 +491,7 @@ function renderAutoCategories() {
 	Object.entries(counts)
 		.filter(([, cnt]) => cnt >= 5)
 		.sort((a, b) => b[1] - a[1])
-		.slice(0, 12)
+		.slice(0, 50)
 		.forEach(([key, cnt]) => {
 			const span = document.createElement('span');
 			span.className = 'category-tag';
