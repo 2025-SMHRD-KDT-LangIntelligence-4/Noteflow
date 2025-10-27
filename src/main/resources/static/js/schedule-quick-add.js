@@ -483,6 +483,23 @@ export function injectPlusButtons() {
    });
 }
 
+// yyyy-MM-dd 문자열(startYmd)부터 yyyy-MM-dd 문자열(endYmd)까지
+// 하루씩 증가시키며 ["2025-10-25","2025-10-26", ...] 형태 배열을 리턴
+function getDateRangeInclusive(startYmd, endYmd) {
+	const result = [];
+	if (!startYmd || !endYmd) return result;
+
+	const start = new Date(startYmd + 'T00:00:00');
+	const end = new Date(endYmd + 'T00:00:00');
+
+	for (let cur = new Date(start); cur <= end; cur.setDate(cur.getDate() + 1)) {
+		const y = cur.getFullYear();
+		const m = String(cur.getMonth() + 1).padStart(2, '0');
+		const d = String(cur.getDate()).padStart(2, '0');
+		result.push(`${y}-${m}-${d}`);
+	}
+	return result;
+}
 
 // ------------------------------ DOMContentLoaded에서 리스너 묶기 ------------------------------
 document.addEventListener('DOMContentLoaded', () => {
@@ -599,38 +616,126 @@ document.addEventListener('DOMContentLoaded', () => {
 	// 최종 등록 버튼
 	if (qaSave) {
 		qaSave.addEventListener('click', async () => {
-			const payload = collectData();
-			if (!payload.title) {
-				payload.title = "(제목 없음)";
+			// 1) 기본 payload 한 번 뽑기
+			const basePayload = collectData();
+			if (!basePayload.title) {
+				basePayload.title = "(제목 없음)";
 			}
 
-			// 반복 일정 여부 판단
+			// 2) 지금이 "기간 내 동일 시간 반복 생성" 케이스인지 판단
 			const isRepeat =
 				qaRepeat &&
 				qaRepeat.checked &&
 				repeatOptionLabel &&
 				repeatOptionLabel.style.display === 'flex';
 
-			const apiUrl = isRepeat
-				? '/api/schedule/repeat/add'
-				: '/api/schedule/create';
+			// helper: alarmTime을 특정 날짜에 맞춰 다시 계산해주는 함수
+			const buildAlarmTimeForDate = (ymd) => {
+				// qaNotify 기준으로 몇 분 전 알림인지 확인
+				const notifyMinutesBefore =
+					qaNotify.value === 'custom' ? null : parseInt(qaNotify.value, 10);
 
+				if (notifyMinutesBefore === null || notifyMinutesBefore < 0) {
+					// 'custom'이거나 음수면 여기서는 알람 안 건드림 (basePayload.alarmTime 그대로 쓰거나 null)
+					return null;
+				}
+
+				// 이벤트 시작 시각 (해당 ymd 사용)
+				const startClock = basePayload.isAllDay
+					? '00:00:00'
+					: (qaStartTime.value + ':00');
+				const startDateTimeString = ymd + 'T' + startClock;
+
+				const startDateObj = new Date(startDateTimeString);
+				if (notifyMinutesBefore > 0) {
+					startDateObj.setMinutes(startDateObj.getMinutes() - notifyMinutesBefore);
+				}
+
+				const year = startDateObj.getFullYear();
+				const month = String(startDateObj.getMonth() + 1).padStart(2, '0');
+				const day = String(startDateObj.getDate()).padStart(2, '0');
+				const hours = String(startDateObj.getHours()).padStart(2, '0');
+				const minutes = String(startDateObj.getMinutes()).padStart(2, '0');
+				const seconds = String(startDateObj.getSeconds()).padStart(2, '0');
+
+				return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+			};
+
+			// 3) 반복 일정 처리 분기
 			if (isRepeat) {
+				// 여기서부터는 백엔드의 /api/schedule/repeat/add 를 안 쓰고
+				// 날짜별로 /api/schedule/create 를 여러 번 호출해서
+				// 카테고리(category) 등 모든 필드를 온전히 저장하게 만든다.
 				alertSuccess('반복 일정 등록을 시작합니다...');
+
+				try {
+					qaSave.disabled = true; // 중복 클릭 방지
+
+					// start/end 기준으로 날짜 배열 뽑기
+					const days = getDateRangeInclusive(qaStartDate.value, qaEndDate.value);
+
+					for (const ymd of days) {
+						// 하루치 payload를 구성
+						const dayPayload = {
+							...basePayload,
+							startTime: ymd + 'T' + (basePayload.isAllDay ? '00:00:00' : qaStartTime.value + ':00'),
+							endTime: ymd + 'T' + (basePayload.isAllDay ? '23:59:59' : qaEndTime.value + ':00'),
+							// 날짜별 alarmTime 다시 계산
+							alarmTime: buildAlarmTimeForDate(ymd)
+						};
+
+						// 실제 단건 생성 호출
+						await fetchWithCsrf('/api/schedule/create', {
+							method: 'POST',
+							body: JSON.stringify(dayPayload)
+						});
+					}
+
+					// 성공 후 메시지
+					alertSuccess('반복 일정이 성공적으로 등록되었습니다.');
+
+					// 캘린더 갱신
+					if (window.refreshEvents && typeof window.refreshEvents === 'function') {
+						await window.refreshEvents();
+					} else if (window.calendar && typeof window.calendar.refetchEvents === 'function') {
+						window.calendar.refetchEvents();
+					}
+
+					// 임시초안(clean-up)
+					if (_currentTempId) {
+						try {
+							await fetchWithCsrf(`/api/temp-schedule/${_currentTempId}`, { method: 'DELETE' });
+							if (window.loadTempDrafts) await window.loadTempDrafts();
+							if (window.refreshTempBadges) await window.refreshTempBadges();
+						} catch (e) {
+							console.warn('임시초안 자동 삭제 실패(무시 가능):', e);
+						} finally {
+							_currentTempId = null;
+						}
+					}
+
+					closeQuickAddModal();
+				} catch (err) {
+					console.error(err);
+					const errorMessage = err.message || '알 수 없는 오류 (네트워크 문제 또는 응답 처리 오류)';
+					alertError(`반복 일정 생성 중 오류가 발생했습니다. (${errorMessage})`);
+				} finally {
+					qaSave.disabled = false;
+				}
+
+				return; // 여기서 종료 (아래 단일 생성 로직은 타지 않음)
 			}
 
+			// 4) 일반 단일 일정 생성 로직 (원래 /api/schedule/create 호출 흐름)
 			try {
-				const createdSchedule = await fetchWithCsrf(apiUrl, {
+				const createdSchedule = await fetchWithCsrf('/api/schedule/create', {
 					method: 'POST',
-					body: JSON.stringify(payload)
+					body: JSON.stringify(basePayload)
 				});
 
 				console.log('일정 생성 성공, 응답 데이터:', createdSchedule);
 
-				const successMessage = isRepeat
-					? '반복 일정이 성공적으로 등록되었습니다.'
-					: '일정이 성공적으로 생성되었습니다.';
-				alertSuccess(successMessage);
+				alertSuccess('일정이 성공적으로 생성되었습니다.');
 
 				// 캘린더 갱신
 				if (window.refreshEvents && typeof window.refreshEvents === 'function') {
@@ -659,6 +764,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				alertError(`일정 생성 중 오류가 발생했습니다. (${errorMessage})`);
 			}
 		});
+	
 	}
 
 	// 취소 버튼
