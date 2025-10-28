@@ -56,7 +56,7 @@ body {
     padding: 40px;
 }
 
-.message {
+.message2 {
     font-family: pretendard;
     width: 80%;
     height: 80px;
@@ -86,7 +86,7 @@ body {
     border-radius: 10px;
 }
 
-.AI-image {
+.AIimage {
     width: 100%;
     height: 100%;
 }
