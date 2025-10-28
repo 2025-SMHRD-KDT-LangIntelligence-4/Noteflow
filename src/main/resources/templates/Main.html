@@ -129,7 +129,8 @@ document.addEventListener("DOMContentLoaded", () => {
 	                            <h3 class="project-card__title">작성 노트 관리</h3>
 	                            <p class="project-card__desc">
 	                                <span th:if="${nickname != null and nickname != ''}" th:text="|${nickname}님, |"></span>
-	                                <span>작성된 노트들을 쉽게 관리해요!</span>
+	                                <span>지금까지 작성 하신 노트들을 </span>
+	                                <span>쉽게 관리해보세요!</span>
 	                            </p>
 	                            <a th:href="@{/notion/manage}" class="project-card__btn">작성된 노트 보러가기</a>
 	                        </div>
@@ -143,7 +144,8 @@ document.addEventListener("DOMContentLoaded", () => {
 	                        <div class="card-div">
 	                            <h3 class="project-card__title">문제 생성/테스트</h3>
 	                            <p class="project-card__desc">
-	                                <span>나만의 노트에 맞춰 생성된 문제를 풀어보세요</span>
+	                                <span>나만의 노트에 맞춰 </span>
+	                                <span>문제를 풀어보세요</span>
 	                            </p>
 	                            <a th:href="@{/exam/create}" class="project-card__btn">문제생성가기</a>
 	                        </div>
@@ -156,7 +158,8 @@ document.addEventListener("DOMContentLoaded", () => {
 	                        <div class="card-div">
 	                            <h3 class="project-card__title">강의목록</h3>
 	                            <p class="project-card__desc">
-	                                <span>부족한 학습은 강의로 채워보세요</span>
+	                                <span>혹시나 부족한 학습은 </span>
+	                                <span>강의로 채워 보세요</span>
 	                            </p>
 	                            <a th:href="@{/recomLecture}" class="project-card__btn">문제생성가기</a>
 	                        </div>
@@ -170,7 +173,8 @@ document.addEventListener("DOMContentLoaded", () => {
 	                            <h3 class="project-card__title">학습 스케줄</h3>
 	                            <p class="project-card__desc">
 	                                <span th:if="${nickname != null and nickname != ''}" th:text="|${nickname}님, |"></span>
-	                                <span>개인 일정부터 학습 계획까지 한눈에 확인하고 관리하세요.</span>
+	                                <span>개인 일정부터 학습 계획까지 </span>
+	                                <span>한눈에 확인하고 관리하세요.</span>
 	                            </p>
 	                            <a th:href="@{/schedule}" class="project-card__btn">스케줄 확인하기</a>
 	                        </div>
@@ -184,7 +188,9 @@ document.addEventListener("DOMContentLoaded", () => {
 	                        <div class="card-div">
 	                            <h3 class="project-card__title">템플릿 마켓</h3>
 	                            <p class="project-card__desc">
-	                                <span>다양한 학습 스타일과 취향에 맞는 노트와 스케줄 템플릿을 만나보세요.</span>
+	                                <span>다양한 학습 스타일과 </span>
+	                                <span>취향에 맞는 노트와 </span>
+	                                <span> 스케줄 템플릿을 만나보세요.</span>
 	                            </p>
 	                            <a th:href="@{/market}" class="project-card__btn">템플릿 마켓 가기</a>
 	                        </div>

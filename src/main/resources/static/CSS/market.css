@@ -38,11 +38,13 @@ body {
 	position: relative;
     font-size: 50px;
     display: flex;
-    justify-content: end;
-    padding-right: 50px;
     width: 500px;
     height: 200px;
-    align-items: flex-end;
+    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 15px;
+    justify-content: center;
+    align-content: center;
 }
 .market-img{
 	width:500px;
