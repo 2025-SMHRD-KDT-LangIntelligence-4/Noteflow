@@ -773,53 +773,71 @@ function clearMultiSelection() {
     // ✅ 버튼 컨테이너 초기화
     updateMultiSelectionUI();
 }
-
-// ========== 12. 노트 요소 생성 ==========
+//------------------------제목슬라이더----------------------//
 function createNoteElement(note, depth) {
     const div = document.createElement('div');
     div.className = 'note-item';
     div.draggable = true;
     div.style.paddingLeft = (depth * 20 + 30) + 'px';
-    div.dataset.noteIdx = note.noteIdx; // ✅ 추가
+    div.dataset.noteIdx = note.noteIdx;
 
-    // ✅ Checkbox 추가
+    const container = document.createElement('div');
+    container.className = 'note-item-container';
+
+    // ✅ 체크박스
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.className = 'item-checkbox';
     checkbox.style.marginRight = '8px';
     checkbox.style.width = '16px';
     checkbox.style.height = '16px';
+    checkbox.addEventListener('click', (e) => e.stopPropagation());
 
-    checkbox.addEventListener('click', (e) => {
-        e.stopPropagation();
-    });
-
-    checkbox.addEventListener('change', (e) => {
-        e.stopPropagation();
-        if (e.target.checked) {
-            toggleMultiFileSelection({ item: note, el: div, type: 'note' });
-        } else {
-            const idx = selectedItems.findIndex(si => si.item.noteIdx === note.noteIdx);
-            if (idx !== -1) {
-                selectedItems.splice(idx, 1);
-                div.classList.remove('multi-selected');
-            }
-        }
-        updateMultiSelectionUI();
-    });
-
+    // ✅ 아이콘
     const icon = document.createElement('span');
     icon.className = 'item-icon';
     icon.innerHTML = '📝';
 
+    // ✅ 제목
+    const titleWrapper = document.createElement('div');
+    titleWrapper.className = 'note-title-wrapper';
     const title = document.createElement('span');
     title.className = 'note-title';
     title.textContent = note.title;
+    titleWrapper.appendChild(title);
 
-    div.appendChild(checkbox); // ✅ checkbox 먼저 추가
-    div.appendChild(icon);
-    div.appendChild(title);
+    // ✅ 조립
+    container.appendChild(checkbox);
+    container.appendChild(icon);
+    container.appendChild(titleWrapper);
+    div.appendChild(container);
 
+    // ✅ 마우스 올릴 때 제목 길이 확인 후 슬라이드
+    div.addEventListener('mouseenter', () => {
+        const titleEl = div.querySelector('.note-title');
+        const wrapperEl = div.querySelector('.note-title-wrapper');
+
+        const titleWidth = titleEl.scrollWidth;
+        const wrapperWidth = wrapperEl.clientWidth;
+
+        // 제목이 wrapper보다 길 때만 슬라이드 시작
+        if (titleWidth > wrapperWidth) {
+            const distance = titleWidth - wrapperWidth;
+            const duration = distance * 15; // px당 속도 (조정 가능)
+            titleEl.style.setProperty('--scroll-distance', `-${distance}px`);
+            titleEl.style.setProperty('--scroll-duration', `${duration}ms`);
+            titleEl.classList.add('scrolling');
+        }
+    });
+
+    // ✅ 마우스가 떠나면 슬라이드 초기화
+    div.addEventListener('mouseleave', () => {
+        const titleEl = div.querySelector('.note-title');
+        titleEl.classList.remove('scrolling');
+        titleEl.style.transform = 'translateX(0)';
+    });
+
+    // ✅ 선택 관련 기존 로직
     div.addEventListener('click', (e) => {
         if (dragging) return;
         e.stopPropagation();
@@ -839,6 +857,7 @@ function createNoteElement(note, depth) {
 
     return div;
 }
+
 
 // ========== 13. 파일 요소 생성 ==========
 function createFileElement(file, depth) {
