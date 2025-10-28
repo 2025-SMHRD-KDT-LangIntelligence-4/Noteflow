@@ -214,7 +214,6 @@ body {
 .folder-item:hover {
     background: #4e4e4e;
     border-color: white;
-    transform: translateX(3px);
 }
 
 .folder-item.selected {
