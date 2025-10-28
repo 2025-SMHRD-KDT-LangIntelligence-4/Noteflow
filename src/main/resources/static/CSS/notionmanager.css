@@ -202,12 +202,12 @@ body {
     border: 1px solid #e9ecef;
     transition: all 0.2s ease;
     gap: 8px;
+    overflow:hidden;
 }
 
 .folder-item:hover {
     background: #e3f2fd;
     border-color: #2196f3;
-    transform: translateX(3px);
 }
 
 .folder-item.selected {
@@ -345,7 +345,6 @@ body {
 .note-item:hover {
     background: #fff3e0;
     border-color: #ff9800;
-    transform: translateX(3px);
 }
 
 .file-item.selected,
