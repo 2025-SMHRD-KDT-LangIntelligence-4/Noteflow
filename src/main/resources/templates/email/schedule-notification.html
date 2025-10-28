@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>일정 알림</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            background-color: #f8f9fa;
+        }
+        
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .email-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px 20px;
+            text-align: center;
+            color: white;
+        }
+        
+        .email-header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .email-header .emoji {
+            font-size: 48px;
+            margin-bottom: 10px;
+            display: block;
+        }
+        
+        .email-body {
+            padding: 40px 30px;
+        }
+        
+        .greeting {
+            font-size: 18px;
+            margin-bottom: 30px;
+            color: #2c3e50;
+        }
+        
+        .schedule-card {
+            background: linear-gradient(135deg, #f8f9ff 0%, #e8f4fd 100%);
+            border: 2px solid #e3f2fd;
+            border-radius: 16px;
+            padding: 30px;
+            margin: 30px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .schedule-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 6px;
+            height: 100%;
+            background: linear-gradient(to bottom, #667eea, #764ba2);
+        }
+        
+        .schedule-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1a202c;
+            margin: 0 0 15px 0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .schedule-title::before {
+            content: '📅';
+            font-size: 28px;
+            margin-right: 12px;
+        }
+        
+        .schedule-info {
+            margin: 20px 0;
+        }
+        
+        .info-item {
+            display: flex;
+            align-items: center;
+            margin: 12px 0;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .info-icon {
+            font-size: 20px;
+            margin-right: 12px;
+            width: 24px;
+            text-align: center;
+        }
+        
+        .info-text {
+            font-size: 16px;
+            color: #2d3748;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #4a5568;
+            margin-right: 8px;
+        }
+        
+        .schedule-description {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .schedule-description h4 {
+            margin: 0 0 10px 0;
+            color: #2d3748;
+            font-size: 16px;
+        }
+        
+        .schedule-description p {
+            margin: 0;
+            color: #4a5568;
+            line-height: 1.6;
+        }
+        
+        .cta-section {
+            text-align: center;
+            margin: 40px 0;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            padding: 16px 32px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white !important;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 16px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+        
+        .email-footer {
+            background: #f8f9fa;
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .email-footer p {
+            margin: 8px 0;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        
+        .brand-name {
+            font-weight: bold;
+            color: #667eea;
+            text-decoration: none;
+        }
+        
+        .notification-badge {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(238, 90, 36, 0.3);
+        }
+        
+        .time-emphasis {
+            background: linear-gradient(135deg, #ffd93d 0%, #f39c12 100%);
+            color: #2c3e50;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        @media (max-width: 600px) {
+            .email-container {
+                margin: 0;
+                border-radius: 0;
+            }
+            
+            .email-body {
+                padding: 20px 15px;
+            }
+            
+            .schedule-card {
+                padding: 20px;
+                margin: 20px 0;
+            }
+            
+            .schedule-title {
+                font-size: 20px;
+            }
+            
+            .info-item {
+                flex-direction: column;
+                align-items: flex-start;
+                text-align: left;
+            }
+            
+            .info-icon {
+                margin-bottom: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- 이메일 헤더 -->
+        <div class="email-header">
+            <span class="emoji">📅</span>
+            <h1>일정 알림</h1>
+        </div>
+        
+        <!-- 이메일 본문 -->
+        <div class="email-body">
+            <div class="greeting">
+                안녕하세요, <strong th:text="${nickname}">사용자</strong>님! 👋
+            </div>
+            
+            <div class="notification-badge">
+                🔔 곧 시작될 일정이 있습니다
+            </div>
+            
+            <!-- 일정 카드 -->
+            <div class="schedule-card">
+                <h2 class="schedule-title" th:text="${scheduleTitle}">일정 제목</h2>
+                
+                <div class="schedule-info">
+                    <!-- 종일 일정인 경우 -->
+                    <div th:if="${isAllDay}" class="info-item">
+                        <span class="info-icon">🗓️</span>
+                        <div class="info-text">
+                            <span class="info-label">날짜:</span>
+                            <span th:text="${startDate}">2024년 10월 28일</span>
+                            <span th:if="${startDate != endDate}">
+                                ~ <span th:text="${endDate}">2024년 10월 29일</span>
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <!-- 시간 지정 일정인 경우 -->
+                    <div th:unless="${isAllDay}">
+                        <div class="info-item">
+                            <span class="info-icon">⏰</span>
+                            <div class="info-text">
+                                <span class="info-label">시작:</span>
+                                <span th:text="${startDateTime}">2024년 10월 28일 14:00</span>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-icon">⏱️</span>
+                            <div class="info-text">
+                                <span class="info-label">종료:</span>
+                                <span th:text="${endDateTime}">2024년 10월 28일 15:00</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 장소 정보 -->
+                    <div class="info-item" th:if="${location != null and location != ''}">
+                        <span class="info-icon">📍</span>
+                        <div class="info-text">
+                            <span class="info-label">장소:</span>
+                            <span th:text="${location}">회의실 A</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 알림 시간 -->
+                    <div class="info-item" th:if="${minutesBefore != null and minutesBefore > 0}">
+                        <span class="info-icon">⏰</span>
+                        <div class="info-text">
+                            <span class="info-label">알림:</span>
+                            <span class="time-emphasis" th:text="${minutesBefore + '분 전 알림'}">10분 전 알림</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 일정 설명 -->
+                <div class="schedule-description" th:if="${scheduleDescription != null and scheduleDescription != ''}">
+                    <h4>📝 상세 내용</h4>
+                    <p th:text="${scheduleDescription}">일정에 대한 상세한 설명이 여기에 표시됩니다.</p>
+                </div>
+            </div>
+            
+            <!-- CTA 섹션 -->
+            <div class="cta-section">
+                <a th:href="${baseUrl + '/schedule/manager'}" class="cta-button">
+                    📅 내 일정 관리하기
+                </a>
+            </div>
+            
+            <p style="color: #6c757d; font-size: 14px; text-align: center; margin-top: 30px;">
+                📱 모바일에서도 언제든지 일정을 확인하고 관리할 수 있습니다.
+            </p>
+        </div>
+        
+        <!-- 이메일 푸터 -->
+        <div class="email-footer">
+            <p>이 메일은 <a href="#" class="brand-name">새김(SSAEGIM)</a>에서 발송되었습니다.</p>
+            <p>일정 알림 설정은 <a th:href="${baseUrl + '/schedule/manager'}">일정 관리</a>에서 변경할 수 있습니다.</p>
+            <p style="margin-top: 20px; font-size: 12px; color: #adb5bd;">
+                © 2024 새김(SSAEGIM). All rights reserved.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

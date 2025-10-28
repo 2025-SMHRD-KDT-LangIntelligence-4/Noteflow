@@ -25,7 +25,355 @@
 		box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 	}
 </style>
+<!-- WebSocket 라이브러리 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.5.0/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@6.1.0/bundles/stomp.umd.min.js"></script>
 
+<!-- 알림 시스템 CSS -->
+<style>
+/* 알림 아이콘 스타일 */
+.notification-icon {
+    position: relative;
+    cursor: pointer;
+    padding: 8px;
+    margin-right: 15px;
+}
+
+.notification-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: #ff4757;
+    color: white;
+    border-radius: 50%;
+    min-width: 18px;
+    height: 18px;
+    font-size: 11px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.notification-icon:hover {
+    background: rgba(0,0,0,0.1);
+    border-radius: 4px;
+}
+
+/* 알림 드롭다운 */
+.notification-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    width: 320px;
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+}
+
+.notification-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid #eee;
+    font-weight: bold;
+    background: #f8f9fa;
+    border-radius: 8px 8px 0 0;
+}
+
+.notification-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.notification-item:hover {
+    background: #f8f9fa;
+}
+
+.notification-item.unread {
+    background: #f0f8ff;
+    border-left: 3px solid #007bff;
+}
+
+.notification-title {
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: #333;
+}
+
+.notification-message {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.notification-time {
+    font-size: 11px;
+    color: #999;
+}
+
+.notification-empty {
+    padding: 40px 16px;
+    text-align: center;
+    color: #999;
+}
+
+/* 알림 권한 요청 바너 */
+.notification-permission-banner {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 12px 20px;
+    text-align: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 9999;
+    transform: translateY(-100%);
+    transition: transform 0.3s ease;
+}
+
+.notification-permission-banner.show {
+    transform: translateY(0);
+}
+
+.permission-banner-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.permission-banner-text {
+    flex: 1;
+    min-width: 200px;
+}
+
+.permission-banner-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.permission-btn {
+    padding: 6px 16px;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.permission-btn.allow {
+    background: rgba(255,255,255,0.2);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.3);
+}
+
+.permission-btn.allow:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+.permission-btn.deny {
+    background: transparent;
+    color: rgba(255,255,255,0.8);
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+.permission-btn.deny:hover {
+    background: rgba(255,255,255,0.1);
+}
+</style>
+
+<!-- 알림 권한 요청 배너 HTML (body 시작 직후에 추가) -->
+<div class="notification-permission-banner" id="notificationPermissionBanner">
+    <div class="permission-banner-content">
+        <div class="permission-banner-text">
+            🔔 실시간 일정 알림을 받으시겠습니까? 중요한 일정을 놓치지 않도록 도와드립니다!
+        </div>
+        <div class="permission-banner-buttons">
+            <button class="permission-btn allow" onclick="allowNotifications()">허용</button>
+            <button class="permission-btn deny" onclick="denyNotifications()">나중에</button>
+        </div>
+    </div>
+</div>
+
+<!-- 네비게이션 바의 오른쪽에 알림 아이콘 추가 (기존 사용자 메뉴 앞에) -->
+<div class="notification-icon" onclick="toggleNotificationDropdown()" style="position: relative;">
+    <i class="fas fa-bell" style="font-size: 18px; color: #666;"></i>
+    <span class="notification-badge" id="notificationBadge">0</span>
+
+    <!-- 알림 드롭다운 -->
+    <div class="notification-dropdown" id="notificationDropdown">
+        <div class="notification-header">
+            <span>알림</span>
+            <button onclick="markAllAsRead()" style="float: right; background: none; border: none; color: #007bff; cursor: pointer; font-size: 12px;">
+                모두 읽음
+            </button>
+        </div>
+        <div class="notification-list" id="notificationList">
+            <div class="notification-empty">
+                알림이 없습니다.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 사용자 ID를 JavaScript에서 사용할 수 있도록 hidden 데이터 추가 -->
+<div data-user-id="${userIdx}" style="display: none;"></div>
+
+<!-- notification.js 스크립트 로드 -->
+<script src="/js/notification.js"></script>
+
+<!-- 알림 관련 JavaScript 함수들 -->
+<script>
+// 알림 권한 허용
+async function allowNotifications() {
+    const banner = document.getElementById('notificationPermissionBanner');
+    banner.classList.remove('show');
+
+    if (notificationManager) {
+        const granted = await notificationManager.requestNotificationPermission();
+        if (granted) {
+            // 권한이 허용되면 배너 완전히 숨김
+            banner.style.display = 'none';
+            localStorage.setItem('notificationPermissionAsked', 'granted');
+        }
+    }
+}
+
+// 알림 권한 거부 (나중에)
+function denyNotifications() {
+    const banner = document.getElementById('notificationPermissionBanner');
+    banner.classList.remove('show');
+
+    // 하루 동안 묻지 않기
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    localStorage.setItem('notificationPermissionAsked', tomorrow.getTime());
+}
+
+// 알림 드롭다운 토글
+function toggleNotificationDropdown() {
+    const dropdown = document.getElementById('notificationDropdown');
+    const isVisible = dropdown.style.display === 'block';
+
+    // 다른 드롭다운들 닫기
+    document.querySelectorAll('.dropdown-menu').forEach(menu => {
+        menu.style.display = 'none';
+    });
+
+    dropdown.style.display = isVisible ? 'none' : 'block';
+
+    if (!isVisible) {
+        loadNotificationHistory();
+    }
+}
+
+// 알림 히스토리 로드
+function loadNotificationHistory() {
+    const list = document.getElementById('notificationList');
+
+    if (notificationManager && notificationManager.notifications.length > 0) {
+        list.innerHTML = notificationManager.notifications
+            .slice(0, 10) // 최근 10개만
+            .map(notification => `
+                <div class="notification-item ${notification.read ? '' : 'unread'}" onclick="handleNotificationClick('${notification.type}', ${notification.read})">
+                    <div class="notification-title">${notification.title}</div>
+                    <div class="notification-message">${notification.message}</div>
+                    <div class="notification-time">${formatNotificationTime(notification.timestamp)}</div>
+                </div>
+            `).join('');
+    } else {
+        list.innerHTML = '<div class="notification-empty">알림이 없습니다.</div>';
+    }
+}
+
+// 알림 클릭 처리
+function handleNotificationClick(type, isRead) {
+    // 읽음 처리
+    if (!isRead && notificationManager) {
+        notificationManager.updateNotificationBadge();
+    }
+
+    // 타입별 페이지 이동
+    switch(type) {
+        case 'schedule':
+            window.open('/schedule/manager', '_blank');
+            break;
+        case 'chatbot':
+            // 챗봇 모달 열기
+            if (window.openChatbot) {
+                window.openChatbot();
+            }
+            break;
+    }
+
+    // 드롭다운 닫기
+    document.getElementById('notificationDropdown').style.display = 'none';
+}
+
+// 모든 알림 읽음 처리
+function markAllAsRead() {
+    if (notificationManager) {
+        notificationManager.notifications.forEach(n => n.read = true);
+        notificationManager.updateNotificationBadge();
+        loadNotificationHistory();
+    }
+}
+
+// 알림 시간 포맷팅
+function formatNotificationTime(timestamp) {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+
+    if (diffMins < 1) return '방금 전';
+    if (diffMins < 60) return `${diffMins}분 전`;
+    if (diffMins < 1440) return `${Math.floor(diffMins / 60)}시간 전`;
+    return date.toLocaleDateString('ko-KR');
+}
+
+// 페이지 로드 시 알림 권한 배너 표시 여부 확인
+document.addEventListener('DOMContentLoaded', function() {
+    const banner = document.getElementById('notificationPermissionBanner');
+    const asked = localStorage.getItem('notificationPermissionAsked');
+
+    if (!asked || asked === 'denied') {
+        if (!asked) {
+            // 처음 방문 시 3초 후 배너 표시
+            setTimeout(() => {
+                banner.classList.add('show');
+            }, 3000);
+        } else if (asked !== 'granted' && new Date().getTime() > parseInt(asked)) {
+            // 거부했지만 시간이 지났으면 다시 표시
+            setTimeout(() => {
+                banner.classList.add('show');
+            }, 3000);
+        }
+    }
+});
+
+// 외부 클릭 시 드롭다운 닫기
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.notification-icon')) {
+        document.getElementById('notificationDropdown').style.display = 'none';
+    }
+});
+</script>
 </head>
 <body>
 <header th:fragment="siteHeader">

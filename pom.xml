@@ -216,7 +216,23 @@
 			<artifactId>spring-boot-starter-jdbc</artifactId>
 		</dependency>
 
+<!-- Spring WebSocket -->
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-websocket</artifactId>
+</dependency>
 
+<!-- Spring Messaging -->
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-messaging</artifactId>
+</dependency>
+
+<!-- JSON 처리용 (이미 있을 가능성 높음) -->
+<dependency>
+    <groupId>com.fasterxml.jackson.core</groupId>
+    <artifactId>jackson-databind</artifactId>
+</dependency>
 
 
 
