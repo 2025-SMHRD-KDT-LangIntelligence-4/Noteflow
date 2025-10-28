@@ -472,4 +472,83 @@ public class NotionController {
     public String viewNote(@PathVariable Long noteIdx) {
         return "redirect:/notion/manage";
     }
+    
+    @PutMapping("/api/notion/{noteIdx}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> updateNote(
+            @PathVariable Long noteIdx,
+            @RequestBody Map<String, Object> requestData,
+            Authentication auth) {
+        
+        try {
+            Long userIdx = ((CustomUserDetails) auth.getPrincipal()).getUserIdx();
+            
+            // 안전한 타입 캐스팅
+            String title = (String) requestData.get("title");
+            String content = (String) requestData.get("content");
+            
+            @SuppressWarnings("unchecked")
+            List<String> keywords = (List<String>) requestData.get("keywords");
+            
+            String largeCategory = (String) requestData.get("largeCategory");
+            String mediumCategory = (String) requestData.get("mediumCategory");
+            String smallCategory = (String) requestData.get("smallCategory");
+            
+            // 노트 존재 여부 확인
+            Optional<Note> noteOpt = noteRepository.findById(noteIdx);
+            if (!noteOpt.isPresent()) {
+                return ResponseEntity.status(404)
+                    .body(Map.of("success", false, "message", "노트를 찾을 수 없습니다."));
+            }
+            
+            Note note = noteOpt.get();
+            
+            // 권한 확인 (본인의 노트인지) - User 객체를 통해 확인
+            if (!note.getUser().getUserIdx().equals(userIdx)) {
+                return ResponseEntity.status(403)
+                    .body(Map.of("success", false, "message", "권한이 없습니다."));
+            }
+            
+            // 노트 업데이트 - 실제 필드명 사용
+            note.setTitle(title);
+            note.setContent(content);
+            note.setUpdatedAt(LocalDateTime.now());
+            noteRepository.save(note);
+            
+            // 태그 업데이트 (기존 syncNoteTags 메서드가 있다면 사용)
+            if (keywords != null && !keywords.isEmpty()) {
+                // notionContentService.syncNoteTags(note, keywords);
+                // 또는 직접 태그 업데이트 로직을 구현
+                log.info("태그 업데이트 요청: {}", keywords);
+            }
+            
+            // 카테고리 업데이트 로직 (필요한 경우 구현)
+            if (largeCategory != null || mediumCategory != null || smallCategory != null) {
+                log.info("카테고리 업데이트 요청 - Large: {}, Medium: {}, Small: {}", 
+                         largeCategory, mediumCategory, smallCategory);
+                // 카테고리 업데이트 로직 구현
+            }
+            
+            // 성공 응답
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", true);
+            result.put("message", "노트가 성공적으로 업데이트되었습니다.");
+            result.put("noteId", noteIdx);
+            result.put("title", title);
+            
+            log.info("노트 업데이트 완료 - noteIdx: {}, userIdx: {}, title: {}", 
+                     noteIdx, userIdx, title);
+            
+            return ResponseEntity.ok(result);
+            
+        } catch (ClassCastException e) {
+            log.error("요청 데이터 타입 오류: {}", e.getMessage());
+            return ResponseEntity.status(400)
+                .body(Map.of("success", false, "error", "잘못된 데이터 형식입니다."));
+        } catch (Exception e) {
+            log.error("노트 업데이트 실패: {}", e.getMessage(), e);
+            return ResponseEntity.status(500)
+                .body(Map.of("success", false, "error", "서버 내부 오류가 발생했습니다."));
+        }
+    }
 }
