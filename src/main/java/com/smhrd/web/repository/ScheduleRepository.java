@@ -65,4 +65,14 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
         LocalDateTime start, 
         LocalDateTime end
     );
+
+ 
+    // 다가오는 일정 조회 (알림용)
+    @Query("SELECT s FROM Schedule s JOIN FETCH s.user " +
+           "WHERE s.startTime BETWEEN :startTime AND :endTime " +
+           "AND s.emailNotificationSent = false")
+    List<Schedule> findUpcomingSchedulesForNotification(
+        @Param("startTime") LocalDateTime startTime, 
+        @Param("endTime") LocalDateTime endTime
+    );
 }

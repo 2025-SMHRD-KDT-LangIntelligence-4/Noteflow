@@ -4,240 +4,253 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
- * ✅ ChatService에서 강의 추천 기능 호출용 Wrapper
- *
- * 기존 LectureRecommendService의 모든 기능을 래핑해서
- * ChatService에서 쉽게 호출할 수 있게 함
- *
- * 사용 사례:
- * 1. "Java 강의 추천해줘" → keyword 검색
- * 2. "객체지향 관련 강의" → 태그 검색
- * 3. "나 자바 약해" → 오답 기반 추천
+ * 챗봇에서 사용할 강의 추천 서비스
+ * LectureRecommendService를 래핑하여 ChatService에서 사용
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ChatbotLectureService {
-
-    // ✅ 이미 있는 LectureRecommendService 사용 (검색 기능 포함!)
+    
     private final LectureRecommendService lectureRecommendService;
-
+    
     /**
-     * 챗봇에서 호출할 통합 강의 검색
-     *
-     * 사용법:
-     * - keyword 있음 + tag 없음: keyword 검색
-     * - tag 있음 + keyword 없음: 태그 검색
-     * - 둘 다 있음: 하이브리드 검색 (AND/OR 모드)
+     * 챗봇용 강의 검색 (메인 메서드)
+     * 키워드를 자동으로 파싱하여 태그로 변환하고 검색
      */
-    public Map<String, Object> searchLecturesForChat(
-            String keyword,
-            List<String> tags,
-            String searchMode,  // "AND", "OR", "auto"
-            String category) {
-
+    public Map<String, Object> searchLecturesForChat(String keyword, List<String> tags, String searchMode, String category) {
         Map<String, Object> result = new HashMap<>();
         result.put("keyword", keyword);
         result.put("tags", tags);
-        result.put("mode", searchMode);
-
+        result.put("mode", searchMode != null ? searchMode : "OR");
+        
         try {
-            // 1️⃣ 키워드 검색만
-            if ((keyword != null && !keyword.isEmpty()) && (tags == null || tags.isEmpty())) {
-                log.info("🔍 챗봇 강의 검색 - 키워드 모드: {}", keyword);
-                List<Map<String, Object>> lectures = lectureRecommendService.searchByKeyword(
-                        keyword,
-                        category,
-                        10  // limit
-                );
-                result.put("lectures", lectures);
-                result.put("count", lectures.size());
-                result.put("search_type", "keyword");
-                log.info("✅ 키워드 검색 완료: {} 개", lectures.size());
-                return result;
+            log.info("🔍 챗봇 강의 검색 시작 - 키워드: {}, 태그: {}", keyword, tags);
+            
+            // 키워드에서 자동으로 태그 추출
+            List<String> autoTags = extractTagsFromKeyword(keyword);
+            
+            // 기존 태그와 자동 추출된 태그 병합
+            Set<String> allTags = new HashSet<>();
+            if (tags != null) allTags.addAll(tags);
+            if (autoTags != null) allTags.addAll(autoTags);
+            
+            List<String> finalTags = new ArrayList<>(allTags);
+            log.info("📌 최종 검색 태그: {}", finalTags);
+            
+            List<Map<String, Object>> lectures = new ArrayList<>();
+            
+            // 1. 태그가 있으면 태그 우선 검색 (웹페이지와 동일한 로직)
+            if (!finalTags.isEmpty()) {
+                log.info("🏷️ 태그 기반 검색: {}", finalTags);
+                lectures = lectureRecommendService.searchByTags(finalTags, "OR", category, 20);
+                result.put("searchType", "tag_based");
+                log.info("✅ 태그 검색 완료: {}개", lectures.size());
             }
-
-            // 2️⃣ 태그 검색만
-            if ((tags != null && !tags.isEmpty()) && (keyword == null || keyword.isEmpty())) {
-                log.info("🔍 챗봇 강의 검색 - 태그 모드: {}", tags);
-                List<Map<String, Object>> lectures = lectureRecommendService.searchByTags(
-                        tags,
-                        searchMode.equals("AND") ? "AND" : "OR",
-                        category,
-                        10
-                );
-                result.put("lectures", lectures);
-                result.put("count", lectures.size());
-                result.put("search_type", "tag");
-                log.info("✅ 태그 검색 완료: {} 개", lectures.size());
-                return result;
+            
+            // 2. 태그 검색 결과가 부족하면 키워드 검색 추가
+            if (lectures.size() < 10 && keyword != null && !keyword.trim().isEmpty()) {
+                log.info("🔍 키워드 검색 추가: {}", keyword);
+                List<Map<String, Object>> keywordLectures = lectureRecommendService.searchByKeyword(keyword, category, 15);
+                
+                // 중복 제거하며 병합
+                Set<String> existingIds = lectures.stream()
+                    .map(l -> String.valueOf(l.get("id")))
+                    .collect(Collectors.toSet());
+                
+                for (Map<String, Object> lecture : keywordLectures) {
+                    String lectureId = String.valueOf(lecture.get("id"));
+                    if (!existingIds.contains(lectureId)) {
+                        lectures.add(lecture);
+                        existingIds.add(lectureId);
+                    }
+                }
+                
+                result.put("searchType", finalTags.isEmpty() ? "keyword_only" : "hybrid");
+                log.info("✅ 키워드 검색 추가 완료: 총 {}개", lectures.size());
             }
-
-            // 3️⃣ 키워드 + 태그 (하이브리드)
-            if ((keyword != null && !keyword.isEmpty()) && (tags != null && !tags.isEmpty())) {
-                log.info("🔍 챗봇 강의 검색 - 하이브리드 모드: keyword={}, tags={}", keyword, tags);
-                List<Map<String, Object>> lectures = lectureRecommendService.searchByKeywordAndTags(
-                        keyword,
-                        tags,
-                        searchMode,
-                        category,
-                        10
-                );
-                result.put("lectures", lectures);
-                result.put("count", lectures.size());
-                result.put("search_type", "hybrid");
-                log.info("✅ 하이브리드 검색 완료: {} 개", lectures.size());
-                return result;
+            
+            // 3. 여전히 결과가 없으면 인기 강의 추천
+            if (lectures.isEmpty()) {
+                log.info("📈 검색 결과가 없어 인기 강의 추천");
+                lectures = lectureRecommendService.getPopularLectures();
+                lectures = lectures.stream().limit(10).collect(Collectors.toList());
+                result.put("searchType", "popular_fallback");
             }
-
-            // 4️⃣ 검색어 없음
-            log.warn("⚠️ 검색어 또는 태그가 없습니다");
-            result.put("lectures", new ArrayList<>());
-            result.put("count", 0);
-            result.put("error", "검색어 또는 태그를 입력해주세요");
+            
+            // 결과 제한 (최대 15개)
+            if (lectures.size() > 15) {
+                lectures = lectures.stream().limit(15).collect(Collectors.toList());
+            }
+            
+            result.put("lectures", lectures);
+            result.put("count", lectures.size());
+            result.put("success", true);
+            
+            log.info("🎯 챗봇 강의 검색 완료: {}개 결과", lectures.size());
             return result;
-
+            
         } catch (Exception e) {
-            log.error("❌ 챗봇 강의 검색 중 오류", e);
-            result.put("error", "강의 검색 중 오류가 발생했습니다: " + e.getMessage());
+            log.error("❌ 챗봇 강의 검색 실패: {}", e.getMessage(), e);
+            result.put("error", e.getMessage());
             result.put("count", 0);
+            result.put("lectures", new ArrayList<>());
+            result.put("success", false);
             return result;
         }
     }
-
+    
     /**
-     * 챗봇에서 사용자 오답 기반 강의 추천
+     * 키워드에서 자동으로 태그 추출
+     */
+    private List<String> extractTagsFromKeyword(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return new ArrayList<>();
+        }
+        
+        List<String> extractedTags = new ArrayList<>();
+        String lowerKeyword = keyword.toLowerCase();
+        
+        // 주요 기술 키워드들
+        List<String> techKeywords = Arrays.asList(
+            "자바", "java", "파이썬", "python", "자바스크립트", "javascript",
+            "리액트", "react", "스프링", "spring", "노드", "node.js", "nodejs",
+            "도커", "docker", "쿠버네티스", "kubernetes", "aws", "클라우드",
+            "리눅스", "linux", "우분투", "ubuntu", "데이터베이스", "mysql", "postgresql",
+            "머신러닝", "딥러닝", "ai", "인공지능", "빅데이터", "데이터분석",
+            "웹개발", "프론트엔드", "백엔드", "풀스택", "안드로이드", "ios",
+            "게임개발", "유니티", "unity", "언리얼", "블록체인", "보안", "네트워크"
+        );
+        
+        for (String tech : techKeywords) {
+            if (lowerKeyword.contains(tech.toLowerCase())) {
+                extractedTags.add(tech);
+            }
+        }
+        
+        log.info("🏷️ 키워드 '{}' 에서 추출된 태그: {}", keyword, extractedTags);
+        return extractedTags;
+    }
+    
+    /**
+     * 취약점 기반 강의 추천
      */
     public Map<String, Object> recommendByWeakness(Long userId) {
         try {
-            log.info("🎓 챗봇 오답 기반 강의 추천 - userId={}", userId);
-
+            log.info("📊 취약점 기반 강의 추천 - 사용자: {}", userId);
             List<Map<String, Object>> lectures = lectureRecommendService.recommendLecturesByWeakness(userId);
-
+            
             Map<String, Object> result = new HashMap<>();
-            result.put("recommendation_type", "weakness_based");
+            result.put("recommendationType", "weakness-based");
             result.put("lectures", lectures);
             result.put("count", lectures.size());
-            result.put("message", lectures.isEmpty()
-                    ? "아직 오답 데이터가 없어서 추천할 수 없습니다"
-                    : "취약 주제 기반으로 추천하는 강의입니다");
-
+            result.put("message", lectures.isEmpty() ? 
+                "아직 충분한 학습 데이터가 없어 개인화 추천이 어렵습니다. 인기 강의를 확인해보세요!" : 
+                "회원님의 학습 취약점을 분석하여 맞춤 강의를 추천해드렸습니다.");
+            
             return result;
-
         } catch (Exception e) {
-            log.error("❌ 오답 기반 추천 중 오류", e);
-            return Map.of(
-                    "error", "추천 중 오류가 발생했습니다",
-                    "count", 0
-            );
+            log.error("❌ 취약점 분석 실패: {}", e.getMessage(), e);
+            return Map.of("error", "취약점 분석 중 오류가 발생했습니다.", "count", 0);
         }
     }
-
+    
     /**
-     * 챗봇에서 사용자 상세 약점 분석
+     * 취약점 분석
      */
     public Map<String, Object> analyzeWeakness(Long userId) {
         try {
-            log.info("📊 챗봇 상세 약점 분석 - userId={}", userId);
+            log.info("📊 사용자 취약점 분석 - 사용자: {}", userId);
             return lectureRecommendService.getDetailedWeaknessAnalysis(userId);
-
         } catch (Exception e) {
-            log.error("❌ 상세 분석 중 오류", e);
-            return Map.of("error", "분석 중 오류가 발생했습니다");
+            log.error("❌ 취약점 분석 실패: {}", e.getMessage(), e);
+            return Map.of("error", "취약점 분석 중 오류가 발생했습니다.");
         }
     }
-
+    
     /**
-     * 챗봇에서 인기 강의 추천
+     * 인기 강의 조회
      */
     public Map<String, Object> getPopularLectures() {
         try {
-            log.info("⭐ 챗봇 인기 강의 조회");
-
+            log.info("📈 인기 강의 조회");
             List<Map<String, Object>> lectures = lectureRecommendService.getPopularLectures();
-
+            
             return Map.of(
-                    "recommendation_type", "popular",
-                    "lectures", lectures,
-                    "count", lectures.size(),
-                    "message", "많이 수강하는 인기 강의입니다"
+                "recommendationType", "popular",
+                "lectures", lectures,
+                "count", lectures.size(),
+                "message", "현재 가장 인기있는 강의들입니다!"
             );
-
         } catch (Exception e) {
-            log.error("❌ 인기 강의 조회 실패", e);
-            return Map.of("error", "조회 중 오류가 발생했습니다");
+            log.error("❌ 인기 강의 조회 실패: {}", e.getMessage(), e);
+            return Map.of("error", "인기 강의 조회 중 오류가 발생했습니다.");
         }
     }
-
+    
     /**
-     * 자연어 질문 → 검색 파라미터 자동 변환
-     *
-     * 예시:
-     * "자바 강의 추천해줘" → keyword=자바, searchMode=auto
-     * "객체지향이랑 디자인패턴 강의 보여줘" → tags=[객체지향, 디자인패턴], mode=OR
-     * "웹개발 근데 쉬운거만" → keyword=웹개발, category=쉬움
+     * 챗봇 질의 파싱 (기존 유지)
      */
     public Map<String, Object> parseChatbotQuery(String question) {
         Map<String, Object> parsed = new HashMap<>();
-
+        
         try {
             log.info("🔍 챗봇 질문 파싱: {}", question);
-
-            // 간단한 키워드 추출 (실제로는 NLP 모델 사용 권장)
+            
             String lowerQ = question.toLowerCase();
-
-            // 태그 키워드 (태그처럼 동작할 단어들)
             List<String> tags = new ArrayList<>();
+            
+            // 기본 태그들
             List<String> commonTags = Arrays.asList(
-                    "자바", "python", "javascript", "c언어", "c++",
-                    "객체지향", "함수형", "디자인패턴", "알고리즘",
-                    "웹개발", "모바일", "데이터베이스", "클라우드",
-                    "머신러닝", "인공지능", "보안", "네트워크"
+                "자바", "python", "javascript", "c++", "c#", "php", "swift", "kotlin",
+                "react", "vue", "angular", "spring", "django", "express",
+                "mysql", "postgresql", "mongodb", "redis", "elasticsearch",
+                "aws", "docker", "kubernetes", "linux", "git"
             );
-
+            
             for (String tag : commonTags) {
                 if (lowerQ.contains(tag.toLowerCase())) {
                     tags.add(tag);
                 }
             }
-
+            
             // 난이도 추출
             String difficulty = null;
-            if (lowerQ.contains("쉬운") || lowerQ.contains("기초") || lowerQ.contains("초급")) {
+            if (lowerQ.contains("초급") || lowerQ.contains("기초") || lowerQ.contains("입문")) {
                 difficulty = "easy";
-            } else if (lowerQ.contains("어려운") || lowerQ.contains("고급") || lowerQ.contains("심화")) {
+            } else if (lowerQ.contains("고급") || lowerQ.contains("심화") || lowerQ.contains("전문")) {
                 difficulty = "hard";
             }
-
-            // 검색 모드 결정
-            String searchMode = "OR";  // 기본값: OR (여러 조건 중 하나라도 만족)
-            if (lowerQ.contains("그리고") || lowerQ.contains("와") || lowerQ.contains("및")) {
-                searchMode = "AND";  // AND: 모든 조건 만족
+            
+            // 검색 모드
+            String searchMode = "OR";
+            if (lowerQ.contains("모두") || lowerQ.contains("전부") || lowerQ.contains("동시에")) {
+                searchMode = "AND";
             }
-
-            // 키워드 추출 (태그 제외한 나머지)
+            
+            // 키워드 정제
             String keyword = question;
             for (String tag : tags) {
                 keyword = keyword.replaceAll("(?i)" + tag, "").trim();
             }
-            keyword = keyword.replaceAll("강의|추천|보여|듣고싶|싶어|해줘|해?", "").trim();
-
+            keyword = keyword.replaceAll("\\s+", " ").trim();
+            
             parsed.put("question", question);
             parsed.put("tags", tags);
             parsed.put("keyword", keyword.isEmpty() ? null : keyword);
             parsed.put("difficulty", difficulty);
             parsed.put("searchMode", searchMode);
-
+            
             log.info("✅ 파싱 완료: tags={}, keyword={}, mode={}", tags, keyword, searchMode);
             return parsed;
-
+            
         } catch (Exception e) {
-            log.error("❌ 질문 파싱 중 오류", e);
-            parsed.put("error", "질문 분석에 실패했습니다");
+            log.error("❌ 질문 파싱 실패: {}", e.getMessage(), e);
+            parsed.put("error", "질문 파싱 중 오류가 발생했습니다.");
             return parsed;
         }
     }
