@@ -245,8 +245,8 @@ body {
     object-fit:cover;
 }
 .reward-img{
-	width:95%;
-	height:180px;
+	width:150px;
+	height:150px;
 	background:white;
 }
 
@@ -256,6 +256,7 @@ body {
     width: 95%;
     height: 50px;
     border-top:1px solid #c7c7c7;
+    justify-content:center;
 }
 .next-sign{
 	width:50px;
