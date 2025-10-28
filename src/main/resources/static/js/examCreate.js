@@ -99,21 +99,64 @@ document.addEventListener('DOMContentLoaded', () => {
     /**
      * 노트 엘리먼트 생성
      */
-    function createNoteElement(note, depth) {
-        const noteEl = document.createElement('div');
-        noteEl.className = 'note-item';
-        noteEl.dataset.noteIdx = note.noteIdx;
-        noteEl.dataset.tags = note.tags.join(',');
+	function createNoteElement(note, depth) {
+	    const noteEl = document.createElement('div');
+	    noteEl.className = 'note-item';
+	    noteEl.dataset.noteIdx = note.noteIdx;
+	    noteEl.dataset.tags = (note.tags || []).join(',');
 
-        
+	    // 아이콘
+	    const icon = document.createElement('span');
+	    icon.className = 'item-icon';
+	    icon.innerHTML = '📝';
 
-        noteEl.innerHTML = `
-        <span class="item-icon">📝</span>
-        <span class="note-title" data-full-text="${escapeHtml(note.title)}" title="${escapeHtml(note.title)}">${escapeHtml(note.title)}</span>
-    `;
+	    // 제목 래퍼 (overflow를 관리하기 위함)
+	    const titleWrapper = document.createElement('div');
+	    titleWrapper.className = 'note-title-wrapper';
 
-        return noteEl;
-    }
+	    const title = document.createElement('span');
+	    title.className = 'note-title';
+	    title.setAttribute('data-full-text', escapeHtml(note.title));
+	    title.setAttribute('title', note.title); // 기존 툴팁 유지
+	    title.textContent = note.title;
+
+	    titleWrapper.appendChild(title);
+
+	    // 조립
+	    noteEl.appendChild(icon);
+	    noteEl.appendChild(titleWrapper);
+
+	    // --- 제목 hover 시 슬라이드 처리 (mouseenter / mouseleave 사용) ---
+	    // mouseenter: 자식 요소로 들어갈 때 한 번만 실행됨 (버블 문제 줄임)
+	    title.addEventListener('mouseenter', (e) => {
+	        // wrapper와 title 실제 너비 측정
+	        const wrapperWidth = titleWrapper.clientWidth;
+	        const textWidth = title.scrollWidth;
+
+	        // 제목이 wrapper보다 길 때만 작동
+	        if (textWidth > wrapperWidth) {
+	            const distance = textWidth - wrapperWidth;
+	            // duration 산정: px당 시간 (예: 12ms) — 필요하면 수치 조정
+	            const duration = Math.max(800, Math.round(distance * 12)); // 최소 800ms 보장
+
+	            title.style.setProperty('--scroll-distance', `-${distance}px`);
+	            title.style.setProperty('--scroll-duration', `${duration}ms`);
+	            title.classList.add('scrolling');
+	        }
+	    });
+
+	    // mouseleave: wrapper를 벗어날 때 초기화
+	    title.addEventListener('mouseleave', (e) => {
+	        title.classList.remove('scrolling');
+	        title.style.transform = 'translateX(0)';
+	        title.style.removeProperty('--scroll-distance');
+	        title.style.removeProperty('--scroll-duration');
+	    });
+
+	    // (기존에서 노트 선택 등 추가 로직이 item click 핸들러로 처리되므로 여기선 단순 리턴)
+	    return noteEl;
+	}
+
 
     /**
      * HTML 이스케이프 (XSS 방지)
@@ -456,4 +499,29 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     examTitle.placeholder = '자동 생성됩니다 (수정 가능)';
+	// ========== 노트 제목 슬라이드 효과 추가 ==========
+	document.addEventListener('mouseover', (e) => {
+	    const title = e.target.closest('.note-title');
+	    if (!title) return;
+
+	    const wrapperWidth = title.parentElement.clientWidth;
+	    const textWidth = title.scrollWidth;
+
+	    // 제목이 wrapper보다 길 때만 슬라이드
+	    if (textWidth > wrapperWidth) {
+	        const distance = textWidth - wrapperWidth;
+	        const duration = distance * 15; // px당 속도
+	        title.style.setProperty('--scroll-distance', `-${distance}px`);
+	        title.style.setProperty('--scroll-duration', `${duration}ms`);
+	        title.classList.add('scrolling');
+	    }
+	});
+
+	document.addEventListener('mouseout', (e) => {
+	    const title = e.target.closest('.note-title');
+	    if (!title) return;
+	    title.classList.remove('scrolling');
+	    title.style.transform = 'translateX(0)';
+	});
+
 });

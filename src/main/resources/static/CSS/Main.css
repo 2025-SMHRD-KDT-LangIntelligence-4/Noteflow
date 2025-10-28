@@ -134,6 +134,8 @@ body {
 	user-select: none;
 	transition: 0.3s;
 	transform: translateY(-50%);
+	background-color: rgba(0, 0, 0, 0.4);
+	border-radius: 10%;
 }
 .prev { left: 0; }
 .next { right: 0; }
