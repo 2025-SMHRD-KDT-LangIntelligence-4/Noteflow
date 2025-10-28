@@ -135,4 +135,27 @@ public class Schedule {
     
     @Column(name = "quartz_job_id", length = 255)
     private String quartzJobId;
+
+    @Column(name = "web_notification_enabled")
+    private Boolean webNotificationEnabled = false;
+
+    @Column(name = "chatbot_notification_enabled") 
+    private Boolean chatbotNotificationEnabled = false;
+
+    // Getter/Setter 추가
+    public Boolean getWebNotificationEnabled() {
+        return webNotificationEnabled;
+    }
+
+    public void setWebNotificationEnabled(Boolean webNotificationEnabled) {
+        this.webNotificationEnabled = webNotificationEnabled;
+    }
+
+    public Boolean getChatbotNotificationEnabled() {
+        return chatbotNotificationEnabled;
+    }
+
+    public void setChatbotNotificationEnabled(Boolean chatbotNotificationEnabled) {
+        this.chatbotNotificationEnabled = chatbotNotificationEnabled;
+    }
 }
