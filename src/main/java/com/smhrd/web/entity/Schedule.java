@@ -158,4 +158,53 @@ public class Schedule {
     public void setChatbotNotificationEnabled(Boolean chatbotNotificationEnabled) {
         this.chatbotNotificationEnabled = chatbotNotificationEnabled;
     }
+    public Object getId() {
+        return this.scheduleId;
+        // 또는 Long 타입으로 하고 싶다면:
+        // public Long getId() { return this.scheduleId; }
+    }
+
+    public boolean isEmailNotificationEnabled() {
+        // emailNotificationEnabled 필드가 있다면
+        return this.emailNotificationEnabled != null ? this.emailNotificationEnabled : true;
+        
+        // 또는 기본값을 true로 하고 싶다면
+        // return true;
+        
+        // 사용자 설정에 따라 결정하고 싶다면
+        // return this.user != null && this.user.isEmailNotificationEnabled();
+    }
+    
+ // 추가로 필요한 메서드들:
+
+ // 이메일 알림 발송 완료 여부 getter
+ public Boolean getEmailNotificationSent() {
+     return this.emailNotificationSent != null ? this.emailNotificationSent : false;
+ }
+
+ // 이메일 알림 발송 완료 여부 setter
+ public void setEmailNotificationSent(Boolean emailNotificationSent) {
+     this.emailNotificationSent = emailNotificationSent;
+ }
+
+
+ // User 객체 getter (JPA 관계가 있다면)
+ public User getUser() {
+     return this.user;
+ }
+
+ // 일정 시작 시간 getter
+ public LocalDateTime getStartTime() {
+     return this.startTime;
+ }
+
+ // 일정 제목 getter
+ public String getTitle() {
+     return this.title;
+ }
+
+ // 일정 설명 getter
+ public String getDescription() {
+     return this.description;
+ }
 }
