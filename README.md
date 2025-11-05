@@ -385,4 +385,203 @@ GridFS에서 첫 번째 청크(0~5MB) 로드
 - 검색 정확도: 하이브리드 방식으로 85% 이상 달성
 - 확장성: 용량 자동 관리로 무한 운영 가능
 
+# 설치 및 실행
+## 사전 요구사항
+- Docker & Docker Compose
+- RTX 5080 (또는 16GB+ VRAM GPU)
+- Python 3.10+
+- Java 17+
+- 디스크 공간: 최소 200GB (모델 + DB)
+- SSL 인증서 (HTTPS 사용)
+***
 
+
+## Docker 컨테이너 구성
+1. MySQL (메타데이터 저장소)     <= postgreSQL로 병합 가능. 학원에서 부여해준 프로젝트라 학원 DB 사용.
+
+```
+docker run -d `
+  --name ssaegim-mysql `
+  -p 3312:3306 `
+  -e MYSQL_ROOT_PASSWORD=your_root_password `
+  -e MYSQL_DATABASE=sc_25K_LI4_p3_2 `
+  -e MYSQL_USER=sc_25K_LI4_p3_2 `
+  -e MYSQL_PASSWORD=smhrd2 `
+  -v D:\data\mysql:/var/lib/mysql `
+  mysql:8.0
+```
+
+2. MongoDB (문서 저장소 + GridFS)
+
+
+```
+docker run -d `
+  --name ssaegim-mongodb `
+  -p 27017:27017 `
+  -e MONGO_INITDB_ROOT_USERNAME=smhrd `
+  -e MONGO_INITDB_ROOT_PASSWORD=0S3M1H5RD `
+  -e MONGO_INITDB_DATABASE=ssaegim `
+  -v D:\data\mongodb:/data/db `
+  mongo:latest
+```
+3. PostgreSQL + pgvector (벡터 저장소)
+
+```
+docker run -d `
+  --name ssaegim-postgres `
+  -p 5432:5432 `
+  -e POSTGRES_USER=smhrd `
+  -e POSTGRES_PASSWORD=0S3M1H5RD `
+  -e POSTGRES_DB=ssaegim `
+  -v D:\data\postgres:/var/lib/postgresql/data `
+  pgvector/pgvector:pg16
+```
+
+4. vLLM - 7.8B 모델 (요약)
+
+
+```
+docker run -d `
+  --name ssaegim-vllm-7.8b `
+  --gpus all `
+  -p 8006:8005 `
+  -v D:\models\exaone-3.5-7.8b:/models/exaone `
+  vllm/vllm-openai:latest `
+  python -m vllm.entrypoints.openai_api_server `
+    --model /models/exaone `
+    --host 0.0.0.0 `
+    --port 8005 `
+    --trust-remote-code `
+    --max-model-len 8192 `
+    --gpu-memory-utilization 0.65 `
+    --dtype float16
+```
+
+5. vLLM - 1.2B 모델 (챗봇)
+
+```
+docker run -d `
+  --name ssaegim-vllm-1.2b `
+  --gpus all `
+  -p 8007:8005 `
+  -v D:\models\exaone-4.0-1.2b:/models/exaone-4.0 `
+  vllm/vllm-openai:latest `
+  python -m vllm.entrypoints.openai_api_server `
+    --model /models/exaone-4.0 `
+    --host 0.0.0.0 `
+    --port 8005 `
+    --trust-remote-code `
+    --max-model-len 4096 `
+    --gpu-memory-utilization 0.25 `
+    --dtype float16
+```
+6. BGE-M3 임베딩 (CPU 기반)
+
+
+```
+docker run -d `
+  --name ssaegim-embedding `
+  -p 8081:8081 `
+  -v D:\models\bge-m3:/models `
+  --memory="4g" `
+  -e MODEL_NAME=bge-m3 `
+  embedding-bge-m3
+```
+
+## Spring Boot 빌드 및 실행
+1. SSL 인증서 준비  :   Win ACME 사용해서 해결봄. tplinkdns 주소는 전세계에 사용자들이 너무많아서 선착순 풀릴때 바로해야할것;
+
+2. Maven 빌드 및 실행
+
+ ```
+# 1. 프로젝트 클론
+git clone https://github.com/2025-SMHRD-KDT-LangIntelligence-4/Noteflow.git
+cd Noteflow
+
+# 2. 의존성 다운로드 및 빌드
+mvn clean install -DskipTests
+
+# 3. Spring Boot 애플리케이션 실행
+mvn spring-boot:run
+
+# 또는 JAR 파일로 빌드 후 실행
+mvn clean package -DskipTests
+java -jar target/noteflow-1.0.0.jar
+```
+
+3. 환경 변수 설정 (PowerShell)
+```
+$env:SPRING_PROFILES_ACTIVE="production"
+$env:SPRING_DATASOURCE_URL="jdbc:mysql:///        sc_25K_LI4_p3_2
+$env:SPRING_DATASOURCE_USERNAME=
+$env:SPRING_DATASOURCE_PASSWORD=
+```
+
+| 서비스                 | 포트    | 설명        |
+| ------------------- | ----- | --------- |
+| Spring Boot (HTTPS) | 443   | 메인 애플리케이션 |
+| MySQL               | 3312  | 메타데이터 저장소 |
+| MongoDB             | 27017 | 문서 저장소    |
+| PostgreSQL          | 5432  | 벡터 저장소    |
+| vLLM 7.8B           | 8006  | 요약 모델 API |
+| vLLM 1.2B           | 8007  | 챗봇 모델 API |
+| BGE-M3              | 8081  | 임베딩 API   |
+
+
+연결테스트
+```
+# 요약 모델 상태 확인
+Invoke-WebRequest -Uri "http://localhost:8006/v1/models" -Method Get
+
+# 챗봇 모델 상태 확인
+Invoke-WebRequest -Uri "http://localhost:8007/v1/models" -Method Get
+
+# 임베딩 서비스 상태 확인
+Invoke-WebRequest -Uri "http://localhost:8081/health" -Method Get
+
+# MySQL 연결 확인
+docker exec ssaegim-mysql mysql -u sc_25K_LI4_p3_2 -psmhrd2 -e "SELECT 1"
+
+# MongoDB 연결 확인
+docker exec ssaegim-mongodb mongosh --host localhost:27017 -u smhrd -p 0S3M1H5RD --authenticationDatabase admin --eval "db.adminCommand('ping')"
+
+# PostgreSQL 연결 확인
+docker exec ssaegim-postgres psql -U smhrd -d ssaegim -c "SELECT 1"
+```
+
+# 보안 주의사항
+
+
+1. 기본 패스워드 변경
+
+  - MySQL 루트 패스워드
+
+  - MongoDB 인증 정보
+
+  - PostgreSQL 패스워드
+
+  - Spring Security 기본 사용자명/비밀번호
+
+2. SSL 인증서
+
+  - 자체 서명 인증서 → 공인 인증서 교체
+
+  - 인증서 만료 전 갱신 체계 구축
+
+3. 이메일 설정
+
+  - 실제 Gmail 계정 및 앱 비밀번호 사용
+
+  - 외부에 노출되지 않도록 환경 변수로 관리
+
+4. 데이터베이스
+
+  - 정기적 백업 체계 구축
+
+  - 접근 권한 최소화
+
+5. 로깅
+
+  - 프로덕션: INFO 레벨로 설정
+
+  - 민감한 정보(패스워드 등) 로깅 제거
