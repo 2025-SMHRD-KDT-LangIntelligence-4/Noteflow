@@ -5,6 +5,8 @@ SSAEGIM.AI 는 AI 기반 학습 지원 플랫폼입니다. 사용자는 학습 �
 
 # 핵심 기능
 ## 1. AI 학습 요약 기능
+<img width="1020" height="1011" alt="1  ai학습요약기능 drawio" src="https://github.com/user-attachments/assets/59957b7e-15bd-448e-a7db-8b4b8ad63ebb" />
+
 - 다양한 파일 형식 지원: PDF, HWP(한글), DOCX, Excel, CSV, MD, TXT
 - 문서 크기별 최적화: 소형(일괄), 중형(슬라이딩 윈도우), 대형(의미 기반) 청킹
 - 16가지 요약 형식 × 3단계 모드: 심플형, 키워드형, 포트폴리오형 등을 심플/표준/고급으로 제공
@@ -12,12 +14,16 @@ SSAEGIM.AI 는 AI 기반 학습 지원 플랫폼입니다. 사용자는 학습 �
 - 자동 폴더 분류: Jaccard 유사도 + LLM으로 기존 폴더 트리에 자동 배치
 
 ## 2. 벡터 DB 및 RAG 시스템
+<img width="1211" height="941" alt="2 벡터 RAG 시스템 drawio" src="https://github.com/user-attachments/assets/366865a7-6df6-4029-8bff-cd171f147d46" />
+
 - BGE-M3 임베딩: 1024차원, 100개 이상 언어 지원, CPU 기반 비동기 처리
 - PostgreSQL + pgvector: HNSW 인덱스로 밀리초 단위 유사도 검색
 - 하이브리드 검색: 텍스트(MySQL) + 벡터(PostgreSQL) + 메타데이터 필터링 결합
 - 유사도 임계값: 0.7 이상만 필터링하여 정확도 85% 이상 달성
 
 ## 3. AI 문제 은행 시스템
+<img width="1102" height="951" alt="3 문제은행 시스템 drawio" src="https://github.com/user-attachments/assets/381b2466-d834-4819-87d6-041b51b9272b" />
+
 - 7가지 문제 유형: 객관식, 참/거짓, 빈칸, 단답형, 서술형, 연결형, 순서배열
 - 5단계 난이도 체계: 원하는 난이도로 선택 가능 / 시험결과 기반 자동 난이도 조절
 - 정답 랜덤화: 객관식 선택지를 매번 다르게 섞어 암기 방지
@@ -25,12 +31,16 @@ SSAEGIM.AI 는 AI 기반 학습 지원 플랫폼입니다. 사용자는 학습 �
 - 통계 추적: test_attempts와 user_answers로 응시 기록 및 정답률 분석
 
 ## 4. 노트 관리 시스템
+<img width="851" height="721" alt="4 노트 관리 시스템 drawio" src="https://github.com/user-attachments/assets/e37b5b41-5367-4e30-835a-c453e44e570d" />
+
 - 계층적 폴더 트리: parentId 필드로 재귀 구조 구현, 무제한 깊이
 - 순환 참조 방지: 이동 전 재귀 검사로 폴더를 자신의 하위로 이동 불가
 - 메타데이터 추적: 생성일, 수정일, 최종 접근일로 "최근 본 노트" 구현
 - 마크다운 지원: 클라이언트 사이드 렌더링으로 서버 부하 감소
 
 ## 5. 일정 관리 시스템
+<img width="1200" height="840" alt="5 일정관리 drawio" src="https://github.com/user-attachments/assets/93ef0c2b-4685-4359-8a8f-8981065adb12" />
+
 - 다양한 일정 유형: 색상으로 개인화 가능
 - 반복 일정(RRULE): iCalendar 표준 기반, 종료일까지 인스턴스 사전 생성
 - 자동 알림 시스템: @Scheduled로 1분마다 PENDING 알림 조회 및 발송
@@ -38,6 +48,8 @@ SSAEGIM.AI 는 AI 기반 학습 지원 플랫폼입니다. 사용자는 학습 �
 - 캘린더 뷰: 월간/주간/일간 조회 지원, toLocalDate() 그룹화
 
 ## 6. 강의 목록 관리
+<img width="985" height="1071" alt="6 강의목록 drawio" src="https://github.com/user-attachments/assets/f50a77d4-0539-4a95-b3e0-8900a5cf9750" />
+
 - 하이브리드 강의 소스: 외부 링크(유튜브) + 내부 영상(GridFS) 동시 지원
 - 키워드 기반 추천: 노트 키워드와 강의 키워드 비교로 관련 강의 자동 추천
 - 벡터 검색 통합: 챗봇의 자연어 질문으로 의미 기반 강의 검색
@@ -45,6 +57,8 @@ SSAEGIM.AI 는 AI 기반 학습 지원 플랫폼입니다. 사용자는 학습 �
 -  메타데이터 저장: MySQL에 강의명, 강사, 카테고리, 난이도, 키워드 관리
 
 ## 7. AI 챗봇 시스템
+<img width="946" height="900" alt="7 챗봇 drawio" src="https://github.com/user-attachments/assets/71533bd9-4bba-40a5-94b0-a490b91466ad" />
+
 - RAG 기반 답변: pgvector에서 Top-5 검색(임계값 0.7↑) + 사용자 자료만 검색
 - 대화 지속성: MySQL chat_sessions에 userId, messages 배열 저장
 - 스마트 링크 삽입: 답변에 키워드 감지 시 [강의 목록], [노트], [시험] 등 클릭 가능 링크 자동 삽입
@@ -200,6 +214,7 @@ User B: "스프링이 뭐야?" (챗봇 질문)
 ```
 **결과: User A와 User B의 요청이 서로 영향을 주지 않음**
 
+<img width="932" height="1080" alt="llm기준 drawio" src="https://github.com/user-attachments/assets/75a61600-1933-429a-a187-bf7fac836a48" />
 
 # Challenge 2: 온프레미스 환경 구축
 
@@ -378,6 +393,7 @@ GridFS에서 첫 번째 청크(0~5MB) 로드
 
 
 ## 온프레미스의 최종 형태
+<img width="1482" height="951" alt="전체 데이터 통합 플로우 drawio" src="https://github.com/user-attachments/assets/d31fde19-6414-4b55-9184-8f4b882b8204" />
 
 결과적으로 저희는 다음을 달성했습니다.
 
